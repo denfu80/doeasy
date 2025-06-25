@@ -33,14 +33,6 @@ export default function PlayfulHomepage() {
             }`}>
               mach<span className="text-pink-500">.</span>halt
             </span>
-            
-            {/* Hidden feature spoiler */}
-            {logoHovered && (
-              <div className="absolute top-16 left-4 bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-bold animate-fade-in z-50">
-                🎤 Voice Input Available!
-                <div className="absolute -top-1 left-4 w-2 h-2 bg-slate-900 rotate-45"></div>
-              </div>
-            )}
           </div>
           
           <Badge 
@@ -96,18 +88,18 @@ export default function PlayfulHomepage() {
               onMouseEnter={() => setTitleHovered(true)}
               onMouseLeave={() => setTitleHovered(false)}
             >
-              <span className={`block text-pink-500 transform inline-block transition-all duration-500 hover:scale-110 ${
-                titleHovered ? '-rotate-12 text-6xl md:text-8xl' : '-rotate-2'
+              <span className={`block text-pink-500 transform inline-block transition-all duration-300 ${
+                titleHovered ? '-rotate-6 scale-105' : '-rotate-2'
               }`}>
                 zusammen
               </span>
-              <span className={`block text-purple-600 transform inline-block transition-all duration-500 hover:scale-110 ${
-                titleHovered ? 'rotate-12 text-6xl md:text-8xl' : 'rotate-1'
+              <span className={`block text-purple-600 transform inline-block transition-all duration-300 ${
+                titleHovered ? 'rotate-6 scale-105' : 'rotate-1'
               }`}>
                 sachen
               </span>
-              <span className={`block text-blue-600 transform inline-block transition-all duration-500 hover:scale-110 ${
-                titleHovered ? '-rotate-6 text-6xl md:text-8xl' : '-rotate-1'
+              <span className={`block text-blue-600 transform inline-block transition-all duration-300 ${
+                titleHovered ? '-rotate-3 scale-105' : '-rotate-1'
               }`}>
                 machen
               </span>
@@ -179,45 +171,26 @@ export default function PlayfulHomepage() {
             </div>
 
             {/* The Interactive Big Button */}
-            <div className="relative">
-              <Button
-                size="lg"
-                className={`bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 hover:from-pink-600 hover:via-purple-600 hover:to-blue-600 text-white px-16 py-10 text-3xl font-black rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-500 transform hover:scale-110 hover:rotate-1 border-4 border-white group ${
-                  isHovered ? 'animate-pulse' : ''
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 hover:from-pink-600 hover:via-purple-600 hover:to-blue-600 text-white px-16 py-10 text-3xl font-black rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 hover:rotate-1 border-4 border-white"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              <Plus className={`w-10 h-10 mr-4 transition-all duration-300 ${
+                isHovered ? 'rotate-90 scale-125' : ''
+              }`} />
+              <span className={`transition-all duration-300 ${
+                isHovered ? 'tracking-widest' : ''
+              }`}>
+                MACHEN
+              </span>
+              <ArrowRight
+                className={`w-8 h-8 ml-4 transition-all duration-300 ${
+                  isHovered ? "translate-x-2 rotate-12 scale-125" : ""
                 }`}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-              >
-                <Plus className={`w-10 h-10 mr-4 transition-all duration-300 ${
-                  isHovered ? 'rotate-90 scale-125' : ''
-                }`} />
-                <span className={`transition-all duration-300 ${
-                  isHovered ? 'tracking-widest' : ''
-                }`}>
-                  MACHEN
-                </span>
-                <ArrowRight
-                  className={`w-8 h-8 ml-4 transition-all duration-300 ${
-                    isHovered ? "translate-x-2 rotate-12 scale-125" : ""
-                  }`}
-                />
-              </Button>
-              
-              {/* Button hover spoiler */}
-              {isHovered && (
-                <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 flex space-x-2 animate-fade-in">
-                  <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-pink-600 shadow-lg animate-bounce">
-                    🎤 Voice
-                  </div>
-                  <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-purple-600 shadow-lg animate-bounce delay-75">
-                    👥 Realtime
-                  </div>
-                  <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-blue-600 shadow-lg animate-bounce delay-150">
-                    🔗 Share
-                  </div>
-                </div>
-              )}
-            </div>
+              />
+            </Button>
           </div>
 
           {/* Interactive Subtitle */}

@@ -68,6 +68,8 @@ export function createTestTodoList(listId: string) {
     return
   }
 
+  const database = db // TypeScript assertion that db is not null
+
   const testTodos = [
     {
       text: 'Firebase Realtime Database testen',
@@ -92,10 +94,10 @@ export function createTestTodoList(listId: string) {
     }
   ]
 
-  const listRef = ref(db, `lists/${listId}/todos`)
+  // const listRef = ref(database, `lists/${listId}/todos`) // Not needed for individual todo creation
   
   testTodos.forEach((todo, index) => {
-    const todoRef = ref(db, `lists/${listId}/todos/test-todo-${index}`)
+    const todoRef = ref(database, `lists/${listId}/todos/test-todo-${index}`)
     set(todoRef, todo)
   })
 

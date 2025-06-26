@@ -53,7 +53,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   useEffect(() => {
     const setupDemoMode = (reason?: string) => {
       const demoUserId = 'demo-user-' + Math.random().toString(36).substring(2, 12)
-      setUser({ uid: demoUserId } as any)
+      setUser({ uid: demoUserId } as FirebaseUser)
       let savedName = localStorage.getItem('machhalt-username')
       if (!savedName) {
         savedName = generateFunnyName()
@@ -102,7 +102,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
         } else {
           try {
             console.log('🔐 Attempting anonymous sign-in...')
-            await signInAnonymously(auth)
+            if (auth) {
+              await signInAnonymously(auth)
+            }
           } catch (error) {
             console.error("❌ Authentication failed - falling back to demo mode:", error)
             setupDemoMode('auth-failed')
@@ -148,9 +150,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     // Set user presence and handle disconnect
     set(userRef, userPresence)
     
-    // Auto-remove user when they disconnect
-    const onDisconnectRef = ref(db, `lists/${listId}/presence/${user.uid}`)
-    // Note: onDisconnect is not available in the web SDK, but we can handle it with visibility API
+    // Handle disconnect using visibility API (onDisconnect not available in web SDK)
     const handleVisibilityChange = () => {
       if (document.hidden) {
         set(userRef, { ...userPresence, lastSeen: serverTimestamp(), onlineAt: null })
@@ -177,7 +177,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
             // Only show users who are online or were online in the last 5 minutes
             const isOnline = user.onlineAt && typeof user.onlineAt === 'object'
             const lastSeen = user.lastSeen || user.onlineAt
-            const timeSinceLastSeen = now - (typeof lastSeen === 'number' ? lastSeen : 0)
+            const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
+            const timeSinceLastSeen = now - lastSeenTime
             return isOnline || timeSinceLastSeen < 5 * 60 * 1000 // 5 minutes
           })
           .sort((a, b) => {
@@ -186,7 +187,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
             const bOnline = b.onlineAt && typeof b.onlineAt === 'object'
             if (aOnline && !bOnline) return -1
             if (!aOnline && bOnline) return 1
-            return (b.lastSeen || b.onlineAt || 0) - (a.lastSeen || a.onlineAt || 0)
+            const aTime = typeof (a.lastSeen || a.onlineAt) === 'number' ? (a.lastSeen || a.onlineAt) : 0
+            const bTime = typeof (b.lastSeen || b.onlineAt) === 'number' ? (b.lastSeen || b.onlineAt) : 0
+            return (bTime as number) - (aTime as number)
           })
         
         presentUsers.forEach((user, index) => {
@@ -232,7 +235,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
             if (a.completed !== b.completed) {
               return a.completed ? 1 : -1
             }
-            return (a.createdAt || 0) - (b.createdAt || 0)
+            const aTime = typeof a.createdAt === 'number' ? a.createdAt : 0
+            const bTime = typeof b.createdAt === 'number' ? b.createdAt : 0
+            return aTime - bTime
           })
         
         setTodos(todosData)
@@ -243,9 +248,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
         setTodos([])
         console.log(`📝 No todos found for list ${listId}`)
       }
-    }, (error) => {
+    }, (error: any) => {
       console.error('❌ Error loading todos:', error)
-      setFirebaseStatus(`error: ${error.code || 'database-read-failed'}`)
+      setFirebaseStatus(`error: ${error.code || error.message || 'database-read-failed'}`)
     })
 
     return () => off(todosRef, 'value', unsubscribe)

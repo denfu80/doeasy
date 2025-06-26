@@ -11,6 +11,8 @@ export interface User {
   id: string
   name: string
   color: string
-  onlineAt: number | object // Realtime Database timestamp
+  onlineAt: number | object | null // Realtime Database timestamp
+  lastSeen?: number | object // Optional lastSeen timestamp
+  isTyping?: boolean // Optional typing indicator
   zIndex?: number
 }

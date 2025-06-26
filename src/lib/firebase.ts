@@ -26,9 +26,9 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:123456789:web:abcdef"
 }
 
-let app: any = null
-let auth: any = null
-let db: any = null
+let app: ReturnType<typeof initializeApp> | null = null
+let auth: ReturnType<typeof getAuth> | null = null
+let db: ReturnType<typeof getDatabase> | null = null
 
 // Only initialize Firebase if configuration is available
 if (isFirebaseConfigured()) {

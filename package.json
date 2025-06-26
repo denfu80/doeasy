@@ -11,7 +11,7 @@
     "firebase:emulators": "firebase emulators:start",
     "firebase:deploy": "firebase deploy",
     "firebase:deploy:rules": "firebase deploy --only database",
-    "firebase:deploy:hosting": "NODE_ENV=production npm run build && firebase deploy --only hosting",
+    "firebase:deploy:hosting": "BUILD_FOR_HOSTING=true npm run build && firebase deploy --only hosting",
     "firebase:test": "node firebase-quick-test.js"
   },
   "dependencies": {

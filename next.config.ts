@@ -1,8 +1,8 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Firebase Hosting configuration
-  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+  // Firebase Hosting configuration - only enable export when specifically building for hosting
+  output: process.env.BUILD_FOR_HOSTING === 'true' ? 'export' : undefined,
   trailingSlash: true,
   images: {
     unoptimized: true

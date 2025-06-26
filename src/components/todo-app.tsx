@@ -396,18 +396,6 @@ export default function TodoApp({ listId }: TodoAppProps) {
             )}
           </div>
         )}
-        
-        {/* Success Notice */}
-        {firebaseStatus === 'connected' && !user?.uid?.startsWith('demo-user-') && (
-          <div className="mb-6 p-4 bg-green-100 border-l-4 border-green-500 rounded-lg">
-            <div className="flex items-center">
-              <Zap className="w-5 h-5 text-green-600 mr-2" />
-              <p className="text-sm text-green-800 font-semibold">
-                ✅ Firebase Realtime Database aktiv - Real-time Kollaboration verfügbar!
-              </p>
-            </div>
-          </div>
-        )}
         {/* Header */}
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
           <div className="flex items-center space-x-3 mb-4 sm:mb-0">

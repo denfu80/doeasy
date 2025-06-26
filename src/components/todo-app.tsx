@@ -7,17 +7,15 @@ import {
   User as FirebaseUser
 } from 'firebase/auth'
 import { 
-  collection, 
-  doc, 
-  addDoc, 
-  onSnapshot, 
-  updateDoc, 
-  deleteDoc,
+  ref, 
+  push, 
+  onValue, 
+  update, 
+  remove,
   serverTimestamp,
-  setDoc,
-  query,
-  orderBy
-} from 'firebase/firestore'
+  set,
+  off
+} from 'firebase/database'
 import { Zap, Link } from 'lucide-react'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
@@ -46,8 +44,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   // Initialize Firebase Authentication
   useEffect(() => {
-    if (!isFirebaseConfigured() || !auth) {
-      // Set up demo mode without Firebase
+    const setupDemoMode = () => {
       const demoUserId = 'demo-user-' + Math.random().toString(36).substring(2, 12)
       setUser({ uid: demoUserId } as any)
       let savedName = localStorage.getItem('machhalt-username')
@@ -57,11 +54,20 @@ export default function TodoApp({ listId }: TodoAppProps) {
       }
       setUserName(savedName)
       setIsAuthReady(true)
+    }
+
+    // Check if Firebase is properly configured and initialized
+    if (!isFirebaseConfigured() || !auth) {
+      console.log('🔧 Setting up demo mode - Firebase not available')
+      setupDemoMode()
       return
     }
 
+    console.log('🔥 Attempting Firebase authentication...')
+    
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        console.log('✅ User authenticated:', firebaseUser.uid)
         setUser(firebaseUser)
         let savedName = localStorage.getItem('machhalt-username')
         if (!savedName) {
@@ -72,9 +78,11 @@ export default function TodoApp({ listId }: TodoAppProps) {
         setIsAuthReady(true)
       } else {
         try {
+          console.log('🔐 Attempting anonymous sign-in...')
           await signInAnonymously(auth)
         } catch (error) {
-          console.error("Authentication Error:", error)
+          console.error("❌ Authentication failed - falling back to demo mode:", error)
+          setupDemoMode()
         }
       }
     })
@@ -99,31 +107,36 @@ export default function TodoApp({ listId }: TodoAppProps) {
       return
     }
 
-    const presenceRef = collection(db, 'lists', listId, 'presence')
-    const userDocRef = doc(presenceRef, user.uid)
+    const presenceRef = ref(db, `lists/${listId}/presence`)
+    const userRef = ref(db, `lists/${listId}/presence/${user.uid}`)
 
     const userColor = generateColor(user.uid)
-    setDoc(userDocRef, { 
+    set(userRef, { 
       onlineAt: serverTimestamp(), 
       color: userColor, 
       name: userName 
-    }, { merge: true })
+    })
     
-    const unsubscribe = onSnapshot(query(presenceRef), (snapshot) => {
-      const presentUsers = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as User)).sort((a, b) => 
-        (a.onlineAt?.seconds || 0) - (b.onlineAt?.seconds || 0)
-      )
-      
-      presentUsers.forEach((user, index) => {
-        user.zIndex = presentUsers.length - index
-      })
-      setUsers(presentUsers)
+    const unsubscribe = onValue(presenceRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        const presentUsers = Object.keys(data).map(userId => ({
+          id: userId,
+          ...data[userId]
+        } as User)).sort((a, b) => 
+          (a.onlineAt || 0) - (b.onlineAt || 0)
+        )
+        
+        presentUsers.forEach((user, index) => {
+          user.zIndex = presentUsers.length - index
+        })
+        setUsers(presentUsers)
+      } else {
+        setUsers([])
+      }
     })
 
-    return () => unsubscribe()
+    return () => off(presenceRef, 'value', unsubscribe)
   }, [isAuthReady, user, userName, listId])
 
   // Real-time Todo Synchronization
@@ -139,18 +152,24 @@ export default function TodoApp({ listId }: TodoAppProps) {
       return
     }
 
-    const todosRef = collection(db, 'lists', listId, 'todos')
-    const q = query(todosRef, orderBy('createdAt', 'asc'))
+    const todosRef = ref(db, `lists/${listId}/todos`)
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const todosData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Todo))
-      setTodos(todosData)
+    const unsubscribe = onValue(todosRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        const todosData = Object.keys(data).map(todoId => ({
+          id: todoId,
+          ...data[todoId]
+        } as Todo)).sort((a, b) => 
+          (a.createdAt || 0) - (b.createdAt || 0)
+        )
+        setTodos(todosData)
+      } else {
+        setTodos([])
+      }
     })
 
-    return () => unsubscribe()
+    return () => off(todosRef, 'value', unsubscribe)
   }, [isAuthReady, user, listId])
 
   // Helper function to save todos to localStorage in demo mode
@@ -169,7 +188,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
         id: Math.random().toString(36).substring(2, 12),
         text,
         completed: false,
-        createdAt: new Date() as any,
+        createdAt: Date.now() as any,
         createdBy: user.uid,
         creatorName: userName,
       }
@@ -178,8 +197,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
       return
     }
     
-    const todosRef = collection(db, 'lists', listId, 'todos')
-    await addDoc(todosRef, {
+    const todosRef = ref(db, `lists/${listId}/todos`)
+    await push(todosRef, {
       text,
       completed: false,
       createdAt: serverTimestamp(),
@@ -198,8 +217,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
       return
     }
 
-    const todoDoc = doc(db, 'lists', listId, 'todos', id)
-    await updateDoc(todoDoc, { completed })
+    const todoRef = ref(db, `lists/${listId}/todos/${id}`)
+    await update(todoRef, { completed })
   }
   
   const handleUpdateTodo = async (id: string, text: string) => {
@@ -212,8 +231,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
       return
     }
 
-    const todoDoc = doc(db, 'lists', listId, 'todos', id)
-    await updateDoc(todoDoc, { text })
+    const todoRef = ref(db, `lists/${listId}/todos/${id}`)
+    await update(todoRef, { text })
   }
 
   const handleDeleteTodo = async (id: string) => {
@@ -224,8 +243,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
       return
     }
 
-    const todoDoc = doc(db, 'lists', listId, 'todos', id)
-    await deleteDoc(todoDoc)
+    const todoRef = ref(db, `lists/${listId}/todos/${id}`)
+    await remove(todoRef)
   }
 
   const copyLinkToClipboard = () => {
@@ -249,15 +268,20 @@ export default function TodoApp({ listId }: TodoAppProps) {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
       <div className="container mx-auto max-w-3xl p-4 md:p-8">
         {/* Firebase Configuration Notice */}
-        {!isFirebaseConfigured() && (
+        {user?.uid?.startsWith('demo-user-') && (
           <div className="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-lg">
-            <div className="flex items-center">
+            <div className="flex items-center mb-2">
               <Zap className="w-5 h-5 text-yellow-600 mr-2" />
-              <p className="text-sm text-yellow-800">
-                <strong>Demo Modus:</strong> Firebase ist nicht konfiguriert. 
-                Todos werden lokal gespeichert und Kollaboration ist nicht verfügbar.
+              <p className="text-sm text-yellow-800 font-semibold">
+                Demo Modus aktiv
               </p>
             </div>
+            <p className="text-xs text-yellow-700">
+              {isFirebaseConfigured() 
+                ? "Firebase Anonymous Authentication ist nicht aktiviert. Aktiviere es in der Firebase Console unter Authentication → Sign-in method → Anonymous."
+                : "Firebase ist nicht konfiguriert. Todos werden lokal gespeichert."
+              }
+            </p>
           </div>
         )}
         {/* Header */}

@@ -19,13 +19,16 @@ import {
 import { Zap, Link } from 'lucide-react'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
+import { testFirebaseConnection } from '@/lib/firebase-test'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
+import { OfflineStorage } from '@/lib/offline-storage'
 import { Todo, User } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
 import TodoList from './todo-list'
 import UserNameEditor from './user-name-editor'
+import DebugPanel from './debug-panel'
 
 interface TodoAppProps {
   listId: string
@@ -41,10 +44,14 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [users, setUsers] = useState<User[]>([])
   const [copied, setCopied] = useState(false)
   const [userName, setUserName] = useState('')
+  const [firebaseStatus, setFirebaseStatus] = useState<string>('initializing')
+  
+  // Initialize offline storage
+  const offlineStorage = new OfflineStorage(listId)
 
   // Initialize Firebase Authentication
   useEffect(() => {
-    const setupDemoMode = () => {
+    const setupDemoMode = (reason?: string) => {
       const demoUserId = 'demo-user-' + Math.random().toString(36).substring(2, 12)
       setUser({ uid: demoUserId } as any)
       let savedName = localStorage.getItem('machhalt-username')
@@ -54,40 +61,59 @@ export default function TodoApp({ listId }: TodoAppProps) {
       }
       setUserName(savedName)
       setIsAuthReady(true)
+      setFirebaseStatus(reason || 'demo-mode')
     }
 
-    // Check if Firebase is properly configured and initialized
-    if (!isFirebaseConfigured() || !auth) {
-      console.log('🔧 Setting up demo mode - Firebase not available')
-      setupDemoMode()
-      return
-    }
-
-    console.log('🔥 Attempting Firebase authentication...')
-    
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        console.log('✅ User authenticated:', firebaseUser.uid)
-        setUser(firebaseUser)
-        let savedName = localStorage.getItem('machhalt-username')
-        if (!savedName) {
-          savedName = generateFunnyName()
-          localStorage.setItem('machhalt-username', savedName)
-        }
-        setUserName(savedName)
-        setIsAuthReady(true)
-      } else {
-        try {
-          console.log('🔐 Attempting anonymous sign-in...')
-          await signInAnonymously(auth)
-        } catch (error) {
-          console.error("❌ Authentication failed - falling back to demo mode:", error)
-          setupDemoMode()
-        }
+    // Test Firebase connection first
+    const initFirebase = async () => {
+      if (!isFirebaseConfigured() || !auth) {
+        console.log('🔧 Setting up demo mode - Firebase not available')
+        setupDemoMode('not-configured')
+        return
       }
-    })
 
-    return () => unsubscribe()
+      console.log('🔥 Testing Firebase connection...')
+      setFirebaseStatus('testing-connection')
+      
+      const testResult = await testFirebaseConnection()
+      console.log('Firebase test result:', testResult)
+      
+      if (testResult.error) {
+        console.log('❌ Firebase test failed:', testResult.error)
+        setFirebaseStatus(`error: ${testResult.error}`)
+        setupDemoMode('firebase-error')
+        return
+      }
+
+      console.log('✅ Firebase connection successful')
+      setFirebaseStatus('connected')
+      
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+          console.log('✅ User authenticated:', firebaseUser.uid)
+          setUser(firebaseUser)
+          let savedName = localStorage.getItem('machhalt-username')
+          if (!savedName) {
+            savedName = generateFunnyName()
+            localStorage.setItem('machhalt-username', savedName)
+          }
+          setUserName(savedName)
+          setIsAuthReady(true)
+        } else {
+          try {
+            console.log('🔐 Attempting anonymous sign-in...')
+            await signInAnonymously(auth)
+          } catch (error) {
+            console.error("❌ Authentication failed - falling back to demo mode:", error)
+            setupDemoMode('auth-failed')
+          }
+        }
+      })
+
+      return () => unsubscribe()
+    }
+
+    initFirebase()
   }, [])
 
   // Real-time Presence Tracking
@@ -111,21 +137,57 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const userRef = ref(db, `lists/${listId}/presence/${user.uid}`)
 
     const userColor = generateColor(user.uid)
-    set(userRef, { 
+    const userPresence = {
       onlineAt: serverTimestamp(), 
       color: userColor, 
-      name: userName 
+      name: userName,
+      lastSeen: serverTimestamp(),
+      isTyping: false
+    }
+    
+    // Set user presence and handle disconnect
+    set(userRef, userPresence)
+    
+    // Auto-remove user when they disconnect
+    const onDisconnectRef = ref(db, `lists/${listId}/presence/${user.uid}`)
+    // Note: onDisconnect is not available in the web SDK, but we can handle it with visibility API
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        set(userRef, { ...userPresence, lastSeen: serverTimestamp(), onlineAt: null })
+      } else {
+        set(userRef, userPresence)
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', () => {
+      set(userRef, { ...userPresence, lastSeen: serverTimestamp(), onlineAt: null })
     })
     
     const unsubscribe = onValue(presenceRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
-        const presentUsers = Object.keys(data).map(userId => ({
-          id: userId,
-          ...data[userId]
-        } as User)).sort((a, b) => 
-          (a.onlineAt || 0) - (b.onlineAt || 0)
-        )
+        const now = Date.now()
+        const presentUsers = Object.keys(data)
+          .map(userId => ({
+            id: userId,
+            ...data[userId]
+          } as User))
+          .filter(user => {
+            // Only show users who are online or were online in the last 5 minutes
+            const isOnline = user.onlineAt && typeof user.onlineAt === 'object'
+            const lastSeen = user.lastSeen || user.onlineAt
+            const timeSinceLastSeen = now - (typeof lastSeen === 'number' ? lastSeen : 0)
+            return isOnline || timeSinceLastSeen < 5 * 60 * 1000 // 5 minutes
+          })
+          .sort((a, b) => {
+            // Sort by online status first, then by last seen
+            const aOnline = a.onlineAt && typeof a.onlineAt === 'object'
+            const bOnline = b.onlineAt && typeof b.onlineAt === 'object'
+            if (aOnline && !bOnline) return -1
+            if (!aOnline && bOnline) return 1
+            return (b.lastSeen || b.onlineAt || 0) - (a.lastSeen || a.onlineAt || 0)
+          })
         
         presentUsers.forEach((user, index) => {
           user.zIndex = presentUsers.length - index
@@ -136,7 +198,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
       }
     })
 
-    return () => off(presenceRef, 'value', unsubscribe)
+    return () => {
+      off(presenceRef, 'value', unsubscribe)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [isAuthReady, user, userName, listId])
 
   // Real-time Todo Synchronization
@@ -144,11 +209,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
     if (!isAuthReady || !user) return
 
     if (!isFirebaseConfigured() || !db) {
-      // Demo mode - load todos from localStorage
-      const savedTodos = localStorage.getItem(`machhalt-todos-${listId}`)
-      if (savedTodos) {
-        setTodos(JSON.parse(savedTodos))
-      }
+      // Demo mode - load todos from offline storage
+      const savedTodos = offlineStorage.loadTodos()
+      setTodos(savedTodos)
+      console.log(`📂 Demo mode: loaded ${savedTodos.length} todos from offline storage`)
       return
     }
 
@@ -157,24 +221,39 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const unsubscribe = onValue(todosRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
-        const todosData = Object.keys(data).map(todoId => ({
-          id: todoId,
-          ...data[todoId]
-        } as Todo)).sort((a, b) => 
-          (a.createdAt || 0) - (b.createdAt || 0)
-        )
+        const todosData = Object.keys(data)
+          .map(todoId => ({
+            id: todoId,
+            ...data[todoId]
+          } as Todo))
+          .filter(todo => todo.text && todo.text.trim().length > 0) // Filter out empty todos
+          .sort((a, b) => {
+            // Sort: incomplete todos first, then by creation time
+            if (a.completed !== b.completed) {
+              return a.completed ? 1 : -1
+            }
+            return (a.createdAt || 0) - (b.createdAt || 0)
+          })
+        
         setTodos(todosData)
+        // Also save to offline storage as backup
+        offlineStorage.saveTodos(todosData)
+        console.log(`📝 Loaded ${todosData.length} todos for list ${listId}`)
       } else {
         setTodos([])
+        console.log(`📝 No todos found for list ${listId}`)
       }
+    }, (error) => {
+      console.error('❌ Error loading todos:', error)
+      setFirebaseStatus(`error: ${error.code || 'database-read-failed'}`)
     })
 
     return () => off(todosRef, 'value', unsubscribe)
   }, [isAuthReady, user, listId])
 
-  // Helper function to save todos to localStorage in demo mode
+  // Helper function to save todos to offline storage in demo mode
   const saveTodosToStorage = (updatedTodos: Todo[]) => {
-    localStorage.setItem(`machhalt-todos-${listId}`, JSON.stringify(updatedTodos))
+    offlineStorage.saveTodos(updatedTodos)
     setTodos(updatedTodos)
   }
 
@@ -267,21 +346,61 @@ export default function TodoApp({ listId }: TodoAppProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
       <div className="container mx-auto max-w-3xl p-4 md:p-8">
-        {/* Firebase Configuration Notice */}
-        {user?.uid?.startsWith('demo-user-') && (
-          <div className="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-lg">
+        {/* Firebase Status Notice */}
+        {firebaseStatus !== 'connected' && (
+          <div className={`mb-6 p-4 rounded-lg border-l-4 ${
+            firebaseStatus.startsWith('error') 
+              ? 'bg-red-100 border-red-500' 
+              : firebaseStatus === 'testing-connection'
+              ? 'bg-blue-100 border-blue-500'
+              : 'bg-yellow-100 border-yellow-500'
+          }`}>
             <div className="flex items-center mb-2">
-              <Zap className="w-5 h-5 text-yellow-600 mr-2" />
-              <p className="text-sm text-yellow-800 font-semibold">
-                Demo Modus aktiv
+              <Zap className={`w-5 h-5 mr-2 ${
+                firebaseStatus.startsWith('error') 
+                  ? 'text-red-600' 
+                  : firebaseStatus === 'testing-connection'
+                  ? 'text-blue-600 animate-spin'
+                  : 'text-yellow-600'
+              }`} />
+              <p className={`text-sm font-semibold ${
+                firebaseStatus.startsWith('error') 
+                  ? 'text-red-800' 
+                  : firebaseStatus === 'testing-connection'
+                  ? 'text-blue-800'
+                  : 'text-yellow-800'
+              }`}>
+                {firebaseStatus === 'testing-connection' && 'Firebase wird getestet...'}
+                {firebaseStatus === 'not-configured' && 'Demo Modus: Firebase nicht konfiguriert'}
+                {firebaseStatus === 'auth-failed' && 'Demo Modus: Authentication fehlgeschlagen'}
+                {firebaseStatus === 'firebase-error' && 'Demo Modus: Firebase Fehler'}
+                {firebaseStatus.startsWith('error:') && `Firebase Fehler: ${firebaseStatus.split(':')[1]}`}
               </p>
             </div>
-            <p className="text-xs text-yellow-700">
-              {isFirebaseConfigured() 
-                ? "Firebase Anonymous Authentication ist nicht aktiviert. Aktiviere es in der Firebase Console unter Authentication → Sign-in method → Anonymous."
-                : "Firebase ist nicht konfiguriert. Todos werden lokal gespeichert."
-              }
-            </p>
+            {firebaseStatus !== 'testing-connection' && (
+              <p className={`text-xs ${
+                firebaseStatus.startsWith('error') 
+                  ? 'text-red-700' 
+                  : 'text-yellow-700'
+              }`}>
+                {firebaseStatus === 'not-configured' && 'Firebase ist nicht konfiguriert. Todos werden lokal gespeichert.'}
+                {firebaseStatus === 'auth-failed' && 'Firebase Anonymous Authentication ist nicht aktiviert. Siehe FIREBASE_SETUP.md'}
+                {firebaseStatus === 'firebase-error' && 'Detaillierte Fehlerinfo in der Browser-Konsole verfügbar.'}
+                {firebaseStatus.startsWith('error:') && 'Überprüfe Firebase Console und FIREBASE_SETUP.md für Lösungsschritte.'}
+              </p>
+            )}
+          </div>
+        )}
+        
+        {/* Success Notice */}
+        {firebaseStatus === 'connected' && !user?.uid?.startsWith('demo-user-') && (
+          <div className="mb-6 p-4 bg-green-100 border-l-4 border-green-500 rounded-lg">
+            <div className="flex items-center">
+              <Zap className="w-5 h-5 text-green-600 mr-2" />
+              <p className="text-sm text-green-800 font-semibold">
+                ✅ Firebase Realtime Database aktiv - Real-time Kollaboration verfügbar!
+              </p>
+            </div>
           </div>
         )}
         {/* Header */}
@@ -320,6 +439,17 @@ export default function TodoApp({ listId }: TodoAppProps) {
         {/* Footer */}
         <UserNameEditor userName={userName} setUserName={setUserName} />
       </div>
+
+      {/* Debug Panel (only in development) */}
+      {process.env.NODE_ENV === 'development' && (
+        <DebugPanel
+          firebaseStatus={firebaseStatus}
+          user={user}
+          listId={listId}
+          todos={todos}
+          users={users}
+        />
+      )}
     </div>
   )
 }

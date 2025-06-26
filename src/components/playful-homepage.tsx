@@ -4,12 +4,20 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Zap, Users, ArrowRight, Mic, MessageCircle, Share2, Clock } from "lucide-react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 export default function PlayfulHomepage() {
   const [isHovered, setIsHovered] = useState(false)
   const [logoHovered, setLogoHovered] = useState(false)
   const [badgeHovered, setBadgeHovered] = useState(false)
   const [titleHovered, setTitleHovered] = useState(false)
+  const router = useRouter()
+
+  const createNewList = () => {
+    // Generate a random ID for the new list
+    const listId = Math.random().toString(36).substring(2, 12)
+    router.push(`/list/${listId}`)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex flex-col overflow-hidden">
@@ -173,6 +181,7 @@ export default function PlayfulHomepage() {
             {/* The Interactive Big Button */}
             <Button
               size="lg"
+              onClick={createNewList}
               className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 hover:from-pink-600 hover:via-purple-600 hover:to-blue-600 text-white px-16 py-10 text-3xl font-black rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 hover:rotate-1 border-4 border-white"
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}

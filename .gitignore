@@ -39,3 +39,10 @@ Thumbs.db
 
 # Firebase
 .firebase/
+.firebaserc.local
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Next.js export
+/out/

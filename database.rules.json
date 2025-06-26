@@ -1,0 +1,132 @@
+{
+  "rules": {
+    // Global read/write rules for lists
+    "lists": {
+      "$listId": {
+        // Allow read/write access to any authenticated user (anonymous or signed-in)
+        ".read": "auth != null",
+        ".write": "auth != null",
+        
+        // Todos structure
+        "todos": {
+          "$todoId": {
+            // Validate todo structure
+            ".validate": "newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName'])",
+            
+            // Todo fields validation
+            "text": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
+            },
+            "completed": {
+              ".validate": "newData.isBoolean()"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() || newData.val() == now"
+            },
+            "createdBy": {
+              ".validate": "newData.isString() && newData.val() == auth.uid"
+            },
+            "creatorName": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            
+            // Prevent additional fields
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        
+        // Presence structure
+        "presence": {
+          "$userId": {
+            // Users can only write their own presence
+            ".write": "auth != null && auth.uid == $userId",
+            
+            // Validate presence structure
+            ".validate": "newData.hasChildren(['name', 'color', 'onlineAt']) || newData.hasChildren(['name', 'color', 'lastSeen'])",
+            
+            // Presence fields validation
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "color": {
+              ".validate": "newData.isString() && newData.val().matches(/^#[0-9a-fA-F]{6}$/)"
+            },
+            "onlineAt": {
+              ".validate": "newData.val() == now || newData.val() == null"
+            },
+            "lastSeen": {
+              ".validate": "newData.isNumber() || newData.val() == now"
+            },
+            "isTyping": {
+              ".validate": "newData.isBoolean()"
+            },
+            
+            // Prevent additional fields
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        
+        // List metadata (optional)
+        "metadata": {
+          ".validate": "newData.hasChildren(['title', 'createdAt', 'createdBy'])",
+          "title": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() || newData.val() == now"
+          },
+          "createdBy": {
+            ".validate": "newData.isString()"
+          },
+          "description": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "isPublic": {
+            ".validate": "newData.isBoolean()"
+          },
+          
+          // Prevent additional fields
+          "$other": {
+            ".validate": false
+          }
+        },
+        
+        // Prevent additional top-level fields
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    
+    // Test endpoint for connection testing
+    "test": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "connection": {
+        ".validate": "newData.hasChildren(['timestamp', 'test']) || newData.val() == null",
+        "timestamp": {
+          ".validate": "newData.isNumber()"
+        },
+        "test": {
+          ".validate": "newData.isString()"
+        }
+      }
+    },
+    
+    // Global stats (read-only)
+    "stats": {
+      ".read": true,
+      ".write": false
+    },
+    
+    // Prevent access to any other paths
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

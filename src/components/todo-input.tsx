@@ -36,10 +36,10 @@ export default function TodoInput({ onAddTodo }: TodoInputProps) {
       />
       <button 
         type="submit" 
-        className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold px-3 py-2 md:px-6 md:py-3 rounded md:rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-md text-xs md:text-base flex-shrink-0"
+        className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold px-3 py-2 md:px-6 md:py-3 rounded md:rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-md text-sm md:text-base flex-shrink-0"
       >
-        <span className="hidden sm:inline">Hinzufügen</span>
-        <span className="sm:hidden">+</span>
+        <span className="hidden md:inline">Hinzufügen</span>
+        <Plus className="w-4 h-4 md:hidden" />
       </button>
     </form>
   )

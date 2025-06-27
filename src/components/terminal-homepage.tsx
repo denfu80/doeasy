@@ -4,16 +4,16 @@ import { Button } from "@/components/ui/button"
 import { Terminal, ArrowRight, Hash } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { generateUniqueReadableId } from "@/lib/readable-id-service"
+import { generateReadableId } from "@/lib/readable-id-service"
 
 export default function TerminalHomepage() {
   const [currentLine, setCurrentLine] = useState(0)
   const [isTyping, setIsTyping] = useState(true)
   const router = useRouter()
 
-  const createNewList = async () => {
+  const createNewList = () => {
     // Generate a human-readable ID for the new list
-    const listId = await generateUniqueReadableId()
+    const listId = generateReadableId()
     router.push(`/list/${listId}`)
   }
 

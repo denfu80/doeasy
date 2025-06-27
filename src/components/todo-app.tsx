@@ -486,6 +486,38 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
+      {/* Full-width Header */}
+      <header className="w-full bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-sm">
+        <div className="container mx-auto px-4 md:px-8 py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+            <div className="flex items-center space-x-3 mb-4 sm:mb-0">
+              <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+                mach<span className="text-pink-500">.</span>einfach
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <UserAvatars 
+                users={users} 
+                currentUserId={user?.uid}
+                userName={userName}
+                onNameChange={setUserName}
+              />
+              <button 
+                onClick={copyLinkToClipboard}
+                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow text-slate-600 font-semibold border border-gray-200"
+              >
+                <Link className="w-5 h-5 text-blue-500"/>
+                <span>{copied ? 'Kopiert!' : 'Teilen'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Content Area - Constrained */}
       <div className="container mx-auto max-w-3xl p-4 md:p-8">
         {/* Firebase Status Notice */}
         {firebaseStatus !== 'connected' && (
@@ -532,32 +564,6 @@ export default function TodoApp({ listId }: TodoAppProps) {
             )}
           </div>
         )}
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
-          <div className="flex items-center space-x-3 mb-4 sm:mb-0">
-            <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight">
-              mach<span className="text-pink-500">.</span>einfach
-            </h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <UserAvatars 
-              users={users} 
-              currentUserId={user?.uid}
-              userName={userName}
-              onNameChange={setUserName}
-            />
-            <button 
-              onClick={copyLinkToClipboard}
-              className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow text-slate-600 font-semibold"
-            >
-              <Link className="w-5 h-5 text-blue-500"/>
-              <span>{copied ? 'Kopiert!' : 'Teilen'}</span>
-            </button>
-          </div>
-        </header>
 
         {/* Add Todo Form */}
         <TodoInput onAddTodo={handleAddTodo} />

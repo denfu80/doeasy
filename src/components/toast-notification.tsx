@@ -25,14 +25,14 @@ export default function ToastNotification({
   const [isClosing, setIsClosing] = useState(false)
 
   useEffect(() => {
-    if (isVisible && !onUndo) {
+    if (isVisible) {
       const timer = setTimeout(() => {
         handleClose()
       }, duration)
       
       return () => clearTimeout(timer)
     }
-  }, [isVisible, duration, onUndo])
+  }, [isVisible, duration])
 
   const handleClose = () => {
     setIsClosing(true)

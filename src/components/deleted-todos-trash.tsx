@@ -1,17 +1,19 @@
 "use client"
 
 import { useState } from 'react'
-import { Trash2, RotateCcw, X } from 'lucide-react'
+import { Trash2, RotateCcw, X, AlertTriangle } from 'lucide-react'
 import { Todo } from '@/types/todo'
 
 interface DeletedTodosTrashProps {
   deletedTodos: Todo[]
   onRestoreTodo: (id: string) => void
   onPermanentDelete: (id: string) => void
+  onDeleteAll: () => void
 }
 
-export default function DeletedTodosTrash({ deletedTodos, onRestoreTodo, onPermanentDelete }: DeletedTodosTrashProps) {
+export default function DeletedTodosTrash({ deletedTodos, onRestoreTodo, onPermanentDelete, onDeleteAll }: DeletedTodosTrashProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false)
 
   if (deletedTodos.length === 0) {
     return null
@@ -88,10 +90,51 @@ export default function DeletedTodosTrash({ deletedTodos, onRestoreTodo, onPerma
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-2 bg-gray-50 border-t border-gray-200">
-            <p className="text-xs text-gray-600 text-center">
-              {deletedTodos.length} gelöschte Todo{deletedTodos.length !== 1 ? 's' : ''}
-            </p>
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-600">
+                {deletedTodos.length} gelöschte Todo{deletedTodos.length !== 1 ? 's' : ''}
+              </p>
+              
+              {deletedTodos.length > 0 && (
+                <div className="relative">
+                  {!showDeleteAllConfirm ? (
+                    <button
+                      onClick={() => setShowDeleteAllConfirm(true)}
+                      className="flex items-center gap-1 px-3 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors font-semibold"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Alles löschen
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-xs text-red-600">
+                        <AlertTriangle className="w-3 h-3" />
+                        <span className="font-semibold">Wirklich?</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => {
+                            onDeleteAll()
+                            setShowDeleteAllConfirm(false)
+                            setIsOpen(false)
+                          }}
+                          className="px-2 py-1 text-xs bg-red-500 hover:bg-red-600 text-white rounded font-semibold transition-colors"
+                        >
+                          Ja
+                        </button>
+                        <button
+                          onClick={() => setShowDeleteAllConfirm(false)}
+                          className="px-2 py-1 text-xs bg-gray-300 hover:bg-gray-400 text-gray-700 rounded font-semibold transition-colors"
+                        >
+                          Nein
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

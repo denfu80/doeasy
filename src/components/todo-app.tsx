@@ -443,6 +443,30 @@ export default function TodoApp({ listId }: TodoAppProps) {
     setToastVisible(false)
   }
 
+  const handleDeleteAll = async () => {
+    if (!isFirebaseConfigured() || !db) {
+      // Demo mode - clear all deleted todos from localStorage
+      setDeletedTodos([])
+      localStorage.removeItem(`machhalt-deleted-${listId}`)
+      return
+    }
+
+    // Firebase - permanently delete all todos in deletedTodos
+    if (!db) return
+    
+    const deletePromises = deletedTodos.map(async (todo) => {
+      const todoRef = ref(db!, `lists/${listId}/todos/${todo.id}`)
+      return remove(todoRef)
+    })
+    
+    await Promise.all(deletePromises)
+    
+    // Show success message
+    setToastMessage(`${deletedTodos.length} Todo${deletedTodos.length !== 1 ? 's' : ''} endgültig gelöscht`)
+    setToastType('success')
+    setToastVisible(true)
+  }
+
   const copyLinkToClipboard = () => {
     navigator.clipboard.writeText(window.location.href)
     setCopied(true)
@@ -553,6 +577,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
         deletedTodos={deletedTodos}
         onRestoreTodo={handleRestoreTodo}
         onPermanentDelete={handlePermanentDelete}
+        onDeleteAll={handleDeleteAll}
       />
 
       {/* Toast Notification */}

@@ -3,10 +3,19 @@
 import { Button } from "@/components/ui/button"
 import { Terminal, ArrowRight, Hash } from "lucide-react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { generateUniqueReadableId } from "@/lib/id-collision-detector"
 
 export default function TerminalHomepage() {
   const [currentLine, setCurrentLine] = useState(0)
   const [isTyping, setIsTyping] = useState(true)
+  const router = useRouter()
+
+  const createNewList = async () => {
+    // Generate a human-readable ID for the new list
+    const listId = await generateUniqueReadableId()
+    router.push(`/list/${listId}`)
+  }
 
   const terminalLines = [
     "$ initialisiere mach.einfach...",
@@ -127,6 +136,7 @@ export default function TerminalHomepage() {
 
               <Button
                 size="lg"
+                onClick={createNewList}
                 className="w-full bg-green-400 hover:bg-green-300 text-black font-bold py-6 text-xl font-mono border-2 border-green-400 hover:border-green-300 transition-all duration-200 group"
               >
                 <Terminal className="w-6 h-6 mr-3" />

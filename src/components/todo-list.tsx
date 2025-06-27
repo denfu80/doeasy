@@ -1,14 +1,17 @@
 import TodoItem from './todo-item'
-import { Todo } from '@/types/todo'
+import { Todo, User } from '@/types/todo'
 
 interface TodoListProps {
   todos: Todo[]
+  users: User[]
+  currentUserId?: string
   onToggleTodo: (id: string, completed: boolean) => Promise<void>
   onDeleteTodo: (id: string) => Promise<void>
   onUpdateTodo: (id: string, text: string) => Promise<void>
+  onEditingChange: (todoId: string | null, isTyping: boolean) => void
 }
 
-export default function TodoList({ todos, onToggleTodo, onDeleteTodo, onUpdateTodo }: TodoListProps) {
+export default function TodoList({ todos, users, currentUserId, onToggleTodo, onDeleteTodo, onUpdateTodo, onEditingChange }: TodoListProps) {
   if (todos.length === 0) {
     return (
       <div className="text-center py-8 md:py-16 px-4 md:px-6 bg-white/60 rounded-lg md:rounded-xl">
@@ -24,9 +27,12 @@ export default function TodoList({ todos, onToggleTodo, onDeleteTodo, onUpdateTo
         <TodoItem 
           key={todo.id} 
           todo={todo}
+          users={users}
+          currentUserId={currentUserId}
           onToggle={onToggleTodo}
           onDelete={onDeleteTodo}
           onUpdate={onUpdateTodo}
+          onEditingChange={onEditingChange}
         />
       ))}
     </main>

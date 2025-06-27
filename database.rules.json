@@ -50,7 +50,7 @@
             ".write": "auth != null && auth.uid == $userId",
             
             // Validate presence structure
-            ".validate": "newData.hasChildren(['name', 'color', 'onlineAt']) || newData.hasChildren(['name', 'color', 'lastSeen'])",
+            ".validate": "newData.hasChildren(['name', 'color']) && (newData.hasChild('onlineAt') || newData.hasChild('lastSeen'))",
             
             // Presence fields validation
             "name": {
@@ -67,6 +67,9 @@
             },
             "isTyping": {
               ".validate": "newData.isBoolean()"
+            },
+            "editingTodoId": {
+              ".validate": "newData.isString() || newData.val() == null"
             },
             
             // Prevent additional fields

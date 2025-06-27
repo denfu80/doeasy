@@ -1,17 +1,20 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
-import { Check, Trash2 } from 'lucide-react'
-import { Todo } from '@/types/todo'
+import { Check, Trash2, Edit3 } from 'lucide-react'
+import { Todo, User } from '@/types/todo'
 
 interface TodoItemProps {
   todo: Todo
+  users: User[]
+  currentUserId?: string
   onToggle: (id: string, completed: boolean) => Promise<void>
   onDelete: (id: string) => Promise<void>
   onUpdate: (id: string, text: string) => Promise<void>
+  onEditingChange: (todoId: string | null, isTyping: boolean) => void
 }
 
-export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoItemProps) {
+export default function TodoItem({ todo, users, currentUserId, onToggle, onDelete, onUpdate, onEditingChange }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isSelected, setIsSelected] = useState(false)
   const [text, setText] = useState(todo.text)
@@ -29,6 +32,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoIte
     }
     setIsEditing(false)
     setIsSelected(false)
+    onEditingChange(null, false)
   }
 
   const handleTextClick = () => {
@@ -38,11 +42,19 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoIte
         setIsSelected(true)
       } else {
         setIsEditing(true)
+        onEditingChange(todo.id, true)
       }
     } else {
       // Desktop: Direct edit on click
       setIsEditing(true)
+      onEditingChange(todo.id, true)
     }
+  }
+
+  // Handle typing indicator
+  const handleTextChange = (value: string) => {
+    setText(value)
+    onEditingChange(todo.id, true)
   }
 
   // Click outside to deselect
@@ -66,17 +78,46 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoIte
     }
   }, [isEditing])
 
+  // Find users editing this todo (excluding current user)
+  const editingUsers = users.filter(user => 
+    user.editingTodoId === todo.id && 
+    user.id !== currentUserId && 
+    user.isTyping
+  )
+
   return (
     <div 
-      className={`flex items-center p-3 md:p-4 rounded-lg md:rounded-xl transition-all duration-300 group ${
+      className={`flex items-center p-3 md:p-4 rounded-lg md:rounded-xl transition-all duration-300 group relative ${
         todo.completed 
           ? 'bg-slate-100 text-slate-500' 
           : isSelected 
           ? 'bg-blue-50 shadow-md border-2 border-blue-200'
+          : editingUsers.length > 0
+          ? 'bg-yellow-50 shadow-md border-2 border-yellow-200'
           : 'bg-white shadow-sm hover:shadow-md'
       }`}
       onClick={(e) => e.stopPropagation()}
     >
+      {/* Editing indicator */}
+      {editingUsers.length > 0 && (
+        <div className="absolute -top-2 -right-2 flex space-x-1">
+          {editingUsers.slice(0, 3).map(user => (
+            <div
+              key={user.id}
+              className="w-5 h-5 rounded-full border-2 border-white shadow-sm flex items-center justify-center"
+              style={{ backgroundColor: user.color }}
+              title={`${user.name} editiert gerade...`}
+            >
+              <Edit3 className="w-2.5 h-2.5 text-white animate-pulse" />
+            </div>
+          ))}
+          {editingUsers.length > 3 && (
+            <div className="w-5 h-5 rounded-full bg-gray-400 border-2 border-white shadow-sm flex items-center justify-center">
+              <span className="text-xs text-white font-bold">+{editingUsers.length - 3}</span>
+            </div>
+          )}
+        </div>
+      )}
       <button
         onClick={() => onToggle(todo.id, !todo.completed)}
         className={`w-5 h-5 md:w-7 md:h-7 rounded md:rounded-lg flex-shrink-0 flex items-center justify-center mr-3 md:mr-4 transition-all duration-300 border-2 ${
@@ -93,7 +134,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoIte
           ref={inputRef}
           type="text"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => handleTextChange(e.target.value)}
           onBlur={handleUpdate}
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleUpdate()
@@ -101,6 +142,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoIte
               setText(todo.text)
               setIsEditing(false)
               setIsSelected(false)
+              onEditingChange(null, false)
             }
           }}
           className="flex-grow bg-transparent focus:outline-none text-slate-800 text-sm md:text-base"

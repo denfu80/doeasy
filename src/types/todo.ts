@@ -16,5 +16,6 @@ export interface User {
   onlineAt: number | object | null // Realtime Database timestamp
   lastSeen?: number | object // Optional lastSeen timestamp
   isTyping?: boolean // Optional typing indicator
+  editingTodoId?: string // Which todo is being edited
   zIndex?: number
 }

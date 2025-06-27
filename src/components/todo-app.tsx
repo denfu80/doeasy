@@ -152,7 +152,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
       color: userColor, 
       name: userName,
       lastSeen: serverTimestamp(),
-      isTyping: false
+      isTyping: false,
+      editingTodoId: null
     }
     
     // Set user presence and handle disconnect
@@ -443,6 +444,17 @@ export default function TodoApp({ listId }: TodoAppProps) {
     setToastVisible(false)
   }
 
+  const handleEditingChange = async (todoId: string | null, isTyping: boolean) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+
+    const userRef = ref(db, `lists/${listId}/presence/${user.uid}`)
+    await update(userRef, {
+      isTyping,
+      editingTodoId: todoId,
+      lastSeen: serverTimestamp()
+    })
+  }
+
   const handleDeleteAll = async () => {
     if (!isFirebaseConfigured() || !db) {
       // Demo mode - clear all deleted todos from localStorage
@@ -572,9 +584,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
         {/* Todo List */}
         <TodoList 
           todos={todos}
+          users={users}
+          currentUserId={user?.uid}
           onToggleTodo={handleToggleTodo}
           onDeleteTodo={handleDeleteTodo}
           onUpdateTodo={handleUpdateTodo}
+          onEditingChange={handleEditingChange}
         />
 
       </div>

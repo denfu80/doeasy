@@ -14,6 +14,7 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
   const [isEditing, setIsEditing] = useState(false)
   const [editingName, setEditingName] = useState(userName || '')
   const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -25,6 +26,24 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
   useEffect(() => {
     setEditingName(userName || '')
   }, [userName])
+
+  // Handle click outside to close expanded state
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        if (isEditing) {
+          handleNameCancel()
+        } else if (isExpanded) {
+          setIsExpanded(false)
+        }
+      }
+    }
+
+    if (isExpanded || isEditing) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isExpanded, isEditing])
 
   // Sort users to show current user first, then others
   const sortedUsers = [...users].sort((a, b) => {
@@ -74,18 +93,10 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
     setIsExpanded(false)
   }
 
-  const handleClickOutside = () => {
-    if (isEditing) {
-      handleNameCancel()
-    } else {
-      setIsExpanded(false)
-    }
-  }
-
   return (
     <div 
+      ref={containerRef}
       className="flex items-center -space-x-2 relative"
-      onBlur={handleClickOutside}
     >
       {sortedUsers.slice(0, 5).map(user => {
         const isCurrentUser = user.id === currentUserId
@@ -141,7 +152,7 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
 
             {/* Avatar */}
             <div 
-              className={`relative w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-lg transition-all duration-300 hover:scale-110 hover:z-40 cursor-pointer ${
+              className={`relative w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-lg transition-all duration-500 hover:scale-110 hover:z-40 cursor-pointer ${
                 isCurrentUser 
                   ? 'border-yellow-300 ring-2 ring-yellow-400 ring-opacity-50' 
                   : 'border-white'
@@ -152,7 +163,8 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
               }`}
               style={{ 
                 backgroundColor: user.color, 
-                zIndex: isCurrentUser ? (isExpanded ? 50 : 100) : user.zIndex 
+                zIndex: isCurrentUser ? (isExpanded ? 50 : 100) : user.zIndex,
+                transform: isCurrentUser && isExpanded ? 'rotate(-360deg)' : 'rotate(0deg)'
               }}
               title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} ${userIsOnline ? '🟢 Online' : '⚫ Offline'}`}
               onClick={() => handleAvatarClick(user)}

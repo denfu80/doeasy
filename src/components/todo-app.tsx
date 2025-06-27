@@ -27,7 +27,6 @@ import { Todo, User } from '@/types/todo'
 import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
 import TodoList from './todo-list'
-import UserNameEditor from './user-name-editor'
 import DebugPanel from './debug-panel'
 
 interface TodoAppProps {
@@ -407,7 +406,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
             </h1>
           </div>
           <div className="flex items-center space-x-4">
-            <UserAvatars users={users} />
+            <UserAvatars 
+              users={users} 
+              currentUserId={user?.uid}
+              userName={userName}
+              onNameChange={setUserName}
+            />
             <button 
               onClick={copyLinkToClipboard}
               className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow text-slate-600 font-semibold"
@@ -429,8 +433,6 @@ export default function TodoApp({ listId }: TodoAppProps) {
           onUpdateTodo={handleUpdateTodo}
         />
 
-        {/* Footer */}
-        <UserNameEditor userName={userName} setUserName={setUserName} />
       </div>
 
       {/* Debug Panel (only in development) */}

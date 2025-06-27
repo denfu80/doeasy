@@ -192,7 +192,7 @@ export default function PlayfulHomepage() {
               <span className={`transition-all duration-300 ${
                 isHovered ? 'tracking-widest' : ''
               }`}>
-                MACHEN
+                {isHovered ? "JETZT" : "MACHEN"}
               </span>
               <ArrowRight
                 className={`w-8 h-8 ml-4 transition-all duration-300 ${

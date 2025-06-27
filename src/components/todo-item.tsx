@@ -68,7 +68,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoIte
 
   return (
     <div 
-      className={`flex items-center p-4 rounded-xl transition-all duration-300 group ${
+      className={`flex items-center p-3 md:p-4 rounded-lg md:rounded-xl transition-all duration-300 group ${
         todo.completed 
           ? 'bg-slate-100 text-slate-500' 
           : isSelected 
@@ -79,13 +79,13 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoIte
     >
       <button
         onClick={() => onToggle(todo.id, !todo.completed)}
-        className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center mr-4 transition-all duration-300 border-2 ${
+        className={`w-5 h-5 md:w-7 md:h-7 rounded md:rounded-lg flex-shrink-0 flex items-center justify-center mr-3 md:mr-4 transition-all duration-300 border-2 ${
           todo.completed 
             ? 'bg-green-400 border-green-400' 
             : 'border-slate-300 hover:border-pink-400'
         }`}
       >
-        {todo.completed && <Check className="w-5 h-5 text-white" />}
+        {todo.completed && <Check className="w-3 h-3 md:w-5 md:h-5 text-white" />}
       </button>
       
       {isEditing ? (
@@ -103,12 +103,12 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoIte
               setIsSelected(false)
             }
           }}
-          className="flex-grow bg-transparent focus:outline-none text-slate-800"
+          className="flex-grow bg-transparent focus:outline-none text-slate-800 text-sm md:text-base"
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
         <p 
-          className={`flex-grow cursor-pointer select-none ${
+          className={`flex-grow cursor-pointer select-none text-sm md:text-base ${
             todo.completed ? 'line-through' : ''
           } ${
             isTouchDevice && isSelected ? 'text-blue-700 font-medium' : ''
@@ -121,16 +121,16 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdate }: TodoIte
 
       {/* Actions - Show on desktop hover or mobile selection, hide during editing */}
       {!isEditing && (
-        <div className={`flex items-center space-x-2 transition-all duration-300 ${
+        <div className={`flex items-center transition-all duration-300 ${
           isTouchDevice 
             ? (isSelected ? 'opacity-100' : 'opacity-0 pointer-events-none')
             : 'opacity-0 group-hover:opacity-100'
         }`}>
           <button 
             onClick={() => onDelete(todo.id)} 
-            className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+            className="p-1.5 md:p-2 text-slate-400 hover:text-red-500 transition-colors"
           >
-            <Trash2 className="w-5 h-5" />
+            <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         </div>
       )}

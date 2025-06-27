@@ -488,17 +488,17 @@ export default function TodoApp({ listId }: TodoAppProps) {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
       {/* Full-width Header */}
       <header className="w-full bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-sm">
-        <div className="container mx-auto px-4 md:px-8 py-4">
+        <div className="container mx-auto px-3 md:px-8 py-2.5 md:py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-            <div className="flex items-center space-x-3 mb-4 sm:mb-0">
-              <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <Zap className="w-6 h-6 text-white" />
+            <div className="flex items-center space-x-2 md:space-x-3 mb-3 sm:mb-0">
+              <div className="w-7 h-7 md:w-10 md:h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded md:rounded-lg flex items-center justify-center shadow-md">
+                <Zap className="w-4 h-4 md:w-6 md:h-6 text-white" />
               </div>
-              <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+              <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">
                 mach<span className="text-pink-500">.</span>einfach
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 md:space-x-4">
               <UserAvatars 
                 users={users} 
                 currentUserId={user?.uid}
@@ -507,10 +507,11 @@ export default function TodoApp({ listId }: TodoAppProps) {
               />
               <button 
                 onClick={copyLinkToClipboard}
-                className="flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-shadow text-slate-600 font-semibold border border-gray-200"
+                className="flex items-center space-x-1.5 md:space-x-2 bg-white px-2.5 py-1.5 md:px-4 md:py-2 rounded md:rounded-lg shadow-sm hover:shadow-md transition-shadow text-slate-600 font-semibold border border-gray-200 text-xs md:text-sm"
               >
-                <Link className="w-5 h-5 text-blue-500"/>
-                <span>{copied ? 'Kopiert!' : 'Teilen'}</span>
+                <Link className="w-4 h-4 md:w-5 md:h-5 text-blue-500"/>
+                <span className="hidden sm:inline">{copied ? 'Kopiert!' : 'Teilen'}</span>
+                <span className="sm:hidden">📋</span>
               </button>
             </div>
           </div>
@@ -518,10 +519,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
       </header>
 
       {/* Content Area - Constrained */}
-      <div className="container mx-auto max-w-3xl p-4 md:p-8">
+      <div className="container mx-auto max-w-3xl p-3 md:p-8">
         {/* Firebase Status Notice */}
         {firebaseStatus !== 'connected' && (
-          <div className={`mb-6 p-4 rounded-lg border-l-4 ${
+          <div className={`mb-3 md:mb-6 p-3 md:p-4 rounded-lg border-l-4 ${
             firebaseStatus.startsWith('error') 
               ? 'bg-red-100 border-red-500' 
               : firebaseStatus === 'testing-connection'

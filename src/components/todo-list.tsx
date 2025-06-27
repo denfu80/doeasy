@@ -11,15 +11,15 @@ interface TodoListProps {
 export default function TodoList({ todos, onToggleTodo, onDeleteTodo, onUpdateTodo }: TodoListProps) {
   if (todos.length === 0) {
     return (
-      <div className="text-center py-16 px-6 bg-white/60 rounded-xl">
-        <h2 className="text-2xl font-bold text-slate-700 mb-2">Die Liste ist leer!</h2>
-        <p className="text-slate-500">Füge eine neue Aufgabe hinzu, um loszulegen.</p>
+      <div className="text-center py-8 md:py-16 px-4 md:px-6 bg-white/60 rounded-lg md:rounded-xl">
+        <h2 className="text-lg md:text-2xl font-bold text-slate-700 mb-2">Die Liste ist leer!</h2>
+        <p className="text-sm md:text-base text-slate-500">Füge eine neue Aufgabe hinzu, um loszulegen.</p>
       </div>
     )
   }
 
   return (
-    <main className="space-y-3">
+    <main className="space-y-2 md:space-y-3">
       {todos.map(todo => (
         <TodoItem 
           key={todo.id} 

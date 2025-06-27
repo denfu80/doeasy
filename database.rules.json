@@ -3,8 +3,8 @@
     // Global read/write rules for lists
     "lists": {
       "$listId": {
-        // Validate readable ID format (letters, numbers, hyphens, German chars)
-        ".validate": "$listId.matches(/^[a-zA-Z0-9äöüÄÖÜß\\-]{3,100}$/)",
+        // Validate readable ID format (letters, numbers, hyphens)
+        ".validate": "$listId.matches(/^[a-zA-Z0-9\\-]{3,100}$/)",
         // Allow read/write access to any authenticated user (anonymous or signed-in)
         ".read": "auth != null",
         ".write": "auth != null",

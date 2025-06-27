@@ -1,6 +1,11 @@
+import { humanId } from 'human-id'
 import { ref, get } from 'firebase/database'
 import { db, isFirebaseConfigured } from '@/lib/firebase'
-import { generateOptimalReadableId, generateFallbackId } from '@/lib/id-generator'
+
+/**
+ * Generate human-readable IDs using the human-id library
+ * Examples: "calm-snails-dream", "tasty-rocks-sparkle", "happy-lions-jump"
+ */
 
 /**
  * Check if a list ID already exists in Firebase
@@ -26,13 +31,17 @@ export async function checkIdExists(listId: string): Promise<boolean> {
 }
 
 /**
- * Generate a unique readable ID that doesn't collide with existing ones
+ * Generate a unique readable ID using human-id library
  * @param maxAttempts Maximum number of attempts to generate a unique ID
  * @returns Promise<string> - A guaranteed unique ID
  */
 export async function generateUniqueReadableId(maxAttempts: number = 10): Promise<string> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const candidateId = generateOptimalReadableId()
+    // Generate ID with lowercase and hyphen separator for URLs
+    const candidateId = humanId({
+      separator: '-',
+      capitalize: false,
+    })
     
     const exists = await checkIdExists(candidateId)
     if (!exists) {
@@ -43,14 +52,15 @@ export async function generateUniqueReadableId(maxAttempts: number = 10): Promis
         localStorage.setItem('macheinfach-existing-ids', JSON.stringify(existingIds))
       }
       
+      console.log(`✅ Generated unique readable ID: ${candidateId}`)
       return candidateId
     }
     
     console.log(`ID collision detected: ${candidateId}, attempting again (${attempt + 1}/${maxAttempts})`)
   }
 
-  // Fallback: use shorter format with timestamp
-  const fallbackId = `${generateFallbackId()}-${Date.now().toString(36)}`
+  // Fallback: add timestamp to ensure uniqueness
+  const fallbackId = `${humanId({ separator: '-', capitalize: false })}-${Date.now().toString(36)}`
   
   // Record fallback ID as used (for demo mode)
   if (!isFirebaseConfigured()) {
@@ -78,8 +88,8 @@ export async function validateListId(listId: string): Promise<{valid: boolean, r
     return { valid: false, reason: 'ID too long' }
   }
   
-  // Check for invalid characters
-  if (!/^[a-zA-Z0-9äöüÄÖÜß\-]+$/.test(listId)) {
+  // Check for invalid characters (allow letters, numbers, hyphens)
+  if (!/^[a-zA-Z0-9\-]+$/.test(listId)) {
     return { valid: false, reason: 'Invalid characters in ID' }
   }
   
@@ -90,4 +100,20 @@ export async function validateListId(listId: string): Promise<{valid: boolean, r
   }
   
   return { valid: true }
+}
+
+/**
+ * Get info about the ID space
+ */
+export function getIdSpaceInfo() {
+  return {
+    poolSize: 15_000_000, // According to human-id docs
+    format: 'adjective-noun-verb',
+    examples: [
+      'calm-snails-dream',
+      'tasty-rocks-sparkle', 
+      'happy-lions-jump',
+      'rare-geckos-jam'
+    ]
+  }
 }

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Terminal, ArrowRight, Hash } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { generateUniqueReadableId } from "@/lib/id-collision-detector"
+import { generateUniqueReadableId } from "@/lib/readable-id-service"
 
 export default function TerminalHomepage() {
   const [currentLine, setCurrentLine] = useState(0)

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { generateUniqueReadableId } from "@/lib/id-collision-detector"
+import { generateUniqueReadableId } from "@/lib/readable-id-service"
 
 export default function PlayfulHomepage() {
   const [isHovered, setIsHovered] = useState(false)

@@ -14,6 +14,17 @@
 - **Als Nutzer** möchte ich Todos löschen können, **damit** ich irrelevante Einträge entfernen kann
 - **Als Nutzer** möchte ich dass unvollständige Todos oben stehen, **damit** ich sofort sehe was zu tun ist
 
+### Smart Delete & Mülleimer-System
+- **Als Nutzer** möchte ich dass gelöschte Todos nicht sofort verschwinden, **damit** ich sie bei Bedarf wiederherstellen kann
+- **Als Nutzer** möchte ich eine sofortige Undo-Option nach dem Löschen, **damit** ich versehentliche Löschungen rückgängig machen kann
+- **Als Nutzer** möchte ich einen Mülleimer sehen der alle gelöschten Todos anzeigt, **damit** ich den Überblick behalte
+- **Als Nutzer** möchte ich einzelne Todos aus dem Mülleimer wiederherstellen können, **damit** ich flexibel entscheiden kann
+- **Als Nutzer** möchte ich einzelne Todos endgültig löschen können, **damit** ich irrelevante Einträge permanent entfernen kann
+- **Als Nutzer** möchte ich alle Todos im Mülleimer auf einmal löschen können, **damit** ich schnell aufräumen kann
+- **Als Nutzer** möchte ich eine Bestätigung vor dem endgültigen Löschen, **damit** ich keine wichtigen Todos verliere
+- **Als Nutzer** möchte ich dass der Mülleimer nur die letzten gelöschten Todos speichert, **damit** er nicht überfüllt wird
+- **Als Nutzer** möchte ich sehen wer ein Todo gelöscht hat, **damit** ich bei Fragen den richtigen Ansprechpartner habe
+
 ### Real-time Kollaboration
 - **Als Nutzer** möchte ich sofort sehen wenn andere Nutzer Todos hinzufügen/ändern, **damit** wir synchron arbeiten können
 - **Als Nutzer** möchte ich sehen wer gerade online ist, **damit** ich weiß mit wem ich zusammenarbeite

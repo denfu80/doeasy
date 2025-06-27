@@ -28,6 +28,8 @@ import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
 import TodoList from './todo-list'
 import DebugPanel from './debug-panel'
+import DeletedTodosTrash from './deleted-todos-trash'
+import ToastNotification from './toast-notification'
 
 interface TodoAppProps {
   listId: string
@@ -40,10 +42,17 @@ export default function TodoApp({ listId }: TodoAppProps) {
   
   // App state
   const [todos, setTodos] = useState<Todo[]>([])
+  const [deletedTodos, setDeletedTodos] = useState<Todo[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [copied, setCopied] = useState(false)
   const [userName, setUserName] = useState('')
   const [firebaseStatus, setFirebaseStatus] = useState<string>('initializing')
+  
+  // Toast notification state
+  const [toastVisible, setToastVisible] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('info')
+  const [lastDeletedTodo, setLastDeletedTodo] = useState<Todo | null>(null)
   
   // Initialize offline storage
   const offlineStorage = new OfflineStorage(listId)
@@ -213,8 +222,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
     if (!isFirebaseConfigured() || !db) {
       // Demo mode - load todos from offline storage
       const savedTodos = offlineStorage.loadTodos()
+      const savedDeletedTodos = JSON.parse(localStorage.getItem(`machhalt-deleted-${listId}`) || '[]') as Todo[]
       setTodos(savedTodos)
-      console.log(`📂 Demo mode: loaded ${savedTodos.length} todos from offline storage`)
+      setDeletedTodos(savedDeletedTodos)
+      console.log(`📂 Demo mode: loaded ${savedTodos.length} active todos and ${savedDeletedTodos.length} deleted todos from offline storage`)
       return
     }
 
@@ -223,12 +234,16 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const unsubscribe = onValue(todosRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
-        const todosData = Object.keys(data)
+        const allTodos = Object.keys(data)
           .map(todoId => ({
             id: todoId,
             ...data[todoId]
           } as Todo))
           .filter(todo => todo.text && todo.text.trim().length > 0) // Filter out empty todos
+        
+        // Separate active and deleted todos
+        const activeTodos = allTodos
+          .filter(todo => !todo.deletedAt)
           .sort((a, b) => {
             // Sort: incomplete todos first, then by creation time
             if (a.completed !== b.completed) {
@@ -239,12 +254,24 @@ export default function TodoApp({ listId }: TodoAppProps) {
             return aTime - bTime
           })
         
-        setTodos(todosData)
+        const recentlyDeletedTodos = allTodos
+          .filter(todo => todo.deletedAt)
+          .sort((a, b) => {
+            // Sort by deletion time, most recent first
+            const aTime = typeof a.deletedAt === 'number' ? a.deletedAt : 0
+            const bTime = typeof b.deletedAt === 'number' ? b.deletedAt : 0
+            return (bTime as number) - (aTime as number)
+          })
+          .slice(0, 10) // Keep only last 10 deleted todos
+        
+        setTodos(activeTodos)
+        setDeletedTodos(recentlyDeletedTodos)
         // Also save to offline storage as backup
-        offlineStorage.saveTodos(todosData)
-        console.log(`📝 Loaded ${todosData.length} todos for list ${listId}`)
+        offlineStorage.saveTodos(activeTodos)
+        console.log(`📝 Loaded ${activeTodos.length} active todos and ${recentlyDeletedTodos.length} deleted todos for list ${listId}`)
       } else {
         setTodos([])
+        setDeletedTodos([])
         console.log(`📝 No todos found for list ${listId}`)
       }
     }, (error: any) => {
@@ -319,15 +346,101 @@ export default function TodoApp({ listId }: TodoAppProps) {
   }
 
   const handleDeleteTodo = async (id: string) => {
+    if (!user) return
+    
+    const todoToDelete = todos.find(todo => todo.id === id)
+    if (!todoToDelete) return
+    
+    // Store for undo functionality
+    setLastDeletedTodo(todoToDelete)
+    
     if (!isFirebaseConfigured() || !db) {
-      // Demo mode - update localStorage
+      // Demo mode - soft delete in localStorage
+      const softDeletedTodo = {
+        ...todoToDelete,
+        deletedAt: Date.now() as any,
+        deletedBy: userName || 'Unbekannt'
+      }
       const updatedTodos = todos.filter(todo => todo.id !== id)
+      const updatedDeletedTodos = [softDeletedTodo, ...deletedTodos].slice(0, 10)
+      
       saveTodosToStorage(updatedTodos)
+      setDeletedTodos(updatedDeletedTodos)
+      
+      // Also save deleted todos to localStorage
+      localStorage.setItem(`machhalt-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
+      
+      // Show undo toast
+      setToastMessage(`"${todoToDelete.text}" wurde gelöscht`)
+      setToastType('warning')
+      setToastVisible(true)
       return
     }
 
+    // Firebase - soft delete
+    const todoRef = ref(db, `lists/${listId}/todos/${id}`)
+    await update(todoRef, { 
+      deletedAt: serverTimestamp(),
+      deletedBy: userName || user.uid
+    })
+    
+    // Show undo toast
+    setToastMessage(`"${todoToDelete.text}" wurde gelöscht`)
+    setToastType('warning')
+    setToastVisible(true)
+  }
+
+  const handleRestoreTodo = async (id: string) => {
+    if (!isFirebaseConfigured() || !db) {
+      // Demo mode - restore from deleted todos
+      const todoToRestore = deletedTodos.find(todo => todo.id === id)
+      if (todoToRestore) {
+        const restoredTodo = {
+          ...todoToRestore,
+          deletedAt: null,
+          deletedBy: undefined
+        }
+        const updatedTodos = [...todos, restoredTodo]
+        const updatedDeletedTodos = deletedTodos.filter(todo => todo.id !== id)
+        
+        saveTodosToStorage(updatedTodos)
+        setDeletedTodos(updatedDeletedTodos)
+        
+        // Update localStorage
+        localStorage.setItem(`machhalt-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
+      }
+      return
+    }
+
+    // Firebase - restore todo
+    const todoRef = ref(db, `lists/${listId}/todos/${id}`)
+    await update(todoRef, { 
+      deletedAt: null,
+      deletedBy: null
+    })
+  }
+
+  const handlePermanentDelete = async (id: string) => {
+    if (!isFirebaseConfigured() || !db) {
+      // Demo mode - permanently remove
+      const updatedDeletedTodos = deletedTodos.filter(todo => todo.id !== id)
+      setDeletedTodos(updatedDeletedTodos)
+      localStorage.setItem(`machhalt-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
+      return
+    }
+
+    // Firebase - permanently delete
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
     await remove(todoRef)
+  }
+
+  const handleUndoDelete = async () => {
+    if (!lastDeletedTodo) return
+    
+    // Restore the last deleted todo
+    await handleRestoreTodo(lastDeletedTodo.id)
+    setLastDeletedTodo(null)
+    setToastVisible(false)
   }
 
   const copyLinkToClipboard = () => {
@@ -434,6 +547,23 @@ export default function TodoApp({ listId }: TodoAppProps) {
         />
 
       </div>
+
+      {/* Deleted Todos Trash */}
+      <DeletedTodosTrash
+        deletedTodos={deletedTodos}
+        onRestoreTodo={handleRestoreTodo}
+        onPermanentDelete={handlePermanentDelete}
+      />
+
+      {/* Toast Notification */}
+      <ToastNotification
+        message={toastMessage}
+        type={toastType}
+        isVisible={toastVisible}
+        onClose={() => setToastVisible(false)}
+        onUndo={lastDeletedTodo ? handleUndoDelete : undefined}
+        undoText="Wiederherstellen"
+      />
 
       {/* Debug Panel (only in development) */}
       {process.env.NODE_ENV === 'development' && (

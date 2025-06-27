@@ -10,8 +10,8 @@
         // Todos structure
         "todos": {
           "$todoId": {
-            // Validate todo structure
-            ".validate": "newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName'])",
+            // Validate todo structure - allow soft delete fields
+            ".validate": "newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName']) || (newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName', 'deletedAt']) && newData.child('deletedAt').val() != null) || (newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName', 'deletedBy']) && newData.child('deletedBy').val() != null) || (newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName', 'deletedAt', 'deletedBy']) && newData.child('deletedAt').val() != null && newData.child('deletedBy').val() != null)",
             
             // Todo fields validation
             "text": {
@@ -27,6 +27,12 @@
               ".validate": "newData.isString() && newData.val() == auth.uid"
             },
             "creatorName": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "deletedAt": {
+              ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
+            },
+            "deletedBy": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
             },
             

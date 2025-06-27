@@ -62,10 +62,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const setupDemoMode = (reason?: string) => {
       const demoUserId = 'demo-user-' + Math.random().toString(36).substring(2, 12)
       setUser({ uid: demoUserId } as FirebaseUser)
-      let savedName = localStorage.getItem('machhalt-username')
+      let savedName = localStorage.getItem('macheinfach-username')
       if (!savedName) {
         savedName = generateFunnyName()
-        localStorage.setItem('machhalt-username', savedName)
+        localStorage.setItem('macheinfach-username', savedName)
       }
       setUserName(savedName)
       setIsAuthReady(true)
@@ -100,10 +100,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
         if (firebaseUser) {
           console.log('✅ User authenticated:', firebaseUser.uid)
           setUser(firebaseUser)
-          let savedName = localStorage.getItem('machhalt-username')
+          let savedName = localStorage.getItem('macheinfach-username')
           if (!savedName) {
             savedName = generateFunnyName()
-            localStorage.setItem('machhalt-username', savedName)
+            localStorage.setItem('macheinfach-username', savedName)
           }
           setUserName(savedName)
           setIsAuthReady(true)
@@ -222,7 +222,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     if (!isFirebaseConfigured() || !db) {
       // Demo mode - load todos from offline storage
       const savedTodos = offlineStorage.loadTodos()
-      const savedDeletedTodos = JSON.parse(localStorage.getItem(`machhalt-deleted-${listId}`) || '[]') as Todo[]
+      const savedDeletedTodos = JSON.parse(localStorage.getItem(`macheinfach-deleted-${listId}`) || '[]') as Todo[]
       setTodos(savedTodos)
       setDeletedTodos(savedDeletedTodos)
       console.log(`📂 Demo mode: loaded ${savedTodos.length} active todos and ${savedDeletedTodos.length} deleted todos from offline storage`)
@@ -368,7 +368,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       setDeletedTodos(updatedDeletedTodos)
       
       // Also save deleted todos to localStorage
-      localStorage.setItem(`machhalt-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
+      localStorage.setItem(`macheinfach-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
       
       // Show undo toast
       setToastMessage(`"${todoToDelete.text}" wurde gelöscht`)
@@ -407,7 +407,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
         setDeletedTodos(updatedDeletedTodos)
         
         // Update localStorage
-        localStorage.setItem(`machhalt-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
+        localStorage.setItem(`macheinfach-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
       }
       return
     }
@@ -425,7 +425,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       // Demo mode - permanently remove
       const updatedDeletedTodos = deletedTodos.filter(todo => todo.id !== id)
       setDeletedTodos(updatedDeletedTodos)
-      localStorage.setItem(`machhalt-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
+      localStorage.setItem(`macheinfach-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
       return
     }
 
@@ -447,7 +447,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     if (!isFirebaseConfigured() || !db) {
       // Demo mode - clear all deleted todos from localStorage
       setDeletedTodos([])
-      localStorage.removeItem(`machhalt-deleted-${listId}`)
+      localStorage.removeItem(`macheinfach-deleted-${listId}`)
       return
     }
 
@@ -539,7 +539,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
               <Zap className="w-6 h-6 text-white" />
             </div>
             <h1 className="text-3xl font-black text-slate-800 tracking-tight">
-              mach<span className="text-pink-500">.</span>halt
+              mach<span className="text-pink-500">.</span>einfach
             </h1>
           </div>
           <div className="flex items-center space-x-4">

@@ -39,7 +39,7 @@ export default function PlayfulHomepage() {
             <span className={`text-xl font-black text-slate-900 tracking-tight transition-all duration-300 ${
               logoHovered ? 'text-2xl bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent' : ''
             }`}>
-              mach<span className="text-pink-500">.</span>halt
+              mach<span className="text-pink-500">.</span>einfach
             </span>
           </div>
           

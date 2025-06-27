@@ -1,4 +1,4 @@
-# Firebase CLI Commands für mach.halt
+# Firebase CLI Commands für mach.einfach
 
 ## 🚀 Quick Commands
 

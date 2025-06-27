@@ -1,4 +1,4 @@
-# User Stories für mach.halt
+# User Stories für mach.einfach
 
 ## 🎯 Core Features
 

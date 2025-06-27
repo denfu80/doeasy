@@ -1,6 +1,6 @@
 import { Todo, User } from '@/types/todo'
 
-const STORAGE_PREFIX = 'machhalt'
+const STORAGE_PREFIX = 'macheinfach'
 const STORAGE_VERSION = '1.0'
 
 interface StoredData {

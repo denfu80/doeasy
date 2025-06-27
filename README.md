@@ -1,10 +1,10 @@
-# mach.halt
+# mach.einfach
 
 **Zusammen Sachen machen** - Eine spielerische, kollaborative Todo-App ohne Registrierung
 
-## 🎯 Was ist mach.halt?
+## 🎯 Was ist mach.einfach?
 
-mach.halt ist eine moderne, echtzeitfähige Todo-App, die es Teams ermöglicht, sofort zusammenzuarbeiten - ohne Registrierung, ohne Komplexität, einfach **machen**.
+mach.einfach ist eine moderne, echtzeitfähige Todo-App, die es Teams ermöglicht, sofort zusammenzuarbeiten - ohne Registrierung, ohne Komplexität, einfach **machen**.
 
 ### ✨ Kernfeatures
 
@@ -37,8 +37,8 @@ mach.halt ist eine moderne, echtzeitfähige Todo-App, die es Teams ermöglicht, 
 
 ```bash
 # Repository klonen
-git clone https://github.com/your-username/mach-halt.git
-cd mach-halt
+git clone https://github.com/your-username/mach-einfach.git
+cd mach-einfach
 
 # Dependencies installieren
 npm install
@@ -86,7 +86,7 @@ NEXT_PUBLIC_HOMEPAGE_STYLE=playful
 ```
 - Moderne Gradients (Pink → Purple → Blue)
 - Spielerische Animationen
-- "mach.halt" Branding mit Zap-Icon
+- "mach.einfach" Branding mit Zap-Icon
 
 ### Terminal Design
 ```bash

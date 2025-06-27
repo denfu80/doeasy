@@ -9,7 +9,7 @@ export default function TerminalHomepage() {
   const [isTyping, setIsTyping] = useState(true)
 
   const terminalLines = [
-    "$ initialisiere mach.halt...",
+    "$ initialisiere mach.einfach...",
     "$ lade kollaboration.exe...",
     "$ verbinde teams...",
     "$ ready to machen!",
@@ -36,7 +36,7 @@ export default function TerminalHomepage() {
             <div className="w-6 h-6 bg-green-400 flex items-center justify-center">
               <Hash className="w-4 h-4 text-black" />
             </div>
-            <span className="text-lg font-bold">mach.halt v2.0.1</span>
+            <span className="text-lg font-bold">mach.einfach v2.0.1</span>
           </div>
           <div className="flex space-x-2">
             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -144,7 +144,7 @@ export default function TerminalHomepage() {
 
             {/* System Info */}
             <div className="border border-green-400 p-4 bg-gray-900 text-xs space-y-1">
-              <div>SYSTEM: mach.halt-os v2.0.1</div>
+              <div>SYSTEM: mach.einfach-os v2.0.1</div>
               <div>KERNEL: kollaboration-core 4.2.0</div>
               <div>UPTIME: ∞ (never crashes)</div>
               <div>MEMORY: unlimited vibes</div>

@@ -1,4 +1,4 @@
-# Firebase Setup für mach.halt
+# Firebase Setup für mach.einfach
 
 ## 🔥 Firebase Realtime Database & Authentication Setup
 

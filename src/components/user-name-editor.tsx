@@ -32,7 +32,7 @@ export default function UserNameEditor({ userName, setUserName, userId, classNam
   const handleNameUpdate = () => {
     if (currentName.trim()) {
       setUserName(currentName.trim())
-      localStorage.setItem('machhalt-username', currentName.trim())
+      localStorage.setItem('macheinfach-username', currentName.trim())
     } else {
       setCurrentName(userName)
     }

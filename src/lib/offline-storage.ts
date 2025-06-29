@@ -72,7 +72,7 @@ export class OfflineStorage {
   saveUser(user: { id: string; name: string; color: string }): void {
     try {
       localStorage.setItem(this.getStorageKey('user'), JSON.stringify(user))
-      localStorage.setItem('machhalt-username', user.name) // Keep global username
+      localStorage.setItem('macheinfach-username', user.name) // Keep global username
     } catch (error) {
       console.error('❌ Failed to save user to localStorage:', error)
     }
@@ -161,11 +161,11 @@ export class OfflineStorage {
 
 // Global helper functions
 export const getGlobalUsername = (): string => {
-  return localStorage.getItem('machhalt-username') || ''
+  return localStorage.getItem('macheinfach-username') || ''
 }
 
 export const setGlobalUsername = (name: string): void => {
-  localStorage.setItem('machhalt-username', name)
+  localStorage.setItem('macheinfach-username', name)
 }
 
 // Clean up old storage data (for maintenance)

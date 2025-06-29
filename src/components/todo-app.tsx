@@ -45,9 +45,15 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [deletedTodos, setDeletedTodos] = useState<Todo[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [copied, setCopied] = useState(false)
-  const [userName, setUserName] = useState('')
+  const [userName, _setUserName] = useState('') // Renamed state setter
   const [firebaseStatus, setFirebaseStatus] = useState<string>('initializing')
-  
+
+  // Wrapper function to update state and localStorage
+  const setUserName = (newName: string) => {
+    const trimmedName = newName.trim()
+    _setUserName(trimmedName)
+    localStorage.setItem('macheinfach-username', trimmedName)
+  }
   // Toast notification state
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
@@ -67,7 +73,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
         savedName = generateFunnyName()
         localStorage.setItem('macheinfach-username', savedName)
       }
-      setUserName(savedName)
+      _setUserName(savedName) // Use _setUserName to avoid localStorage write
       setIsAuthReady(true)
       setFirebaseStatus(reason || 'demo-mode')
     }
@@ -105,7 +111,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
             savedName = generateFunnyName()
             localStorage.setItem('macheinfach-username', savedName)
           }
-          setUserName(savedName)
+          _setUserName(savedName) // Use _setUserName to avoid localStorage write
           setIsAuthReady(true)
         } else {
           try {

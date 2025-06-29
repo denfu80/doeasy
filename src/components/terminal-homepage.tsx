@@ -1,19 +1,39 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Terminal, ArrowRight, Hash } from "lucide-react"
+import { Terminal, ArrowRight, Hash, FolderOpen } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { generateReadableId } from "@/lib/readable-id-service"
+import { getLocalListIds, addLocalListId } from "@/lib/offline-storage"
 
 export default function TerminalHomepage() {
   const [currentLine, setCurrentLine] = useState(0)
   const [isTyping, setIsTyping] = useState(true)
+  const [localLists, setLocalLists] = useState<string[]>([])
   const router = useRouter()
 
+  useEffect(() => {
+    setLocalLists(getLocalListIds())
+    const timer = setInterval(() => {
+      if (currentLine < terminalLines.length - 1) {
+        setCurrentLine((prev) => prev + 1)
+      } else {
+        setIsTyping(false)
+      }
+    }, 800)
+
+    return () => clearInterval(timer)
+  }, [currentLine]) // Removed terminalLines from dependencies as it's constant
+
   const createNewList = () => {
-    // Generate a human-readable ID for the new list
     const listId = generateReadableId()
+    addLocalListId(listId) // Save new list ID
+    router.push(`/list/${listId}`)
+  }
+
+  const navigateToList = (listId: string) => {
+    addLocalListId(listId) // Ensure it's tracked
     router.push(`/list/${listId}`)
   }
 
@@ -147,10 +167,37 @@ export default function TerminalHomepage() {
               <div className="text-xs text-gray-400 space-y-1">
                 <div>USAGE: ./neue-liste [OPTIONS]</div>
                 <div> --start erstelle neue kollaborative liste</div>
+                <div> --open [list_id] öffne existierende lokale liste</div>
                 <div> --share teile link mit team</div>
                 <div> --help zeige diese hilfe</div>
               </div>
             </div>
+
+            {/* Local Lists Section */}
+            {localLists.length > 0 && (
+              <div className="border border-green-400 p-6 bg-gray-900">
+                <div className="flex items-center text-yellow-400 mb-3">
+                  <FolderOpen className="w-5 h-5 mr-2" />
+                  <span className="font-bold">Lokale Listen:</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {localLists.map((listId) => (
+                    <Button
+                      key={listId}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigateToList(listId)}
+                      className="text-green-400 hover:bg-green-900 hover:text-green-300 justify-start group"
+                    >
+                      <span className="truncate group-hover:animate-pulse">{`./open ${listId}`}</span>
+                    </Button>
+                  ))}
+                </div>
+                 <div className="text-xs text-gray-500 mt-3">
+                  {`> tip: use './open [list_id]'`}
+                </div>
+              </div>
+            )}
 
             {/* System Info */}
             <div className="border border-green-400 p-4 bg-gray-900 text-xs space-y-1">

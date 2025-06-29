@@ -2,21 +2,32 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock } from "lucide-react"
-import { useState } from "react"
+import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock, List } from "lucide-react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { generateReadableId } from "@/lib/readable-id-service"
+import { getLocalListIds, addLocalListId } from "@/lib/offline-storage"
 
 export default function PlayfulHomepage() {
   const [isHovered, setIsHovered] = useState(false)
   const [logoHovered, setLogoHovered] = useState(false)
   const [badgeHovered, setBadgeHovered] = useState(false)
   const [titleHovered, setTitleHovered] = useState(false)
+  const [localLists, setLocalLists] = useState<string[]>([])
   const router = useRouter()
 
+  useEffect(() => {
+    setLocalLists(getLocalListIds())
+  }, [])
+
   const createNewList = () => {
-    // Generate a human-readable ID for the new list
     const listId = generateReadableId()
+    addLocalListId(listId) // Save new list ID
+    router.push(`/list/${listId}`)
+  }
+
+  const navigateToList = (listId: string) => {
+    addLocalListId(listId) // Ensure it's tracked if accessed directly or from a shared link previously
     router.push(`/list/${listId}`)
   }
 
@@ -203,8 +214,31 @@ export default function PlayfulHomepage() {
             </Button>
           </div>
 
+          {/* Local Lists Section */}
+          {localLists.length > 0 && (
+            <div className="mt-12 p-6 bg-white/50 backdrop-blur-md rounded-xl shadow-lg max-w-md mx-auto">
+              <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center justify-center">
+                <List className="w-6 h-6 mr-2 text-purple-500" />
+                Deine lokalen Listen
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {localLists.map((listId) => (
+                  <Button
+                    key={listId}
+                    variant="outline"
+                    onClick={() => navigateToList(listId)}
+                    className="w-full justify-center text-slate-700 border-purple-300 hover:bg-purple-100 hover:text-purple-700 transition-all duration-200 group"
+                  >
+                    {listId}
+                    <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200" />
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Interactive Subtitle */}
-          <div className="space-y-2">
+          <div className="space-y-2 mt-12">
             <p className="text-lg text-slate-500">
               <span className="font-mono bg-slate-100 px-2 py-1 rounded cursor-pointer hover:bg-green-100 hover:text-green-700 hover:scale-110 transition-all duration-300">0</span> anmeldung •{" "}
               <span className="font-mono bg-slate-100 px-2 py-1 rounded cursor-pointer hover:bg-purple-100 hover:text-purple-700 hover:scale-110 transition-all duration-300 hover:animate-pulse">∞</span> kollaboration •{" "}

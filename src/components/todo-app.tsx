@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   signInAnonymously, 
   onAuthStateChanged,
@@ -19,7 +19,6 @@ import {
 import { Zap, Link } from 'lucide-react'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
-import { testFirebaseConnection } from '@/lib/firebase-test'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { OfflineStorage } from '@/lib/offline-storage'
 import { Todo, User } from '@/types/todo'
@@ -62,74 +61,97 @@ export default function TodoApp({ listId }: TodoAppProps) {
   
   // Initialize offline storage
   const offlineStorage = new OfflineStorage(listId)
+  
+  // Use ref to ensure Firebase initialization only runs once (React StrictMode protection)
+  const firebaseInitialized = useRef(false)
 
-  // Initialize Firebase Authentication
+  // Initialize Firebase Authentication (Client-side only, using onAuthStateChanged)
   useEffect(() => {
-    const setupDemoMode = (reason?: string) => {
-      const demoUserId = 'demo-user-' + Math.random().toString(36).substring(2, 12)
-      setUser({ uid: demoUserId } as FirebaseUser)
-      let savedName = localStorage.getItem('macheinfach-username')
-      if (!savedName) {
-        savedName = generateFunnyName()
-        localStorage.setItem('macheinfach-username', savedName)
-      }
-      _setUserName(savedName) // Use _setUserName to avoid localStorage write
-      setIsAuthReady(true)
-      setFirebaseStatus(reason || 'demo-mode')
+    // Skip if already initialized (React StrictMode protection)
+    if (firebaseInitialized.current) {
+      return
+    }
+    
+    firebaseInitialized.current = true
+    
+    // Only run in browser environment
+    if (typeof window === 'undefined') {
+      return
+    }
+    
+    const showFirebaseError = (reason: string, error?: any) => {
+      console.error('❌ Firebase fehlt:', reason, error)
+      setFirebaseStatus(`error: ${reason}`)
+      // Zeige Fehlermeldung aber lade nicht die App
     }
 
-    // Test Firebase connection first
+    // Initialize Firebase with proper error handling
     const initFirebase = async () => {
       if (!isFirebaseConfigured() || !auth) {
-        console.log('🔧 Setting up demo mode - Firebase not available')
-        setupDemoMode('not-configured')
-        return
+        showFirebaseError('not-configured')
+        return null
       }
 
-      console.log('🔥 Testing Firebase connection...')
-      setFirebaseStatus('testing-connection')
-      
-      const testResult = await testFirebaseConnection()
-      console.log('Firebase test result:', testResult)
-      
-      if (testResult.error) {
-        console.log('❌ Firebase test failed:', testResult.error)
-        setFirebaseStatus(`error: ${testResult.error}`)
-        setupDemoMode('firebase-error')
-        return
-      }
-
-      console.log('✅ Firebase connection successful')
+      console.log('🔐 Initializing Firebase Auth...')
       setFirebaseStatus('connected')
       
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          console.log('✅ User authenticated:', firebaseUser.uid)
-          setUser(firebaseUser)
+      try {
+        // Try to get current user first (synchronous)
+        if (auth.currentUser) {
+          console.log('✅ User already authenticated:', auth.currentUser.uid)
+          setUser(auth.currentUser)
           let savedName = localStorage.getItem('macheinfach-username')
           if (!savedName) {
             savedName = generateFunnyName()
             localStorage.setItem('macheinfach-username', savedName)
           }
-          _setUserName(savedName) // Use _setUserName to avoid localStorage write
+          _setUserName(savedName)
           setIsAuthReady(true)
-        } else {
-          try {
-            console.log('🔐 Attempting anonymous sign-in...')
-            if (auth) {
-              await signInAnonymously(auth)
-            }
-          } catch (error) {
-            console.error("❌ Authentication failed - falling back to demo mode:", error)
-            setupDemoMode('auth-failed')
-          }
+          return null
         }
-      })
 
-      return () => unsubscribe()
+        // No current user, try anonymous sign-in directly
+        console.log('🔐 No current user, attempting anonymous sign-in...')
+        const userCredential = await signInAnonymously(auth)
+        console.log('✅ Anonymous sign-in successful:', userCredential.user.uid)
+        
+        setUser(userCredential.user)
+        let savedName = localStorage.getItem('macheinfach-username')
+        if (!savedName) {
+          savedName = generateFunnyName()
+          localStorage.setItem('macheinfach-username', savedName)
+        }
+        _setUserName(savedName)
+        setIsAuthReady(true)
+
+        // Set up listener for future auth changes
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+          if (firebaseUser && firebaseUser.uid !== userCredential.user.uid) {
+            console.log('🔄 Auth state changed to new user:', firebaseUser.uid)
+            setUser(firebaseUser)
+          }
+        })
+
+        return unsubscribe
+      } catch (error) {
+        showFirebaseError('auth-failed', error)
+        return null
+      }
     }
 
-    initFirebase()
+    // Call async function and handle cleanup
+    let cleanup: (() => void) | null = null
+    
+    initFirebase().then((cleanupFn) => {
+      cleanup = cleanupFn
+    })
+    
+    // Cleanup function
+    return () => {
+      if (cleanup && typeof cleanup === 'function') {
+        cleanup()
+      }
+    }
   }, [])
 
   // Real-time Presence Tracking
@@ -137,15 +159,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     if (!isAuthReady || !user || !userName) return
 
     if (!isFirebaseConfigured() || !db) {
-      // Demo mode - show only current user
-      const demoUser: User = {
-        id: user.uid,
-        name: userName,
-        color: generateColor(user.uid),
-        onlineAt: new Date() as any,
-        zIndex: 1
-      }
-      setUsers([demoUser])
+      console.error('❌ Firebase database not available for presence tracking')
       return
     }
 
@@ -153,30 +167,53 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const userRef = ref(db, `lists/${listId}/presence/${user.uid}`)
 
     const userColor = generateColor(user.uid)
-    const userPresence = {
-      onlineAt: serverTimestamp(), 
+    const baseUserPresence = {
       color: userColor, 
       name: userName,
-      lastSeen: serverTimestamp(),
       isTyping: false,
       editingTodoId: null
     }
     
-    // Set user presence and handle disconnect
-    set(userRef, userPresence)
+    // Function to update presence with current timestamp
+    const updatePresence = () => {
+      const userPresence = {
+        ...baseUserPresence,
+        onlineAt: serverTimestamp(),
+        lastSeen: serverTimestamp()
+      }
+      set(userRef, userPresence)
+    }
+    
+    // Set initial presence
+    updatePresence()
+    
+    // Set up heartbeat to continuously update presence every 30 seconds
+    const heartbeatInterval = setInterval(() => {
+      if (!document.hidden) {
+        updatePresence()
+      }
+    }, 30000) // 30 seconds
     
     // Handle disconnect using visibility API (onDisconnect not available in web SDK)
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        set(userRef, { ...userPresence, lastSeen: serverTimestamp(), onlineAt: null })
+        set(userRef, { 
+          ...baseUserPresence, 
+          lastSeen: serverTimestamp(), 
+          onlineAt: null 
+        })
       } else {
-        set(userRef, userPresence)
+        updatePresence()
       }
     }
     
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('beforeunload', () => {
-      set(userRef, { ...userPresence, lastSeen: serverTimestamp(), onlineAt: null })
+      set(userRef, { 
+        ...baseUserPresence, 
+        lastSeen: serverTimestamp(), 
+        onlineAt: null 
+      })
     })
     
     const unsubscribe = onValue(presenceRef, (snapshot) => {
@@ -189,12 +226,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
             ...data[userId]
           } as User))
           .filter(user => {
-            // Only show users who are online or were online in the last 5 minutes
+            // Only show users who are online or were online in the last 2 minutes
             const isOnline = user.onlineAt && typeof user.onlineAt === 'object'
             const lastSeen = user.lastSeen || user.onlineAt
             const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
             const timeSinceLastSeen = now - lastSeenTime
-            return isOnline || timeSinceLastSeen < 5 * 60 * 1000 // 5 minutes
+            return isOnline || timeSinceLastSeen < 2 * 60 * 1000 // 2 minutes
           })
           .sort((a, b) => {
             // Sort by online status first, then by last seen
@@ -219,6 +256,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     return () => {
       off(presenceRef, 'value', unsubscribe)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(heartbeatInterval)
     }
   }, [isAuthReady, user, userName, listId])
 
@@ -227,12 +265,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     if (!isAuthReady || !user) return
 
     if (!isFirebaseConfigured() || !db) {
-      // Demo mode - load todos from offline storage
-      const savedTodos = offlineStorage.loadTodos()
-      const savedDeletedTodos = JSON.parse(localStorage.getItem(`macheinfach-deleted-${listId}`) || '[]') as Todo[]
-      setTodos(savedTodos)
-      setDeletedTodos(savedDeletedTodos)
-      console.log(`📂 Demo mode: loaded ${savedTodos.length} active todos and ${savedDeletedTodos.length} deleted todos from offline storage`)
+      console.error('❌ Firebase database not available for todo synchronization')
       return
     }
 
@@ -289,7 +322,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     return () => off(todosRef, 'value', unsubscribe)
   }, [isAuthReady, user, listId])
 
-  // Helper function to save todos to offline storage in demo mode
+  // Helper function to save todos locally as backup
   const saveTodosToStorage = (updatedTodos: Todo[]) => {
     offlineStorage.saveTodos(updatedTodos)
     setTodos(updatedTodos)
@@ -297,22 +330,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   // CRUD Functions
   const handleAddTodo = async (text: string) => {
-    if (!user) return
-    
-    if (!isFirebaseConfigured() || !db) {
-      // Demo mode - use localStorage
-      const newTodo: Todo = {
-        id: Math.random().toString(36).substring(2, 12),
-        text,
-        completed: false,
-        createdAt: Date.now() as any,
-        createdBy: user.uid,
-        creatorName: userName,
-      }
-      const updatedTodos = [...todos, newTodo]
-      saveTodosToStorage(updatedTodos)
-      return
-    }
+    if (!user || !isFirebaseConfigured() || !db) return
     
     const todosRef = ref(db, `lists/${listId}/todos`)
     await push(todosRef, {
@@ -325,64 +343,27 @@ export default function TodoApp({ listId }: TodoAppProps) {
   }
 
   const handleToggleTodo = async (id: string, completed: boolean) => {
-    if (!isFirebaseConfigured() || !db) {
-      // Demo mode - update localStorage
-      const updatedTodos = todos.map(todo => 
-        todo.id === id ? { ...todo, completed } : todo
-      )
-      saveTodosToStorage(updatedTodos)
-      return
-    }
+    if (!isFirebaseConfigured() || !db) return
 
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
     await update(todoRef, { completed })
   }
   
   const handleUpdateTodo = async (id: string, text: string) => {
-    if (!isFirebaseConfigured() || !db) {
-      // Demo mode - update localStorage
-      const updatedTodos = todos.map(todo => 
-        todo.id === id ? { ...todo, text } : todo
-      )
-      saveTodosToStorage(updatedTodos)
-      return
-    }
+    if (!isFirebaseConfigured() || !db) return
 
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
     await update(todoRef, { text })
   }
 
   const handleDeleteTodo = async (id: string) => {
-    if (!user) return
+    if (!user || !isFirebaseConfigured() || !db) return
     
     const todoToDelete = todos.find(todo => todo.id === id)
     if (!todoToDelete) return
     
     // Store for undo functionality
     setLastDeletedTodo(todoToDelete)
-    
-    if (!isFirebaseConfigured() || !db) {
-      // Demo mode - soft delete in localStorage
-      const softDeletedTodo = {
-        ...todoToDelete,
-        deletedAt: Date.now() as any,
-        deletedBy: userName || 'Unbekannt'
-      }
-      const updatedTodos = todos.filter(todo => todo.id !== id)
-      const updatedDeletedTodos = [softDeletedTodo, ...deletedTodos].slice(0, 10)
-      
-      saveTodosToStorage(updatedTodos)
-      setDeletedTodos(updatedDeletedTodos)
-      
-      // Also save deleted todos to localStorage
-      localStorage.setItem(`macheinfach-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
-      
-      // Show undo toast
-      setToastMessage(`"${todoToDelete.text}" wurde gelöscht`)
-      setToastType('warning')
-      setToastVisible(true)
-      return
-    }
 
     // Firebase - soft delete
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
@@ -398,26 +379,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   }
 
   const handleRestoreTodo = async (id: string) => {
-    if (!isFirebaseConfigured() || !db) {
-      // Demo mode - restore from deleted todos
-      const todoToRestore = deletedTodos.find(todo => todo.id === id)
-      if (todoToRestore) {
-        const restoredTodo = {
-          ...todoToRestore,
-          deletedAt: null,
-          deletedBy: undefined
-        }
-        const updatedTodos = [...todos, restoredTodo]
-        const updatedDeletedTodos = deletedTodos.filter(todo => todo.id !== id)
-        
-        saveTodosToStorage(updatedTodos)
-        setDeletedTodos(updatedDeletedTodos)
-        
-        // Update localStorage
-        localStorage.setItem(`macheinfach-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
-      }
-      return
-    }
+    if (!isFirebaseConfigured() || !db) return
 
     // Firebase - restore todo
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
@@ -428,13 +390,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   }
 
   const handlePermanentDelete = async (id: string) => {
-    if (!isFirebaseConfigured() || !db) {
-      // Demo mode - permanently remove
-      const updatedDeletedTodos = deletedTodos.filter(todo => todo.id !== id)
-      setDeletedTodos(updatedDeletedTodos)
-      localStorage.setItem(`macheinfach-deleted-${listId}`, JSON.stringify(updatedDeletedTodos))
-      return
-    }
+    if (!isFirebaseConfigured() || !db) return
 
     // Firebase - permanently delete
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
@@ -462,16 +418,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
   }
 
   const handleDeleteAll = async () => {
-    if (!isFirebaseConfigured() || !db) {
-      // Demo mode - clear all deleted todos from localStorage
-      setDeletedTodos([])
-      localStorage.removeItem(`macheinfach-deleted-${listId}`)
-      return
-    }
+    if (!isFirebaseConfigured() || !db) return
 
     // Firebase - permanently delete all todos in deletedTodos
-    if (!db) return
-    
     const deletePromises = deletedTodos.map(async (todo) => {
       const todoRef = ref(db!, `lists/${listId}/todos/${todo.id}`)
       return remove(todoRef)
@@ -563,9 +512,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
                   : 'text-yellow-800'
               }`}>
                 {firebaseStatus === 'testing-connection' && 'Firebase wird getestet...'}
-                {firebaseStatus === 'not-configured' && 'Demo Modus: Firebase nicht konfiguriert'}
-                {firebaseStatus === 'auth-failed' && 'Demo Modus: Authentication fehlgeschlagen'}
-                {firebaseStatus === 'firebase-error' && 'Demo Modus: Firebase Fehler'}
+                {firebaseStatus === 'not-configured' && 'Firebase nicht konfiguriert'}
+                {firebaseStatus === 'auth-failed' && 'Firebase Authentication fehlgeschlagen'}
+                {firebaseStatus === 'auth-timeout' && 'Firebase Authentication Timeout'}
+                {firebaseStatus === 'firebase-error' && 'Firebase Fehler'}
                 {firebaseStatus.startsWith('error:') && `Firebase Fehler: ${firebaseStatus.split(':')[1]}`}
               </p>
             </div>
@@ -575,8 +525,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
                   ? 'text-red-700' 
                   : 'text-yellow-700'
               }`}>
-                {firebaseStatus === 'not-configured' && 'Firebase ist nicht konfiguriert. Todos werden lokal gespeichert.'}
+                {firebaseStatus === 'not-configured' && 'Firebase ist nicht konfiguriert. Überprüfe die Umgebungsvariablen.'}
                 {firebaseStatus === 'auth-failed' && 'Firebase Anonymous Authentication ist nicht aktiviert. Siehe FIREBASE_SETUP.md'}
+                {firebaseStatus === 'auth-timeout' && 'Firebase Authentication dauerte zu lange. Netzwerkverbindung prüfen.'}
                 {firebaseStatus === 'firebase-error' && 'Detaillierte Fehlerinfo in der Browser-Konsole verfügbar.'}
                 {firebaseStatus.startsWith('error:') && 'Überprüfe Firebase Console und FIREBASE_SETUP.md für Lösungsschritte.'}
               </p>

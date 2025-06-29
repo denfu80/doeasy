@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { generateReadableId } from "@/lib/readable-id-service"
 
 export default function PlayfulHomepage() {
   const [isHovered, setIsHovered] = useState(false)
@@ -14,8 +15,8 @@ export default function PlayfulHomepage() {
   const router = useRouter()
 
   const createNewList = () => {
-    // Generate a random ID for the new list
-    const listId = Math.random().toString(36).substring(2, 12)
+    // Generate a human-readable ID for the new list
+    const listId = generateReadableId()
     router.push(`/list/${listId}`)
   }
 

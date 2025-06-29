@@ -67,6 +67,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   // Initialize Firebase Authentication (protected against React StrictMode double execution)
   useEffect(() => {
+    console.log('🔧 useEffect fired, firebaseInitialized.current:', firebaseInitialized.current)
+    
     // Skip if already initialized (React StrictMode protection)
     if (firebaseInitialized.current) {
       console.log('🔧 Skipping Firebase init - already initialized')
@@ -75,6 +77,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
     
     firebaseInitialized.current = true
     console.log('🔥 Starting Firebase auth with 2s timeout... (first time)')
+    console.log('🔧 Firebase auth instance:', !!auth)
+    console.log('🔧 Firebase config check:', isFirebaseConfigured())
     
     const setupDemoMode = (reason?: string) => {
       const demoUserId = 'demo-user-' + Math.random().toString(36).substring(2, 12)

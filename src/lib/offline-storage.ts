@@ -168,6 +168,42 @@ export const setGlobalUsername = (name: string): void => {
   localStorage.setItem('macheinfach-username', name)
 }
 
+const LOCAL_LIST_IDS_KEY = `${STORAGE_PREFIX}-localListIds`;
+
+export const getLocalListIds = (): string[] => {
+  try {
+    const stored = localStorage.getItem(LOCAL_LIST_IDS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('❌ Failed to load local list IDs from localStorage:', error);
+    return [];
+  }
+};
+
+export const addLocalListId = (listId: string): void => {
+  try {
+    const currentIds = getLocalListIds();
+    if (!currentIds.includes(listId)) {
+      const updatedIds = [...currentIds, listId];
+      localStorage.setItem(LOCAL_LIST_IDS_KEY, JSON.stringify(updatedIds));
+      console.log(`💾 Added list ID ${listId} to local lists`);
+    }
+  } catch (error) {
+    console.error('❌ Failed to add local list ID to localStorage:', error);
+  }
+};
+
+export const removeLocalListId = (listId: string): void => {
+  try {
+    const currentIds = getLocalListIds();
+    const updatedIds = currentIds.filter(id => id !== listId);
+    localStorage.setItem(LOCAL_LIST_IDS_KEY, JSON.stringify(updatedIds));
+    console.log(`🗑️ Removed list ID ${listId} from local lists`);
+  } catch (error) {
+    console.error('❌ Failed to remove local list ID from localStorage:', error);
+  }
+};
+
 // Clean up old storage data (for maintenance)
 export const cleanupOldStorage = (): void => {
   try {

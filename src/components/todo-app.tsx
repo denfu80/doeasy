@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { 
   signInAnonymously, 
   onAuthStateChanged,
@@ -61,9 +61,21 @@ export default function TodoApp({ listId }: TodoAppProps) {
   
   // Initialize offline storage
   const offlineStorage = new OfflineStorage(listId)
+  
+  // Use ref to ensure Firebase initialization only runs once (React StrictMode protection)
+  const firebaseInitialized = useRef(false)
 
-  // Initialize Firebase Authentication
+  // Initialize Firebase Authentication (protected against React StrictMode double execution)
   useEffect(() => {
+    // Skip if already initialized (React StrictMode protection)
+    if (firebaseInitialized.current) {
+      console.log('🔧 Skipping Firebase init - already initialized')
+      return
+    }
+    
+    firebaseInitialized.current = true
+    console.log('🔥 Starting Firebase auth with 2s timeout... (first time)')
+    
     const setupDemoMode = (reason?: string) => {
       const demoUserId = 'demo-user-' + Math.random().toString(36).substring(2, 12)
       setUser({ uid: demoUserId } as FirebaseUser)
@@ -77,7 +89,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       setFirebaseStatus(reason || 'demo-mode')
     }
 
-    // Initialize Firebase (skip heavy testing, faster startup)
+    // Initialize Firebase with timeout protection
     const initFirebase = async () => {
       if (!isFirebaseConfigured() || !auth) {
         console.log('🔧 Setting up demo mode - Firebase not available')
@@ -86,8 +98,19 @@ export default function TodoApp({ listId }: TodoAppProps) {
       }
 
       setFirebaseStatus('connected')
+      const startTime = Date.now()
+      
+      // Set a timeout to fallback to demo mode if auth takes too long
+      const authTimeout = setTimeout(() => {
+        console.warn('⏰ Authentication timeout (2s) - falling back to demo mode')
+        setupDemoMode('auth-timeout')
+      }, 2000) // 2 second timeout (aggressive)
       
       const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        const authStateChangeTime = Date.now()
+        clearTimeout(authTimeout) // Clear timeout on successful auth state change
+        console.log(`📊 onAuthStateChanged fired after ${authStateChangeTime - startTime}ms`)
+        
         if (firebaseUser) {
           console.log('✅ User already authenticated:', firebaseUser.uid)
           setUser(firebaseUser)
@@ -101,8 +124,11 @@ export default function TodoApp({ listId }: TodoAppProps) {
         } else {
           try {
             console.log('🔐 Attempting anonymous sign-in...')
+            const signInStartTime = Date.now()
             if (auth) {
-              await signInAnonymously(auth)
+              const userCredential = await signInAnonymously(auth)
+              const signInEndTime = Date.now()
+              console.log(`📊 Anonymous sign-in completed in ${signInEndTime - signInStartTime}ms`)
             }
           } catch (error) {
             console.error("❌ Authentication failed - falling back to demo mode:", error)
@@ -111,7 +137,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
         }
       })
 
-      return () => unsubscribe()
+      return () => {
+        clearTimeout(authTimeout)
+        unsubscribe()
+      }
     }
 
     initFirebase()
@@ -574,6 +603,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
                 {firebaseStatus === 'testing-connection' && 'Firebase wird getestet...'}
                 {firebaseStatus === 'not-configured' && 'Demo Modus: Firebase nicht konfiguriert'}
                 {firebaseStatus === 'auth-failed' && 'Demo Modus: Authentication fehlgeschlagen'}
+                {firebaseStatus === 'auth-timeout' && 'Demo Modus: Authentication Timeout'}
                 {firebaseStatus === 'firebase-error' && 'Demo Modus: Firebase Fehler'}
                 {firebaseStatus.startsWith('error:') && `Firebase Fehler: ${firebaseStatus.split(':')[1]}`}
               </p>
@@ -586,6 +616,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
               }`}>
                 {firebaseStatus === 'not-configured' && 'Firebase ist nicht konfiguriert. Todos werden lokal gespeichert.'}
                 {firebaseStatus === 'auth-failed' && 'Firebase Anonymous Authentication ist nicht aktiviert. Siehe FIREBASE_SETUP.md'}
+                {firebaseStatus === 'auth-timeout' && 'Firebase Authentication dauerte zu lange (>2s). Todos werden lokal gespeichert.'}
                 {firebaseStatus === 'firebase-error' && 'Detaillierte Fehlerinfo in der Browser-Konsole verfügbar.'}
                 {firebaseStatus.startsWith('error:') && 'Überprüfe Firebase Console und FIREBASE_SETUP.md für Lösungsschritte.'}
               </p>

@@ -19,7 +19,6 @@ import {
 import { Zap, Link } from 'lucide-react'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
-import { testFirebaseConnection } from '@/lib/firebase-test'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { OfflineStorage } from '@/lib/offline-storage'
 import { Todo, User } from '@/types/todo'
@@ -78,7 +77,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       setFirebaseStatus(reason || 'demo-mode')
     }
 
-    // Test Firebase connection first
+    // Initialize Firebase (skip heavy testing, faster startup)
     const initFirebase = async () => {
       if (!isFirebaseConfigured() || !auth) {
         console.log('🔧 Setting up demo mode - Firebase not available')
@@ -86,25 +85,11 @@ export default function TodoApp({ listId }: TodoAppProps) {
         return
       }
 
-      console.log('🔥 Testing Firebase connection...')
-      setFirebaseStatus('testing-connection')
-      
-      const testResult = await testFirebaseConnection()
-      console.log('Firebase test result:', testResult)
-      
-      if (testResult.error) {
-        console.log('❌ Firebase test failed:', testResult.error)
-        setFirebaseStatus(`error: ${testResult.error}`)
-        setupDemoMode('firebase-error')
-        return
-      }
-
-      console.log('✅ Firebase connection successful')
       setFirebaseStatus('connected')
       
       const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
-          console.log('✅ User authenticated:', firebaseUser.uid)
+          console.log('✅ User already authenticated:', firebaseUser.uid)
           setUser(firebaseUser)
           let savedName = localStorage.getItem('macheinfach-username')
           if (!savedName) {
@@ -153,30 +138,53 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const userRef = ref(db, `lists/${listId}/presence/${user.uid}`)
 
     const userColor = generateColor(user.uid)
-    const userPresence = {
-      onlineAt: serverTimestamp(), 
+    const baseUserPresence = {
       color: userColor, 
       name: userName,
-      lastSeen: serverTimestamp(),
       isTyping: false,
       editingTodoId: null
     }
     
-    // Set user presence and handle disconnect
-    set(userRef, userPresence)
+    // Function to update presence with current timestamp
+    const updatePresence = () => {
+      const userPresence = {
+        ...baseUserPresence,
+        onlineAt: serverTimestamp(),
+        lastSeen: serverTimestamp()
+      }
+      set(userRef, userPresence)
+    }
+    
+    // Set initial presence
+    updatePresence()
+    
+    // Set up heartbeat to continuously update presence every 30 seconds
+    const heartbeatInterval = setInterval(() => {
+      if (!document.hidden) {
+        updatePresence()
+      }
+    }, 30000) // 30 seconds
     
     // Handle disconnect using visibility API (onDisconnect not available in web SDK)
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        set(userRef, { ...userPresence, lastSeen: serverTimestamp(), onlineAt: null })
+        set(userRef, { 
+          ...baseUserPresence, 
+          lastSeen: serverTimestamp(), 
+          onlineAt: null 
+        })
       } else {
-        set(userRef, userPresence)
+        updatePresence()
       }
     }
     
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('beforeunload', () => {
-      set(userRef, { ...userPresence, lastSeen: serverTimestamp(), onlineAt: null })
+      set(userRef, { 
+        ...baseUserPresence, 
+        lastSeen: serverTimestamp(), 
+        onlineAt: null 
+      })
     })
     
     const unsubscribe = onValue(presenceRef, (snapshot) => {
@@ -189,12 +197,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
             ...data[userId]
           } as User))
           .filter(user => {
-            // Only show users who are online or were online in the last 5 minutes
+            // Only show users who are online or were online in the last 2 minutes
             const isOnline = user.onlineAt && typeof user.onlineAt === 'object'
             const lastSeen = user.lastSeen || user.onlineAt
             const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
             const timeSinceLastSeen = now - lastSeenTime
-            return isOnline || timeSinceLastSeen < 5 * 60 * 1000 // 5 minutes
+            return isOnline || timeSinceLastSeen < 2 * 60 * 1000 // 2 minutes
           })
           .sort((a, b) => {
             // Sort by online status first, then by last seen
@@ -219,6 +227,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     return () => {
       off(presenceRef, 'value', unsubscribe)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(heartbeatInterval)
     }
   }, [isAuthReady, user, userName, listId])
 

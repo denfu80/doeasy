@@ -67,18 +67,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   // Initialize Firebase Authentication (protected against React StrictMode double execution)
   useEffect(() => {
-    console.log('🔧 useEffect fired, firebaseInitialized.current:', firebaseInitialized.current)
-    
     // Skip if already initialized (React StrictMode protection)
     if (firebaseInitialized.current) {
-      console.log('🔧 Skipping Firebase init - already initialized')
       return
     }
     
     firebaseInitialized.current = true
-    console.log('🔥 Starting Firebase auth with 2s timeout... (first time)')
-    console.log('🔧 Firebase auth instance:', !!auth)
-    console.log('🔧 Firebase config check:', isFirebaseConfigured())
     
     const setupDemoMode = (reason?: string) => {
       const demoUserId = 'demo-user-' + Math.random().toString(36).substring(2, 12)
@@ -102,18 +96,15 @@ export default function TodoApp({ listId }: TodoAppProps) {
       }
 
       setFirebaseStatus('connected')
-      const startTime = Date.now()
       
       // Set a timeout to fallback to demo mode if auth takes too long
       const authTimeout = setTimeout(() => {
-        console.warn('⏰ Authentication timeout (2s) - falling back to demo mode')
+        console.warn('⏰ Authentication timeout (1s) - Firebase Auth unreachable, falling back to demo mode')
         setupDemoMode('auth-timeout')
-      }, 2000) // 2 second timeout (aggressive)
+      }, 1000) // 1 second timeout (Firebase Auth seems to be blocked)
       
       const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        const authStateChangeTime = Date.now()
         clearTimeout(authTimeout) // Clear timeout on successful auth state change
-        console.log(`📊 onAuthStateChanged fired after ${authStateChangeTime - startTime}ms`)
         
         if (firebaseUser) {
           console.log('✅ User already authenticated:', firebaseUser.uid)

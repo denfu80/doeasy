@@ -16,11 +16,11 @@ import {
   set,
   off
 } from 'firebase/database'
-import { Zap, Link, Edit2, Check, X } from 'lucide-react'
+import { Zap, Link, Edit2, Check, X, Pin, PinOff } from 'lucide-react'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
-import { OfflineStorage } from '@/lib/offline-storage'
+import { OfflineStorage, getLocalListIds, addLocalListId, removeLocalListId } from '@/lib/offline-storage'
 import { Todo, User } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
@@ -51,6 +51,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [listName, setListName] = useState('')
   const [isEditingListName, setIsEditingListName] = useState(false)
   const [editingListNameValue, setEditingListNameValue] = useState('')
+  
+  // Pin state
+  const [isPinned, setIsPinned] = useState(false)
 
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
@@ -79,6 +82,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
     })
 
     return () => off(listNameRef, 'value', unsubscribe)
+  }, [listId])
+
+  // Check if list is pinned in this browser
+  useEffect(() => {
+    const localLists = getLocalListIds()
+    setIsPinned(localLists.includes(listId))
   }, [listId])
   
   // Use ref to ensure Firebase initialization only runs once (React StrictMode protection)
@@ -491,6 +500,25 @@ export default function TodoApp({ listId }: TodoAppProps) {
       handleCancelEditListName()
     }
   }
+
+  // Pin/Unpin functionality
+  const handleTogglePin = () => {
+    if (isPinned) {
+      removeLocalListId(listId)
+      setIsPinned(false)
+      // Show notification
+      setToastMessage('Liste aus diesem Browser entpinnt')
+      setToastType('info')
+      setToastVisible(true)
+    } else {
+      addLocalListId(listId)
+      setIsPinned(true)
+      // Show notification
+      setToastMessage('Liste in diesem Browser gepinnt')
+      setToastType('success')
+      setToastVisible(true)
+    }
+  }
   
   if (!isAuthReady) {
     return (
@@ -566,6 +594,21 @@ export default function TodoApp({ listId }: TodoAppProps) {
                 userName={userName}
                 onNameChange={setUserName}
               />
+              <button 
+                onClick={handleTogglePin}
+                className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border ${
+                  isPinned 
+                    ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100' 
+                    : 'bg-white text-slate-400 border-gray-200 hover:bg-gray-50 hover:text-slate-600'
+                }`}
+                title={isPinned ? 'Aus diesem Browser entpinnen' : 'In diesem Browser pinnen'}
+              >
+                {isPinned ? (
+                  <Pin className="w-4 h-4" />
+                ) : (
+                  <Pin className="w-4 h-4" />
+                )}
+              </button>
               <button 
                 onClick={copyLinkToClipboard}
                 className="flex items-center space-x-1.5 md:space-x-2 bg-white px-2.5 py-1.5 md:px-4 md:py-2 rounded md:rounded-lg shadow-sm hover:shadow-md transition-shadow text-slate-600 font-semibold border border-gray-200 text-xs md:text-sm"

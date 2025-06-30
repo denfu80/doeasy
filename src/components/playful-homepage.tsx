@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock, X, Edit2, Check } from "lucide-react"
+import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock, X, Edit2, Check, Pin, PinOff } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { generateReadableId } from "@/lib/readable-id-service"
@@ -16,7 +16,7 @@ export default function PlayfulHomepage() {
   const [badgeHovered, setBadgeHovered] = useState(false)
   const [titleHovered, setTitleHovered] = useState(false)
   const [localLists, setLocalLists] = useState<string[]>([])
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [unpinConfirm, setUnpinConfirm] = useState<string | null>(null)
   const [editingList, setEditingList] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [listNames, setListNames] = useState<Record<string, string>>({})
@@ -62,18 +62,18 @@ export default function PlayfulHomepage() {
     router.push(`/list/${listId}`)
   }
 
-  const handleDeleteClick = (listId: string, event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent navigation when deleting
-    if (deleteConfirm === listId) {
-      // Second click - actually delete
+  const handleUnpinClick = (listId: string, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevent navigation when unpinning
+    if (unpinConfirm === listId) {
+      // Second click - actually unpin from this browser
       removeLocalListId(listId)
       setLocalLists(getLocalListIds()) // Refresh the list
-      setDeleteConfirm(null)
+      setUnpinConfirm(null)
     } else {
       // First click - show confirm state
-      setDeleteConfirm(listId)
+      setUnpinConfirm(listId)
       // Auto-reset after 3 seconds
-      setTimeout(() => setDeleteConfirm(null), 3000)
+      setTimeout(() => setUnpinConfirm(null), 3000)
     }
   }
 
@@ -85,7 +85,7 @@ export default function PlayfulHomepage() {
     event.stopPropagation() // Prevent navigation when editing
     setEditingList(listId)
     setEditValue(getListName(listId))
-    setDeleteConfirm(null) // Close delete confirm if open
+    setUnpinConfirm(null) // Close unpin confirm if open
   }
 
   const handleEditSave = async (listId: string, event: React.MouseEvent) => {
@@ -314,9 +314,9 @@ export default function PlayfulHomepage() {
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 -translate-x-6 w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce"></div>
                 
                 <h2 className="text-2xl font-black bg-gradient-to-r from-pink-500 via-purple-600 to-blue-600 bg-clip-text text-transparent inline-block">
-                  ⚡ deine listen
+                  📌 gepinnte listen
                 </h2>
-                <p className="text-sm text-slate-500 mt-2 font-mono">{`// sofort wieder da wo du warst`}</p>
+                <p className="text-sm text-slate-500 mt-2 font-mono">{`// in diesem browser gespeichert`}</p>
               </div>
 
               {/* Floating Memory Cards */}
@@ -380,18 +380,18 @@ export default function PlayfulHomepage() {
                               </button>
                             )}
                             
-                            {/* Delete Button - appears on hover when not editing */}
+                            {/* Unpin Button - appears on hover when not editing */}
                             {editingList !== listId && (
                               <button
-                                onClick={(e) => handleDeleteClick(listId, e)}
+                                onClick={(e) => handleUnpinClick(listId, e)}
                                 className={`w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-md ${
-                                  deleteConfirm === listId 
-                                    ? 'bg-red-500 animate-pulse' 
-                                    : 'bg-red-400 hover:bg-red-500'
+                                  unpinConfirm === listId 
+                                    ? 'bg-orange-500 animate-pulse' 
+                                    : 'bg-orange-400 hover:bg-orange-500'
                                 }`}
-                                title={deleteConfirm === listId ? 'Nochmal klicken zum Löschen' : `"${getListName(listId)}" löschen`}
+                                title={unpinConfirm === listId ? 'Nochmal klicken zum Entpinnen' : `"${getListName(listId)}" aus diesem Browser entpinnen`}
                               >
-                                <X className="w-3 h-3 text-white" />
+                                <PinOff className="w-3 h-3 text-white" />
                               </button>
                             )}
                             
@@ -423,15 +423,15 @@ export default function PlayfulHomepage() {
                           <p className={`text-xs mt-1 font-mono transition-colors duration-300 ${
                             editingList === listId
                               ? 'text-blue-500'
-                              : deleteConfirm === listId 
-                              ? 'text-red-500 animate-pulse' 
+                              : unpinConfirm === listId 
+                              ? 'text-orange-500 animate-pulse' 
                               : 'text-slate-500 group-hover:text-purple-500'
                           }`}>
                             {editingList === listId 
                               ? `// enter = speichern, esc = abbrechen` 
-                              : deleteConfirm === listId 
-                              ? `// nochmal klicken?` 
-                              : `// gespeichert`}
+                              : unpinConfirm === listId 
+                              ? `// nochmal klicken zum entpinnen?` 
+                              : `// in diesem browser gepinnt`}
                           </p>
                         </div>
                       </div>

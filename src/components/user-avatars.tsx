@@ -1,19 +1,23 @@
 import { User } from '@/types/todo'
 import { useState, useRef, useEffect } from 'react'
 import { Check, Edit3 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface UserAvatarsProps {
   users: User[]
   currentUserId?: string
   userName?: string
   onNameChange?: (name: string) => void
+  listId: string
 }
 
-export default function UserAvatars({ users, currentUserId, userName, onNameChange }: UserAvatarsProps) {
+export default function UserAvatars({ users, currentUserId, userName, onNameChange, listId }: UserAvatarsProps) {
+  const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editingName, setEditingName] = useState(userName || '')
   const [, forceUpdate] = useState({})
+  const [clickedUserId, setClickedUserId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -117,6 +121,15 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
       } else if (!isEditing) {
         setIsEditing(true)
       }
+    } else {
+      // Highlight effect for clicked avatar
+      setClickedUserId(user.id)
+      setTimeout(() => setClickedUserId(null), 600)
+      
+      // Navigate to users page after short delay
+      setTimeout(() => {
+        router.push(`/list/${listId}/users`)
+      }, 300)
     }
   }
 
@@ -200,6 +213,8 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
                 userIsOnline ? 'opacity-100' : 'opacity-60'
               } ${
                 isCurrentUser && isExpanded ? 'scale-110 z-50' : ''
+              } ${
+                clickedUserId === user.id ? 'ring-4 ring-purple-400 ring-opacity-75 scale-125 shadow-2xl' : ''
               }`}
               style={{ 
                 backgroundColor: user.color, 
@@ -237,6 +252,7 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
           <span className="text-sm font-bold text-slate-700">+{users.length - 5}</span>
         </div>
       )}
+      
       
     </div>
   )

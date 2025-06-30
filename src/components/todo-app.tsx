@@ -635,6 +635,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
                 currentUserId={user?.uid}
                 userName={userName}
                 onNameChange={setUserName}
+                listId={listId}
               />
               <button 
                 onClick={handleTogglePin}

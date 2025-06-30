@@ -54,6 +54,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   
   // Pin state
   const [isPinned, setIsPinned] = useState(false)
+  const [hasShownPinHint, setHasShownPinHint] = useState(false)
 
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
@@ -84,11 +85,33 @@ export default function TodoApp({ listId }: TodoAppProps) {
     return () => off(listNameRef, 'value', unsubscribe)
   }, [listId])
 
-  // Check if list is pinned in this browser
+  // Check if list is pinned and show pin hint if needed
   useEffect(() => {
     const localLists = getLocalListIds()
-    setIsPinned(localLists.includes(listId))
-  }, [listId])
+    const isListPinned = localLists.includes(listId)
+    setIsPinned(isListPinned)
+    
+    // Check if we should show pin hint
+    const pinHintKey = `pin-hint-shown-${listId}`
+    const hasShownHintBefore = localStorage.getItem(pinHintKey) === 'true'
+    
+    // Show hint if: list is not pinned, user is authenticated, and we haven't shown it before
+    if (!isListPinned && !hasShownHintBefore && isAuthReady) {
+      // Delay to let the UI settle first
+      setTimeout(() => {
+        setToastMessage('💡 Tipp: Pinne diese Liste, um sie schnell wiederzufinden!')
+        setToastType('info')
+        setToastVisible(true)
+        setHasShownPinHint(true)
+        localStorage.setItem(pinHintKey, 'true')
+        
+        // Auto-stop pulsing after 8 seconds
+        setTimeout(() => {
+          setHasShownPinHint(false)
+        }, 8000)
+      }, 0) // Show after 3 seconds
+    }
+  }, [listId, isAuthReady])
   
   // Use ref to ensure Firebase initialization only runs once (React StrictMode protection)
   const firebaseInitialized = useRef(false)
@@ -555,6 +578,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     } else {
       addLocalListId(listId)
       setIsPinned(true)
+      setHasShownPinHint(false) // Stop the pin button animation
       // Show notification
       setToastMessage('Liste in diesem Browser gepinnt')
       setToastType('success')
@@ -643,6 +667,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
                   isPinned 
                     ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100' 
                     : 'bg-white text-slate-400 border-gray-200 hover:bg-gray-50 hover:text-slate-600'
+                } ${
+                  hasShownPinHint && !isPinned ? 'gentle-pulse-animation' : ''
                 }`}
                 title={isPinned ? 'Aus diesem Browser entpinnen' : 'In diesem Browser pinnen'}
               >

@@ -66,6 +66,9 @@
         
         // Presence structure
         "presence": {
+          // Allow all authenticated users to read presence data (for avatars)
+          ".read": "auth != null",
+          
           "$userId": {
             // Users can only write their own presence
             ".write": "auth != null && auth.uid == $userId",

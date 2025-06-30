@@ -238,15 +238,6 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
         </div>
       )}
       
-      {/* User count info */}
-      <div className="ml-3 text-sm text-slate-500 font-medium">
-
-        {users.filter(isOnline).length > 0 && (
-          <span className="text-green-600 ml-1">
-            ({users.filter(isOnline).length} online)
-          </span>
-        )}
-      </div>
     </div>
   )
 }

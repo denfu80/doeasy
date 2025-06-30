@@ -214,26 +214,95 @@ export default function PlayfulHomepage() {
             </Button>
           </div>
 
-          {/* Local Lists Section */}
+          {/* Floating Memory Cards - Local Lists */}
           {localLists.length > 0 && (
-            <div className="mt-12 p-6 bg-white/50 backdrop-blur-md rounded-xl shadow-lg max-w-md mx-auto">
-              <h2 className="text-xl font-bold text-slate-700 mb-4 flex items-center justify-center">
-                <List className="w-6 h-6 mr-2 text-purple-500" />
-                Deine lokalen Listen
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {localLists.map((listId) => (
-                  <Button
-                    key={listId}
-                    variant="outline"
-                    onClick={() => navigateToList(listId)}
-                    className="w-full justify-center text-slate-700 border-purple-300 hover:bg-purple-100 hover:text-purple-700 transition-all duration-200 group"
-                  >
-                    {listId}
-                    <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200" />
-                  </Button>
-                ))}
+            <div className="mt-16 relative">
+              {/* Magic Header with floating particles */}
+              <div className="text-center mb-8 relative">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-pink-400 rounded-full animate-ping opacity-75"></div>
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 translate-x-8 w-1 h-1 bg-purple-400 rounded-full animate-pulse"></div>
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 -translate-x-6 w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce"></div>
+                
+                <h2 className="text-2xl font-black bg-gradient-to-r from-pink-500 via-purple-600 to-blue-600 bg-clip-text text-transparent inline-block">
+                  ⚡ deine listen
+                </h2>
+                <p className="text-sm text-slate-500 mt-2 font-mono">// sofort wieder da wo du warst</p>
               </div>
+
+              {/* Floating Memory Cards */}
+              <div className="flex flex-wrap justify-center gap-4 max-w-2xl mx-auto">
+                {localLists.map((listId, index) => (
+                  <div
+                    key={listId}
+                    className="group relative"
+                    style={{
+                      animationDelay: `${index * 150}ms`,
+                      animation: 'fadeInUp 0.6s ease-out forwards'
+                    }}
+                  >
+                    {/* Memory Card */}
+                    <button
+                      onClick={() => navigateToList(listId)}
+                      className="relative overflow-hidden bg-gradient-to-br from-white via-pink-50 to-purple-50 backdrop-blur-lg rounded-2xl p-4 min-w-[180px] shadow-lg border border-white/20 hover:shadow-2xl hover:scale-105 hover:rotate-1 transition-all duration-500 group-hover:from-pink-100 group-hover:via-purple-100 group-hover:to-blue-100"
+                    >
+                      {/* Floating sparkles */}
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="w-1 h-1 bg-pink-400 rounded-full animate-ping"></div>
+                      </div>
+                      <div className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <div className="w-0.5 h-0.5 bg-purple-400 rounded-full animate-pulse"></div>
+                      </div>
+                      
+                      {/* Gradient border glow */}
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-pink-400 via-purple-500 to-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-sm"></div>
+                      
+                      {/* Content */}
+                      <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-500 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-md group-hover:scale-110 transition-transform duration-300">
+                            {index + 1}
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:text-purple-600 transition-all duration-300" />
+                        </div>
+                        
+                        <div className="text-left">
+                          <p className="font-bold text-slate-700 text-sm leading-tight group-hover:text-purple-700 transition-colors duration-300">
+                            {listId}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1 font-mono group-hover:text-purple-500 transition-colors duration-300">
+                            // gespeichert
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-pink-400/10 via-purple-400/10 to-blue-400/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    </button>
+                    
+                    {/* Magic floating elements around card */}
+                    <div className="absolute -top-1 -left-1 w-2 h-2 bg-pink-300 rounded-full opacity-0 group-hover:opacity-60 group-hover:animate-ping transition-all duration-300"></div>
+                    <div className="absolute -bottom-1 -right-1 w-1.5 h-1.5 bg-blue-300 rounded-full opacity-0 group-hover:opacity-60 group-hover:animate-pulse transition-all duration-500"></div>
+                  </div>
+                ))}
+                
+                {/* Add magical "create new" hint if less than 3 lists */}
+                {localLists.length < 3 && (
+                  <button
+                    onClick={createNewList}
+                    className="flex items-center justify-center min-w-[180px] h-[100px] rounded-2xl border-2 border-dashed border-purple-200 bg-purple-50/50 backdrop-blur-sm hover:border-purple-300 hover:bg-purple-100/50 transition-all duration-300 group cursor-pointer hover:scale-105 hover:rotate-1"
+                  >
+                    <div className="text-center">
+                      <Plus className="w-6 h-6 text-purple-400 mx-auto mb-1 group-hover:scale-125 group-hover:text-purple-600 transition-all duration-300" />
+                      <p className="text-xs text-purple-500 font-mono group-hover:text-purple-700 transition-colors duration-300">
+                        neue liste
+                      </p>
+                    </div>
+                  </button>
+                )}
+              </div>
+              
+              {/* Subtle background glow */}
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-100/20 via-purple-100/20 to-blue-100/20 rounded-3xl blur-3xl -z-10"></div>
             </div>
           )}
 

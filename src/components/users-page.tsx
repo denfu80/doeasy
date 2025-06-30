@@ -43,7 +43,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
 
     const initFirebase = async () => {
       try {
-        if (auth.currentUser) {
+        if (auth && auth.currentUser) {
           setUser(auth.currentUser)
           const savedName = localStorage.getItem('macheinfach-username') || generateFunnyName()
           setUserName(savedName)
@@ -51,14 +51,14 @@ export default function UsersPage({ listId }: UsersPageProps) {
           return null
         }
 
-        const userCredential = await signInAnonymously(auth)
+        const userCredential = await signInAnonymously(auth!)
         setUser(userCredential.user)
         const savedName = localStorage.getItem('macheinfach-username') || generateFunnyName()
         localStorage.setItem('macheinfach-username', savedName)
         setUserName(savedName)
         setIsAuthReady(true)
 
-        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        const unsubscribe = onAuthStateChanged(auth!, (firebaseUser) => {
           if (firebaseUser && firebaseUser.uid !== userCredential.user.uid) {
             setUser(firebaseUser)
           }

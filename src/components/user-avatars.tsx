@@ -13,6 +13,7 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
   const [isExpanded, setIsExpanded] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editingName, setEditingName] = useState(userName || '')
+  const [, forceUpdate] = useState({})
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -26,6 +27,15 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
   useEffect(() => {
     setEditingName(userName || '')
   }, [userName])
+
+  // Update online status indicators every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({})
+    }, 60000) // Update every minute
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Handle click outside to close expanded state
   useEffect(() => {
@@ -67,7 +77,37 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
   }
 
   const isOnline = (user: User) => {
-    return user.onlineAt && typeof user.onlineAt === 'object'
+    // Check if user has active onlineAt timestamp
+    const hasActiveSession = user.onlineAt && typeof user.onlineAt === 'object'
+    if (hasActiveSession) return true
+    
+    // Otherwise check if user was seen in the last 2 minutes
+    const now = Date.now()
+    const lastSeen = user.lastSeen || user.onlineAt
+    const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
+    const timeSinceLastSeen = now - lastSeenTime
+    
+    return timeSinceLastSeen < 2 * 60 * 1000 // 2 minutes
+  }
+
+  const getOfflineTime = (user: User) => {
+    const now = Date.now()
+    const lastSeen = user.lastSeen || user.onlineAt
+    const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
+    const diff = now - lastSeenTime
+    
+    if (diff < 60000) { // < 1 minute
+      return '⚫ Gerade offline'
+    } else if (diff < 3600000) { // < 1 hour
+      const minutes = Math.floor(diff / 60000)
+      return `⚫ Offline seit ${minutes}m`
+    } else if (diff < 86400000) { // < 1 day
+      const hours = Math.floor(diff / 3600000)
+      return `⚫ Offline seit ${hours}h`
+    } else {
+      const days = Math.floor(diff / 86400000)
+      return `⚫ Offline seit ${days}d`
+    }
   }
 
   const handleAvatarClick = (user: User) => {
@@ -166,7 +206,7 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
                 zIndex: isCurrentUser ? (isExpanded ? 50 : 100) : user.zIndex,
                 transform: isCurrentUser && isExpanded ? 'rotate(-360deg)' : 'rotate(0deg)'
               }}
-              title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} ${userIsOnline ? '🟢 Online' : '⚫ Offline'}`}
+              title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} ${userIsOnline ? '🟢 Online' : getOfflineTime(user)}`}
               onClick={() => handleAvatarClick(user)}
             >
               <span className="text-sm font-bold text-white drop-shadow-sm">

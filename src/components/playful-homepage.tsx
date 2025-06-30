@@ -20,22 +20,24 @@ export default function PlayfulHomepage() {
   const [editingList, setEditingList] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [listNames, setListNames] = useState<Record<string, string>>({})
+  const [lastActivity, setLastActivity] = useState<Record<string, {timestamp: number, user: string}>>({})
+  const [, forceUpdate] = useState({})
   const router = useRouter()
 
   useEffect(() => {
     setLocalLists(getLocalListIds())
   }, [])
 
-  // Load list names from Firebase for all local lists
+  // Load list names and activity from Firebase for all local lists
   useEffect(() => {
     if (!isFirebaseConfigured() || !db || localLists.length === 0) return
 
     const unsubscribes: (() => void)[] = []
 
     localLists.forEach(listId => {
+      // Listen to list name changes
       const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
-      
-      const unsubscribe = onValue(listNameRef, (snapshot) => {
+      const nameUnsubscribe = onValue(listNameRef, (snapshot) => {
         const name = snapshot.val()
         setListNames(prev => ({
           ...prev,
@@ -43,13 +45,53 @@ export default function PlayfulHomepage() {
         }))
       })
       
-      unsubscribes.push(() => off(listNameRef, 'value', unsubscribe))
+      // Listen to todos to track last activity
+      const todosRef = ref(db!, `lists/${listId}/todos`)
+      const activityUnsubscribe = onValue(todosRef, (snapshot) => {
+        const data = snapshot.val()
+        if (data) {
+          let latestTimestamp = 0
+          let latestUser = 'Unknown'
+          
+          Object.values(data).forEach((todo: any) => {
+            // Check creation time
+            if (todo.createdAt && typeof todo.createdAt === 'number' && todo.createdAt > latestTimestamp) {
+              latestTimestamp = todo.createdAt
+              latestUser = todo.creatorName || 'Unknown'
+            }
+            // Check modification time (if exists)
+            if (todo.modifiedAt && typeof todo.modifiedAt === 'number' && todo.modifiedAt > latestTimestamp) {
+              latestTimestamp = todo.modifiedAt
+              latestUser = todo.modifiedBy || latestUser
+            }
+          })
+          
+          if (latestTimestamp > 0) {
+            setLastActivity(prev => ({
+              ...prev,
+              [listId]: { timestamp: latestTimestamp, user: latestUser }
+            }))
+          }
+        }
+      })
+      
+      unsubscribes.push(() => off(listNameRef, 'value', nameUnsubscribe))
+      unsubscribes.push(() => off(todosRef, 'value', activityUnsubscribe))
     })
 
     return () => {
       unsubscribes.forEach(unsub => unsub())
     }
   }, [localLists])
+
+  // Update time strings every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({})
+    }, 60000) // Update every minute
+
+    return () => clearInterval(interval)
+  }, [])
 
   const createNewList = () => {
     const listId = generateReadableId()
@@ -79,6 +121,35 @@ export default function PlayfulHomepage() {
 
   const getListName = (listId: string): string => {
     return listNames[listId] || listId
+  }
+
+  const formatLastActivity = (listId: string): string => {
+    const activity = lastActivity[listId]
+    if (!activity) return '// keine aktivität'
+    
+    const now = Date.now()
+    const diff = now - activity.timestamp
+    
+    // Time formatting
+    let timeStr = ''
+    if (diff < 60000) { // < 1 minute
+      timeStr = 'gerade eben'
+    } else if (diff < 3600000) { // < 1 hour
+      const minutes = Math.floor(diff / 60000)
+      timeStr = `vor ${minutes}m`
+    } else if (diff < 86400000) { // < 1 day
+      const hours = Math.floor(diff / 3600000)
+      timeStr = `vor ${hours}h`
+    } else if (diff < 604800000) { // < 1 week
+      const days = Math.floor(diff / 86400000)
+      timeStr = `vor ${days}d`
+    } else {
+      // Format as date
+      const date = new Date(activity.timestamp)
+      timeStr = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+    }
+    
+    return `// ${timeStr} von ${activity.user}`
   }
 
   const handleEditClick = (listId: string, event: React.MouseEvent) => {
@@ -431,7 +502,7 @@ export default function PlayfulHomepage() {
                               ? `// enter = speichern, esc = abbrechen` 
                               : unpinConfirm === listId 
                               ? `// nochmal klicken zum entpinnen?` 
-                              : `// in diesem browser gepinnt`}
+                              : formatLastActivity(listId)}
                           </p>
                         </div>
                       </div>

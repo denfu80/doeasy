@@ -174,19 +174,19 @@ export default function PlayfulHomepage() {
       timeStr = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
     }
     
-    // Action descriptions
+    // Action descriptions with proper German phrasing
     const actionMap = {
-      'created': 'erstellt',
-      'updated': 'bearbeitet', 
-      'completed': 'abgehakt',
-      'uncompleted': 'aktiviert',
-      'deleted': 'gelöscht',
-      'restored': 'wiederhergestellt'
+      'created': 'hat etwas hinzugefügt',
+      'updated': 'hat etwas bearbeitet', 
+      'completed': 'hat etwas abgehakt',
+      'uncompleted': 'hat etwas aktiviert',
+      'deleted': 'hat etwas gelöscht',
+      'restored': 'hat etwas wiederhergestellt'
     }
     
-    const actionText = activity.action ? actionMap[activity.action as keyof typeof actionMap] || 'geändert' : 'geändert'
+    const actionText = activity.action ? actionMap[activity.action as keyof typeof actionMap] || 'hat etwas geändert' : 'hat etwas geändert'
     
-    return `// ${timeStr} ${actionText} von ${activity.user}`
+    return `// ${activity.user} ${actionText} ${timeStr}`
   }
 
   const handleEditClick = (listId: string, event: React.MouseEvent) => {

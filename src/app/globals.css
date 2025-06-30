@@ -79,3 +79,7 @@
     transform: translateY(0) scale(1);
   }
 }
+
+.animate-fadeInUp {
+  animation-name: fadeInUp;
+}

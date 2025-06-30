@@ -250,10 +250,12 @@ export default function PlayfulHomepage() {
                 {localLists.map((listId, index) => (
                   <div
                     key={listId}
-                    className="group relative"
+                    className="group relative animate-fadeInUp"
                     style={{
                       animationDelay: `${index * 150}ms`,
-                      animation: 'fadeInUp 0.6s ease-out forwards'
+                      animationDuration: '0.6s',
+                      animationTimingFunction: 'ease-out',
+                      animationFillMode: 'forwards'
                     }}
                   >
                     {/* Memory Card */}

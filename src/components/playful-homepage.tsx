@@ -172,19 +172,22 @@ export default function PlayfulHomepage() {
       timeStr = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
     }
     
-    // Action descriptions with proper German phrasing
+    // Shortened action descriptions
     const actionMap = {
-      'created': 'hat etwas hinzugefügt',
-      'updated': 'hat etwas bearbeitet', 
-      'completed': 'hat etwas abgehakt',
-      'uncompleted': 'hat etwas aktiviert',
-      'deleted': 'hat etwas gelöscht',
-      'restored': 'hat etwas wiederhergestellt'
+      'created': 'hinzugefügt',
+      'updated': 'bearbeitet', 
+      'completed': 'abgehakt',
+      'uncompleted': 'aktiviert',
+      'deleted': 'gelöscht',
+      'restored': 'wiederhergestellt'
     }
     
-    const actionText = activity.action ? actionMap[activity.action as keyof typeof actionMap] || 'hat etwas geändert' : 'hat etwas geändert'
+    const actionText = activity.action ? actionMap[activity.action as keyof typeof actionMap] || 'geändert' : 'geändert'
     
-    return `// ${activity.user} ${actionText} ${timeStr}`
+    // Shorten user name if too long
+    const shortUser = activity.user.length > 8 ? activity.user.substring(0, 8) + '...' : activity.user
+    
+    return `// ${shortUser} ${actionText} ${timeStr}`
   }
 
   return (

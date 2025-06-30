@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Browser Debug</title>
+    <script type="module">
+        // Import Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
+        import { getDatabase, ref, set, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js';
+
+        // Firebase config from .env.local
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHjnKRY8oiyn2sssaLwwAJJdj1CCNQIdc",
+            authDomain: "doeasy-denfu.firebaseapp.com",
+            databaseURL: "https://doeasy-denfu-default-rtdb.firebaseio.com/",
+            projectId: "doeasy-denfu",
+            storageBucket: "doeasy-denfu.firebasestorage.app",
+            messagingSenderId: "234745300690",
+            appId: "1:234745300690:web:568ad4bbe38ecb16a20f0b"
+        };
+
+        async function debugInBrowser() {
+            console.log('🔥 Firebase Browser Debug - Starting...');
+            
+            try {
+                // Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getDatabase(app);
+                
+                console.log('✅ Firebase initialized successfully');
+                console.log('📊 Project ID:', firebaseConfig.projectId);
+                console.log('🔐 Current user:', auth.currentUser?.uid || 'null');
+                
+                // Try anonymous sign-in
+                console.log('🔐 Attempting anonymous sign-in...');
+                
+                const userCredential = await signInAnonymously(auth);
+                const user = userCredential.user;
+                
+                console.log('✅ Anonymous sign-in successful!');
+                console.log('User ID:', user.uid);
+                console.log('Is anonymous:', user.isAnonymous);
+                
+                // Test presence write with the exact same path pattern as the app
+                console.log('🎯 Testing presence write...');
+                const testListId = 'foo'; // Using the same listId from the error
+                const presenceRef = ref(db, `lists/${testListId}/presence/${user.uid}`);
+                
+                const presenceData = {
+                    name: 'Browser Debug User',
+                    color: '#FF6B6B',
+                    onlineAt: serverTimestamp(),
+                    lastSeen: serverTimestamp(),
+                    isTyping: false,
+                    editingTodoId: null
+                };
+                
+                await set(presenceRef, presenceData);
+                console.log('✅ Presence write successful!');
+                console.log('Written to path:', `lists/${testListId}/presence/${user.uid}`);
+                
+                document.getElementById('result').innerHTML = `
+                    <h2>✅ Firebase Auth Working!</h2>
+                    <p><strong>User ID:</strong> ${user.uid}</p>
+                    <p><strong>Anonymous:</strong> ${user.isAnonymous}</p>
+                    <p><strong>Presence Path:</strong> lists/${testListId}/presence/${user.uid}</p>
+                    <p><strong>Status:</strong> All operations successful</p>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                document.getElementById('result').innerHTML = `
+                    <h2>❌ Error Found!</h2>
+                    <p><strong>Error Code:</strong> ${error.code}</p>
+                    <p><strong>Error Message:</strong> ${error.message}</p>
+                `;
+            }
+        }
+
+        // Run debug on page load
+        window.addEventListener('load', debugInBrowser);
+    </script>
+</head>
+<body>
+    <h1>Firebase Browser Debug</h1>
+    <div id="result">Loading...</div>
+    <p>Check console for detailed logs.</p>
+</body>
+</html>

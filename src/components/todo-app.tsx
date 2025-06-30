@@ -203,17 +203,49 @@ export default function TodoApp({ listId }: TodoAppProps) {
     }
     
     // Function to update presence with current timestamp
-    const updatePresence = () => {
+    const updatePresence = async () => {
       const userPresence = {
         ...baseUserPresence,
         onlineAt: serverTimestamp(),
         lastSeen: serverTimestamp()
       }
-      set(userRef, userPresence)
+      
+      // Debug auth state before write
+      console.log('🔍 DEBUG: Before presence write')
+      console.log('User ID from useEffect:', user.uid)
+      console.log('Current auth.currentUser:', auth?.currentUser?.uid)
+      console.log('UserRef path:', userRef.toString())
+      console.log('Auth state:', {
+        isAnonymous: user.isAnonymous,
+        providerData: user.providerData.length
+      })
+      
+      try {
+        await set(userRef, userPresence)
+        console.log('✅ Presence updated successfully')
+      } catch (error: any) {
+        console.error('❌ Presence update failed:', error.code, error.message)
+        console.error('Error details:', error)
+        
+        // Additional debug info on failure
+        console.log('🔍 DEBUG: On failure')
+        console.log('Auth current user at failure:', auth?.currentUser?.uid)
+        console.log('User from state at failure:', user.uid)
+        console.log('Are they equal?', auth?.currentUser?.uid === user.uid)
+        
+        // Check if we can read the presence path (should work if auth is valid)
+        try {
+          const { get } = await import('firebase/database')
+          const readResult = await get(userRef)
+          console.log('🔍 Can read own presence path:', readResult.exists())
+        } catch (readError: any) {
+          console.log('🔍 Cannot read own presence path:', readError.code)
+        }
+      }
     }
     
-    // Set initial presence
-    updatePresence()
+    // Set initial presence with small delay to ensure auth token is ready
+    setTimeout(updatePresence, 100)
     
     // Set up heartbeat to continuously update presence every 30 seconds
     const heartbeatInterval = setInterval(() => {

@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
+import DebugFirebaseConfig from '@/components/debug-firebase-config'
 
 // Dynamic import with SSR disabled for Firebase Auth compatibility
 const TodoApp = dynamic(() => import('@/components/todo-app'), {
@@ -22,5 +23,10 @@ export default function TodoListPage() {
   const params = useParams()
   const listId = params.id as string
 
-  return <TodoApp listId={listId} />
+  return (
+    <>
+      <TodoApp listId={listId} />
+      <DebugFirebaseConfig />
+    </>
+  )
 }

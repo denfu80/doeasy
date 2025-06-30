@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock, X, Edit2, Check, Pin, PinOff } from "lucide-react"
+import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock, Pin, PinOff } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { generateReadableId } from "@/lib/readable-id-service"
 import { getLocalListIds, addLocalListId, removeLocalListId } from "@/lib/offline-storage"
-import { ref, onValue, off, set } from 'firebase/database'
+import { ref, onValue, off } from 'firebase/database'
 import { db, isFirebaseConfigured } from '@/lib/firebase'
 
 export default function PlayfulHomepage() {
@@ -17,8 +17,6 @@ export default function PlayfulHomepage() {
   const [titleHovered, setTitleHovered] = useState(false)
   const [localLists, setLocalLists] = useState<string[]>([])
   const [unpinConfirm, setUnpinConfirm] = useState<string | null>(null)
-  const [editingList, setEditingList] = useState<string | null>(null)
-  const [editValue, setEditValue] = useState('')
   const [listNames, setListNames] = useState<Record<string, string>>({})
   const [lastActivity, setLastActivity] = useState<Record<string, {timestamp: number, user: string, action?: string}>>({})
   const [, forceUpdate] = useState({})
@@ -187,46 +185,6 @@ export default function PlayfulHomepage() {
     const actionText = activity.action ? actionMap[activity.action as keyof typeof actionMap] || 'hat etwas geändert' : 'hat etwas geändert'
     
     return `// ${activity.user} ${actionText} ${timeStr}`
-  }
-
-  const handleEditClick = (listId: string, event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent navigation when editing
-    setEditingList(listId)
-    setEditValue(getListName(listId))
-    setUnpinConfirm(null) // Close unpin confirm if open
-  }
-
-  const handleEditSave = async (listId: string, event: React.MouseEvent) => {
-    event.stopPropagation()
-    
-    if (!isFirebaseConfigured() || !db) return
-    
-    const newName = editValue.trim()
-    const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
-    
-    if (newName && newName !== listId) {
-      // Save custom name to Firebase
-      await set(listNameRef, newName)
-    } else {
-      // Remove custom name (use listId as default)
-      await set(listNameRef, null)
-    }
-    
-    setEditingList(null)
-    setEditValue('')
-  }
-
-  const handleEditCancel = () => {
-    setEditingList(null)
-    setEditValue('')
-  }
-
-  const handleKeyPress = (event: React.KeyboardEvent, listId: string) => {
-    if (event.key === 'Enter') {
-      handleEditSave(listId, event as any)
-    } else if (event.key === 'Escape') {
-      handleEditCancel()
-    }
   }
 
   return (
@@ -442,10 +400,8 @@ export default function PlayfulHomepage() {
                   >
                     {/* Memory Card */}
                     <div
-                      className={`relative overflow-hidden bg-gradient-to-br from-white via-pink-50 to-purple-50 backdrop-blur-lg rounded-2xl p-4 min-w-[180px] shadow-lg border border-white/20 hover:shadow-2xl hover:scale-105 hover:rotate-1 transition-all duration-500 group-hover:from-pink-100 group-hover:via-purple-100 group-hover:to-blue-100 ${
-                        editingList === listId ? 'cursor-default' : 'cursor-pointer'
-                      }`}
-                      onClick={() => editingList !== listId && navigateToList(listId)}
+                      className="relative overflow-hidden bg-gradient-to-br from-white via-pink-50 to-purple-50 backdrop-blur-lg rounded-2xl p-4 min-w-[180px] shadow-lg border border-white/20 hover:shadow-2xl hover:scale-105 hover:rotate-1 transition-all duration-500 group-hover:from-pink-100 group-hover:via-purple-100 group-hover:to-blue-100 cursor-pointer"
+                      onClick={() => navigateToList(listId)}
                     >
                       {/* Floating sparkles */}
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -466,78 +422,36 @@ export default function PlayfulHomepage() {
                           </div>
                           
                           <div className="flex items-center space-x-1">
-                            {/* Edit Button - appears on hover when not editing */}
-                            {editingList !== listId && (
-                              <button
-                                onClick={(e) => handleEditClick(listId, e)}
-                                className="w-6 h-6 bg-blue-400 hover:bg-blue-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-md"
-                                title={`"${getListName(listId)}" umbenennen`}
-                              >
-                                <Edit2 className="w-3 h-3 text-white" />
-                              </button>
-                            )}
+                            {/* Unpin Button - appears on hover */}
+                            <button
+                              onClick={(e) => handleUnpinClick(listId, e)}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-md ${
+                                unpinConfirm === listId 
+                                  ? 'bg-orange-500 animate-pulse' 
+                                  : 'bg-orange-400 hover:bg-orange-500'
+                              }`}
+                              title={unpinConfirm === listId ? 'Nochmal klicken zum Entpinnen' : `"${getListName(listId)}" aus diesem Browser entpinnen`}
+                            >
+                              <PinOff className="w-3 h-3 text-white" />
+                            </button>
                             
-                            {/* Save Button - appears when editing */}
-                            {editingList === listId && (
-                              <button
-                                onClick={(e) => handleEditSave(listId, e)}
-                                className="w-6 h-6 bg-green-400 hover:bg-green-500 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 shadow-md"
-                                title="Speichern"
-                              >
-                                <Check className="w-3 h-3 text-white" />
-                              </button>
-                            )}
-                            
-                            {/* Unpin Button - appears on hover when not editing */}
-                            {editingList !== listId && (
-                              <button
-                                onClick={(e) => handleUnpinClick(listId, e)}
-                                className={`w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-md ${
-                                  unpinConfirm === listId 
-                                    ? 'bg-orange-500 animate-pulse' 
-                                    : 'bg-orange-400 hover:bg-orange-500'
-                                }`}
-                                title={unpinConfirm === listId ? 'Nochmal klicken zum Entpinnen' : `"${getListName(listId)}" aus diesem Browser entpinnen`}
-                              >
-                                <PinOff className="w-3 h-3 text-white" />
-                              </button>
-                            )}
-                            
-                            {/* Arrow - shows when not hovering buttons and not editing */}
-                            {editingList !== listId && (
-                              <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:text-purple-600 transition-all duration-300" />
-                            )}
+                            {/* Arrow - shows when not hovering buttons */}
+                            <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:text-purple-600 transition-all duration-300" />
                           </div>
                         </div>
                         
                         <div className="text-left">
-                          {/* Editable List Name */}
-                          {editingList === listId ? (
-                            <input
-                              type="text"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={(e) => handleKeyPress(e, listId)}
-                              onBlur={handleEditCancel}
-                              className="font-bold text-slate-700 text-sm leading-tight bg-white/80 border border-purple-300 rounded px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
-                              autoFocus
-                            />
-                          ) : (
-                            <p className="font-bold text-slate-700 text-sm leading-tight group-hover:text-purple-700 transition-colors duration-300">
-                              {getListName(listId)}
-                            </p>
-                          )}
+                          {/* List Name - read only */}
+                          <p className="font-bold text-slate-700 text-sm leading-tight group-hover:text-purple-700 transition-colors duration-300">
+                            {getListName(listId)}
+                          </p>
                           
                           <p className={`text-xs mt-1 font-mono transition-colors duration-300 ${
-                            editingList === listId
-                              ? 'text-blue-500'
-                              : unpinConfirm === listId 
+                            unpinConfirm === listId 
                               ? 'text-orange-500 animate-pulse' 
                               : 'text-slate-500 group-hover:text-purple-500'
                           }`}>
-                            {editingList === listId 
-                              ? `// enter = speichern, esc = abbrechen` 
-                              : unpinConfirm === listId 
+                            {unpinConfirm === listId 
                               ? `// nochmal klicken zum entpinnen?` 
                               : formatLastActivity(listId)}
                           </p>

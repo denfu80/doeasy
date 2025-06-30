@@ -83,7 +83,14 @@
         
         // List metadata (optional)
         "metadata": {
-          ".validate": "newData.hasChildren(['title', 'createdAt', 'createdBy'])",
+          // Allow read/write access to any authenticated user
+          ".read": "auth != null",
+          ".write": "auth != null",
+          
+          // Allow flexible metadata structure - name field is optional
+          "name": {
+            ".validate": "(newData.isString() && newData.val().length > 0 && newData.val().length <= 100) || newData.val() == null"
+          },
           "title": {
             ".validate": "newData.isString() && newData.val().length <= 100"
           },
@@ -98,11 +105,6 @@
           },
           "isPublic": {
             ".validate": "newData.isBoolean()"
-          },
-          
-          // Prevent additional fields
-          "$other": {
-            ".validate": false
           }
         },
         

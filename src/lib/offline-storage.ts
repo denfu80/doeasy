@@ -169,6 +169,7 @@ export const setGlobalUsername = (name: string): void => {
 }
 
 const LOCAL_LIST_IDS_KEY = `${STORAGE_PREFIX}-localListIds`;
+const LOCAL_LIST_NAMES_KEY = `${STORAGE_PREFIX}-localListNames`;
 
 export const getLocalListIds = (): string[] => {
   try {
@@ -178,6 +179,32 @@ export const getLocalListIds = (): string[] => {
     console.error('❌ Failed to load local list IDs from localStorage:', error);
     return [];
   }
+};
+
+export const getLocalListNames = (): Record<string, string> => {
+  try {
+    const stored = localStorage.getItem(LOCAL_LIST_NAMES_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch (error) {
+    console.error('❌ Failed to load local list names from localStorage:', error);
+    return {};
+  }
+};
+
+export const setLocalListName = (listId: string, name: string): void => {
+  try {
+    const currentNames = getLocalListNames();
+    currentNames[listId] = name;
+    localStorage.setItem(LOCAL_LIST_NAMES_KEY, JSON.stringify(currentNames));
+    console.log(`💾 Set list name for ${listId}: ${name}`);
+  } catch (error) {
+    console.error('❌ Failed to save local list name to localStorage:', error);
+  }
+};
+
+export const getLocalListName = (listId: string): string => {
+  const names = getLocalListNames();
+  return names[listId] || listId; // Fallback to listId if no name set
 };
 
 export const addLocalListId = (listId: string): void => {

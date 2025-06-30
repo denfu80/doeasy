@@ -16,7 +16,7 @@ import {
   set,
   off
 } from 'firebase/database'
-import { Zap, Link } from 'lucide-react'
+import { Zap, Link, Edit2, Check, X } from 'lucide-react'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
@@ -46,6 +46,11 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [copied, setCopied] = useState(false)
   const [userName, _setUserName] = useState('') // Renamed state setter
   const [firebaseStatus, setFirebaseStatus] = useState<string>('initializing')
+  
+  // List name editing state
+  const [listName, setListName] = useState('')
+  const [isEditingListName, setIsEditingListName] = useState(false)
+  const [editingListNameValue, setEditingListNameValue] = useState('')
 
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
@@ -61,6 +66,20 @@ export default function TodoApp({ listId }: TodoAppProps) {
   
   // Initialize offline storage
   const offlineStorage = new OfflineStorage(listId)
+  
+  // Load list name from Firebase
+  useEffect(() => {
+    if (!isFirebaseConfigured() || !db) return
+
+    const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
+    
+    const unsubscribe = onValue(listNameRef, (snapshot) => {
+      const name = snapshot.val()
+      setListName(name || listId) // Fallback to listId if no name set
+    })
+
+    return () => off(listNameRef, 'value', unsubscribe)
+  }, [listId])
   
   // Use ref to ensure Firebase initialization only runs once (React StrictMode protection)
   const firebaseInitialized = useRef(false)
@@ -435,6 +454,43 @@ export default function TodoApp({ listId }: TodoAppProps) {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  // List name editing functions
+  const handleEditListName = () => {
+    setIsEditingListName(true)
+    setEditingListNameValue(listName)
+  }
+
+  const handleSaveListName = async () => {
+    if (!isFirebaseConfigured() || !db) return
+    
+    const newName = editingListNameValue.trim()
+    const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
+    
+    if (newName && newName !== listId) {
+      // Save custom name to Firebase
+      await set(listNameRef, newName)
+    } else {
+      // Remove custom name (use listId as default)
+      await set(listNameRef, null)
+    }
+    
+    setIsEditingListName(false)
+    setEditingListNameValue('')
+  }
+
+  const handleCancelEditListName = () => {
+    setIsEditingListName(false)
+    setEditingListNameValue('')
+  }
+
+  const handleListNameKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveListName()
+    } else if (e.key === 'Escape') {
+      handleCancelEditListName()
+    }
+  }
   
   if (!isAuthReady) {
     return (
@@ -457,9 +513,51 @@ export default function TodoApp({ listId }: TodoAppProps) {
               <div className="w-7 h-7 md:w-10 md:h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded md:rounded-lg flex items-center justify-center shadow-md">
                 <Zap className="w-4 h-4 md:w-6 md:h-6 text-white" />
               </div>
-              <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">
-                mach<span className="text-pink-500">.</span>einfach
-              </h1>
+              <div className="flex flex-col">
+                <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">
+                  mach<span className="text-pink-500">.</span>einfach
+                </h1>
+                <div className="flex items-center space-x-2 mt-1">
+                  {isEditingListName ? (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={editingListNameValue}
+                        onChange={(e) => setEditingListNameValue(e.target.value)}
+                        onKeyDown={handleListNameKeyPress}
+                        onBlur={handleCancelEditListName}
+                        className="bg-white/80 border border-purple-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent min-w-[200px]"
+                        placeholder="Listenname eingeben..."
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleSaveListName}
+                        className="w-6 h-6 bg-green-400 hover:bg-green-500 rounded-full flex items-center justify-center transition-colors duration-200"
+                        title="Speichern"
+                      >
+                        <Check className="w-3 h-3 text-white" />
+                      </button>
+                      <button
+                        onClick={handleCancelEditListName}
+                        className="w-6 h-6 bg-gray-400 hover:bg-gray-500 rounded-full flex items-center justify-center transition-colors duration-200"
+                        title="Abbrechen"
+                      >
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2 group cursor-pointer" onClick={handleEditListName}>
+                      <span className="text-sm md:text-base text-purple-600 font-bold group-hover:text-purple-700 transition-colors duration-200">
+                        {listName}
+                      </span>
+                      <Edit2 className="w-4 h-4 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    </div>
+                  )}
+                  <p className="text-xs text-slate-400 font-mono hidden sm:block">
+                    {isEditingListName ? '// enter = speichern, esc = abbrechen' : '// zum bearbeiten klicken'}
+                  </p>
+                </div>
+              </div>
             </div>
             <div className="flex items-center space-x-2 md:space-x-4">
               <UserAvatars 

@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock, List } from "lucide-react"
+import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { generateReadableId } from "@/lib/readable-id-service"
-import { getLocalListIds, addLocalListId } from "@/lib/offline-storage"
+import { getLocalListIds, addLocalListId, removeLocalListId } from "@/lib/offline-storage"
 
 export default function PlayfulHomepage() {
   const [isHovered, setIsHovered] = useState(false)
@@ -14,6 +14,7 @@ export default function PlayfulHomepage() {
   const [badgeHovered, setBadgeHovered] = useState(false)
   const [titleHovered, setTitleHovered] = useState(false)
   const [localLists, setLocalLists] = useState<string[]>([])
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -29,6 +30,21 @@ export default function PlayfulHomepage() {
   const navigateToList = (listId: string) => {
     addLocalListId(listId) // Ensure it's tracked if accessed directly or from a shared link previously
     router.push(`/list/${listId}`)
+  }
+
+  const handleDeleteClick = (listId: string, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevent navigation when deleting
+    if (deleteConfirm === listId) {
+      // Second click - actually delete
+      removeLocalListId(listId)
+      setLocalLists(getLocalListIds()) // Refresh the list
+      setDeleteConfirm(null)
+    } else {
+      // First click - show confirm state
+      setDeleteConfirm(listId)
+      // Auto-reset after 3 seconds
+      setTimeout(() => setDeleteConfirm(null), 3000)
+    }
   }
 
   return (
@@ -226,7 +242,7 @@ export default function PlayfulHomepage() {
                 <h2 className="text-2xl font-black bg-gradient-to-r from-pink-500 via-purple-600 to-blue-600 bg-clip-text text-transparent inline-block">
                   ⚡ deine listen
                 </h2>
-                <p className="text-sm text-slate-500 mt-2 font-mono">// sofort wieder da wo du warst</p>
+                <p className="text-sm text-slate-500 mt-2 font-mono">{`// sofort wieder da wo du warst`}</p>
               </div>
 
               {/* Floating Memory Cards */}
@@ -241,9 +257,9 @@ export default function PlayfulHomepage() {
                     }}
                   >
                     {/* Memory Card */}
-                    <button
+                    <div
+                      className="relative overflow-hidden bg-gradient-to-br from-white via-pink-50 to-purple-50 backdrop-blur-lg rounded-2xl p-4 min-w-[180px] shadow-lg border border-white/20 hover:shadow-2xl hover:scale-105 hover:rotate-1 transition-all duration-500 group-hover:from-pink-100 group-hover:via-purple-100 group-hover:to-blue-100 cursor-pointer"
                       onClick={() => navigateToList(listId)}
-                      className="relative overflow-hidden bg-gradient-to-br from-white via-pink-50 to-purple-50 backdrop-blur-lg rounded-2xl p-4 min-w-[180px] shadow-lg border border-white/20 hover:shadow-2xl hover:scale-105 hover:rotate-1 transition-all duration-500 group-hover:from-pink-100 group-hover:via-purple-100 group-hover:to-blue-100"
                     >
                       {/* Floating sparkles */}
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -262,22 +278,43 @@ export default function PlayfulHomepage() {
                           <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-500 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-md group-hover:scale-110 transition-transform duration-300">
                             {index + 1}
                           </div>
-                          <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:text-purple-600 transition-all duration-300" />
+                          
+                          <div className="flex items-center space-x-1">
+                            {/* Delete Button - appears on hover */}
+                            <button
+                              onClick={(e) => handleDeleteClick(listId, e)}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-md ${
+                                deleteConfirm === listId 
+                                  ? 'bg-red-500 animate-pulse' 
+                                  : 'bg-red-400 hover:bg-red-500'
+                              }`}
+                              title={deleteConfirm === listId ? 'Nochmal klicken zum Löschen' : `"${listId}" löschen`}
+                            >
+                              <X className="w-3 h-3 text-white" />
+                            </button>
+                            
+                            {/* Arrow - shows when not hovering delete */}
+                            <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:text-purple-600 transition-all duration-300" />
+                          </div>
                         </div>
                         
                         <div className="text-left">
                           <p className="font-bold text-slate-700 text-sm leading-tight group-hover:text-purple-700 transition-colors duration-300">
                             {listId}
                           </p>
-                          <p className="text-xs text-slate-500 mt-1 font-mono group-hover:text-purple-500 transition-colors duration-300">
-                            // gespeichert
+                          <p className={`text-xs mt-1 font-mono transition-colors duration-300 ${
+                            deleteConfirm === listId 
+                              ? 'text-red-500 animate-pulse' 
+                              : 'text-slate-500 group-hover:text-purple-500'
+                          }`}>
+                            {deleteConfirm === listId ? `// nochmal klicken?` : `// gespeichert`}
                           </p>
                         </div>
                       </div>
                       
                       {/* Hover overlay */}
                       <div className="absolute inset-0 bg-gradient-to-br from-pink-400/10 via-purple-400/10 to-blue-400/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </button>
+                    </div>
                     
                     {/* Magic floating elements around card */}
                     <div className="absolute -top-1 -left-1 w-2 h-2 bg-pink-300 rounded-full opacity-0 group-hover:opacity-60 group-hover:animate-ping transition-all duration-300"></div>

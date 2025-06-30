@@ -1,4 +1,4 @@
-import { ref, push, onValue, off, set } from 'firebase/database'
+import { ref, onValue, off, set } from 'firebase/database'
 import { db, isFirebaseConfigured } from './firebase'
 
 export interface RealtimeTestResult {

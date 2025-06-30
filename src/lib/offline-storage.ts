@@ -1,4 +1,4 @@
-import { Todo, User } from '@/types/todo'
+import { Todo } from '@/types/todo'
 
 const STORAGE_PREFIX = 'macheinfach'
 const STORAGE_VERSION = '1.0'

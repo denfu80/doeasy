@@ -79,7 +79,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       return
     }
     
-    const showFirebaseError = (reason: string, error?: any) => {
+    const showFirebaseError = (reason: string, error?: unknown) => {
       console.error('❌ Firebase fehlt:', reason, error)
       setFirebaseStatus(`error: ${reason}`)
       // Zeige Fehlermeldung aber lade nicht die App
@@ -314,19 +314,15 @@ export default function TodoApp({ listId }: TodoAppProps) {
         setDeletedTodos([])
         console.log(`📝 No todos found for list ${listId}`)
       }
-    }, (error: any) => {
+    }, (error: unknown) => {
       console.error('❌ Error loading todos:', error)
-      setFirebaseStatus(`error: ${error.code || error.message || 'database-read-failed'}`)
+      const errorMessage = error instanceof Error ? error.message : 'database-read-failed'
+      setFirebaseStatus(`error: ${errorMessage}`)
     })
 
     return () => off(todosRef, 'value', unsubscribe)
   }, [isAuthReady, user, listId])
 
-  // Helper function to save todos locally as backup
-  const saveTodosToStorage = (updatedTodos: Todo[]) => {
-    offlineStorage.saveTodos(updatedTodos)
-    setTodos(updatedTodos)
-  }
 
   // CRUD Functions
   const handleAddTodo = async (text: string) => {

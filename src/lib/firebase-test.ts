@@ -1,6 +1,6 @@
 import { auth, db, isFirebaseConfigured } from './firebase'
 import { signInAnonymously } from 'firebase/auth'
-import { ref, set, get, onValue, off } from 'firebase/database'
+import { ref, set, get } from 'firebase/database'
 
 export async function testFirebaseConnection() {
   const results = {

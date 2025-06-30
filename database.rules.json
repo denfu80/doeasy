@@ -12,8 +12,7 @@
         // Todos structure
         "todos": {
           "$todoId": {
-            // Validate todo structure - allow soft delete fields
-            ".validate": "newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName']) || (newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName', 'deletedAt']) && newData.child('deletedAt').val() != null) || (newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName', 'deletedBy']) && newData.child('deletedBy').val() != null) || (newData.hasChildren(['text', 'completed', 'createdAt', 'createdBy', 'creatorName', 'deletedAt', 'deletedBy']) && newData.child('deletedAt').val() != null && newData.child('deletedBy').val() != null)",
+            // Allow flexible todo structure with activity tracking fields
             
             // Todo fields validation
             "text": {
@@ -35,6 +34,26 @@
               ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
             },
             "deletedBy": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            
+            // Activity tracking fields
+            "completedAt": {
+              ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
+            },
+            "completedBy": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
+            },
+            "updatedBy": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+            },
+            "restoredAt": {
+              ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
+            },
+            "restoredBy": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
             },
             

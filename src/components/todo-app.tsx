@@ -370,14 +370,22 @@ export default function TodoApp({ listId }: TodoAppProps) {
     if (!isFirebaseConfigured() || !db) return
 
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
-    await update(todoRef, { completed })
+    await update(todoRef, { 
+      completed,
+      completedAt: serverTimestamp(),
+      completedBy: userName || 'Unknown'
+    })
   }
   
   const handleUpdateTodo = async (id: string, text: string) => {
     if (!isFirebaseConfigured() || !db) return
 
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
-    await update(todoRef, { text })
+    await update(todoRef, { 
+      text,
+      updatedAt: serverTimestamp(),
+      updatedBy: userName || 'Unknown'
+    })
   }
 
   const handleDeleteTodo = async (id: string) => {
@@ -409,7 +417,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
     await update(todoRef, { 
       deletedAt: null,
-      deletedBy: null
+      deletedBy: null,
+      restoredAt: serverTimestamp(),
+      restoredBy: userName || 'Unknown'
     })
   }
 

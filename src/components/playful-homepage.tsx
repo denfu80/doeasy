@@ -20,7 +20,7 @@ export default function PlayfulHomepage() {
   const [editingList, setEditingList] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [listNames, setListNames] = useState<Record<string, string>>({})
-  const [lastActivity, setLastActivity] = useState<Record<string, {timestamp: number, user: string}>>({})
+  const [lastActivity, setLastActivity] = useState<Record<string, {timestamp: number, user: string, action?: string}>>({})
   const [, forceUpdate] = useState({})
   const router = useRouter()
 
@@ -52,24 +52,49 @@ export default function PlayfulHomepage() {
         if (data) {
           let latestTimestamp = 0
           let latestUser = 'Unknown'
+          let latestAction = 'created'
           
           Object.values(data).forEach((todo: any) => {
             // Check creation time
             if (todo.createdAt && typeof todo.createdAt === 'number' && todo.createdAt > latestTimestamp) {
               latestTimestamp = todo.createdAt
               latestUser = todo.creatorName || 'Unknown'
+              latestAction = 'created'
             }
-            // Check modification time (if exists)
-            if (todo.modifiedAt && typeof todo.modifiedAt === 'number' && todo.modifiedAt > latestTimestamp) {
-              latestTimestamp = todo.modifiedAt
-              latestUser = todo.modifiedBy || latestUser
+            
+            // Check completion toggle (when completed timestamp exists)
+            if (todo.completedAt && typeof todo.completedAt === 'number' && todo.completedAt > latestTimestamp) {
+              latestTimestamp = todo.completedAt
+              latestUser = todo.completedBy || latestUser
+              latestAction = todo.completed ? 'completed' : 'uncompleted'
+            }
+            
+            // Check text updates (when updatedAt exists)
+            if (todo.updatedAt && typeof todo.updatedAt === 'number' && todo.updatedAt > latestTimestamp) {
+              latestTimestamp = todo.updatedAt
+              latestUser = todo.updatedBy || latestUser
+              latestAction = 'updated'
+            }
+            
+            // Check deletion (when deletedAt exists)
+            if (todo.deletedAt && typeof todo.deletedAt === 'number' && todo.deletedAt > latestTimestamp) {
+              latestTimestamp = todo.deletedAt
+              latestUser = todo.deletedBy || latestUser
+              latestAction = 'deleted'
+            }
+            
+            // Check restoration (when restoredAt exists)
+            if (todo.restoredAt && typeof todo.restoredAt === 'number' && todo.restoredAt > latestTimestamp) {
+              latestTimestamp = todo.restoredAt
+              latestUser = todo.restoredBy || latestUser
+              latestAction = 'restored'
             }
           })
           
           if (latestTimestamp > 0) {
             setLastActivity(prev => ({
               ...prev,
-              [listId]: { timestamp: latestTimestamp, user: latestUser }
+              [listId]: { timestamp: latestTimestamp, user: latestUser, action: latestAction }
             }))
           }
         }
@@ -149,7 +174,19 @@ export default function PlayfulHomepage() {
       timeStr = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
     }
     
-    return `// ${timeStr} von ${activity.user}`
+    // Action descriptions
+    const actionMap = {
+      'created': 'erstellt',
+      'updated': 'bearbeitet', 
+      'completed': 'abgehakt',
+      'uncompleted': 'aktiviert',
+      'deleted': 'gelöscht',
+      'restored': 'wiederhergestellt'
+    }
+    
+    const actionText = activity.action ? actionMap[activity.action as keyof typeof actionMap] || 'geändert' : 'geändert'
+    
+    return `// ${timeStr} ${actionText} von ${activity.user}`
   }
 
   const handleEditClick = (listId: string, event: React.MouseEvent) => {

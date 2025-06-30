@@ -680,11 +680,14 @@ export default function TodoApp({ listId }: TodoAppProps) {
               </button>
               <button 
                 onClick={copyLinkToClipboard}
-                className="flex items-center space-x-1.5 md:space-x-2 bg-white px-2.5 py-1.5 md:px-4 md:py-2 rounded md:rounded-lg shadow-sm hover:shadow-md transition-shadow text-slate-600 font-semibold border border-gray-200 text-xs md:text-sm"
+                className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border ${
+                  copied 
+                    ? 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100' 
+                    : 'bg-white text-blue-500 border-gray-200 hover:bg-blue-50'
+                }`}
+                title={copied ? 'Link kopiert!' : 'Link teilen'}
               >
-                <Link className="w-4 h-4 md:w-5 md:h-5 text-blue-500"/>
-                <span className="hidden sm:inline">{copied ? 'Kopiert!' : 'Teilen'}</span>
-                <span className="sm:hidden">📋</span>
+                <Link className="w-4 h-4" />
               </button>
             </div>
           </div>

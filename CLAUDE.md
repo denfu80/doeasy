@@ -132,10 +132,14 @@ NEXT_PUBLIC_HOMEPAGE_STYLE=terminal
 
 ## Firebase Integration
 
-- Use Firebase Realtime Database for real-time todo synchronization
-- Implement optimistic updates for better UX
-- Handle offline scenarios gracefully
-- Use unique list IDs for multi-user access
+**⚠️ Firebase is required for the app to function.** No demo mode is available.
+
+- Firebase Realtime Database for real-time todo synchronization
+- Firebase Anonymous Authentication with SSR-safe implementation
+- Direct signInAnonymously() without onAuthStateChanged delays
+- Dynamic import with ssr: false to avoid Next.js SSR conflicts
+- localStorage as backup system for data safety
+- Human-readable list IDs using human-id package for better UX
 
 ## Current Setup Status
 
@@ -154,7 +158,9 @@ NEXT_PUBLIC_HOMEPAGE_STYLE=terminal
 - **Toast notification system** with undo options
 - **Expandable avatar system** for name editing
 - **Dual design system** (playful + terminal)
-- **Offline support** with localStorage fallback
+- **Human-readable list IDs** using human-id package
+- **Firebase Auth with SSR-safe implementation** (no demo mode)
+- **Backup system** with localStorage for data safety
 - **Comprehensive user stories** and documentation
 
 🎯 **Production Ready:**

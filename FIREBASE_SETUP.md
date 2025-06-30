@@ -58,7 +58,7 @@ npm run dev
 ## ✅ Verification
 
 Wenn alles korrekt konfiguriert ist:
-- ✅ Keine "Demo Modus" Warnung
+- ✅ App lädt sofort ohne Fehlermeldungen
 - ✅ Real-time Synchronisation zwischen Browser-Tabs
 - ✅ User Presence (farbige Avatars) wird angezeigt
 - ✅ Todos werden in Firebase gespeichert
@@ -73,10 +73,11 @@ Wenn alles korrekt konfiguriert ist:
 - Realtime Database Rules sind zu restriktiv
 - Setze für Development die oben genannten Test-Rules
 
-### Demo Modus bleibt aktiv
+### App zeigt Firebase-Fehler
 - Überprüfe alle Environment Variables in `.env.local`
 - Development Server neu starten (`npm run dev`)
 - Browser Cache leeren
+- Anonymous Authentication in Firebase Console aktiviert?
 
 ## 📊 Database Structure
 

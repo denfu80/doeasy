@@ -13,7 +13,7 @@ mach.einfach ist eine moderne, echtzeitfähige Todo-App, die es Teams ermöglich
 - **🎨 Dual Design System** - Playful & Terminal-Style verfügbar
 - **📱 Mobile-First** - Perfekt optimiert für alle Geräte
 - **🗂️ Smart Mülleimer** - Todos wiederherstellen statt verlieren
-- **🔄 Offline-Support** - Funktioniert auch ohne Internet
+- **🔄 Backup-System** - Automatische lokale Sicherung der Daten
 - **🔗 Einfaches Teilen** - Ein Link, alle können mitmachen
 
 ## 🛠️ Tech Stack
@@ -31,7 +31,7 @@ mach.einfach ist eine moderne, echtzeitfähige Todo-App, die es Teams ermöglich
 
 - Node.js 18+ 
 - npm oder yarn
-- Firebase-Projekt (optional für Entwicklung)
+- Firebase-Projekt (erforderlich für Kollaboration)
 
 ### Installation
 
@@ -49,9 +49,9 @@ npm run dev
 
 Die App läuft dann unter `http://localhost:3000`
 
-### Firebase Setup (Optional)
+### Firebase Setup (Erforderlich)
 
-Für Produktionsumgebung oder Real-time Features:
+Für Real-time Kollaboration:
 
 1. Firebase-Projekt erstellen: https://console.firebase.google.com
 2. Realtime Database aktivieren
@@ -74,7 +74,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abcdef
 npm run firebase:deploy:rules
 ```
 
-Ohne Firebase läuft die App automatisch im **Demo-Modus** mit localStorage.
+**Firebase ist erforderlich** für echte Kollaboration. Ohne Firebase zeigt die App eine Fehlermeldung.
 
 ## 🎨 Design-Modi
 
@@ -183,7 +183,7 @@ src/
 - **shadcn/ui** als Basis für UI-Komponenten
 - **Tailwind CSS** für Styling
 - **Firebase Realtime Database** für Echtzeitdaten
-- **localStorage** als Offline-Fallback
+- **localStorage** als Backup-System
 
 ## 🚀 Deployment
 
@@ -256,7 +256,7 @@ Contributions sind willkommen!
 - Follow existing code style
 - Add TypeScript types for new features
 - Update documentation for user-facing changes
-- Test features in both Firebase and Demo mode
+- Test features with Firebase configuration
 
 ## 📄 Lizenz
 

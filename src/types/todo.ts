@@ -19,3 +19,40 @@ export interface User {
   editingTodoId?: string // Which todo is being edited
   zIndex?: number
 }
+
+export interface Admin {
+  uid: string
+  name: string
+  claimedAt: number | object
+  isLocallyStored: boolean
+}
+
+export interface PasswordSettings {
+  adminPassword?: string
+  normalPassword?: string
+  guestPassword?: string
+  enabledModes?: {
+    adminPasswordEnabled: boolean
+    normalPasswordEnabled: boolean
+    guestPasswordEnabled: boolean
+  }
+}
+
+export interface GuestLink {
+  id: string
+  createdBy: string
+  createdAt: number | object
+  revoked?: boolean
+  revokedAt?: number | object | null
+  revokedBy?: string | null
+}
+
+export type UserRole = 'admin' | 'normal' | 'guest'
+
+export interface ListPermissions {
+  canRead: boolean
+  canWrite: boolean
+  canDelete: boolean
+  canManageUsers: boolean
+  canManageSettings: boolean
+}

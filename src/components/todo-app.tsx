@@ -21,7 +21,7 @@ import { Zap, Link, Edit2, Check, X, Pin, PinOff } from 'lucide-react'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { OfflineStorage, getLocalListIds, addLocalListId, removeLocalListId } from '@/lib/offline-storage'
-import { Todo, User } from '@/types/todo'
+import { Todo, User, Admin, GuestLink, UserRole, PasswordSettings } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
@@ -29,6 +29,7 @@ import TodoList from './todo-list'
 import DebugPanel from './debug-panel'
 import DeletedTodosTrash from './deleted-todos-trash'
 import ToastNotification from './toast-notification'
+import SharingModal from './sharing-modal'
 
 interface TodoAppProps {
   listId: string
@@ -43,7 +44,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [todos, setTodos] = useState<Todo[]>([])
   const [deletedTodos, setDeletedTodos] = useState<Todo[]>([])
   const [users, setUsers] = useState<User[]>([])
-  const [copied, setCopied] = useState(false)
+  // Remove unused copied state since we're using sharing modal instead
   const [userName, _setUserName] = useState('') // Renamed state setter
   const [firebaseStatus, setFirebaseStatus] = useState<string>('initializing')
   
@@ -55,6 +56,19 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // Pin state
   const [isPinned, setIsPinned] = useState(false)
   const [hasShownPinHint, setHasShownPinHint] = useState(false)
+  
+  // Sharing state
+  const [showSharingModal, setShowSharingModal] = useState(false)
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('normal')
+  const [admins, setAdmins] = useState<Admin[]>([])
+  const [guestLinks, setGuestLinks] = useState<GuestLink[]>([])
+  const [passwordSettings, setPasswordSettings] = useState<PasswordSettings>({
+    enabledModes: {
+      adminPasswordEnabled: false,
+      normalPasswordEnabled: false,
+      guestPasswordEnabled: false
+    }
+  })
 
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
@@ -524,9 +538,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   }
 
   const copyLinkToClipboard = () => {
-    navigator.clipboard.writeText(window.location.href)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setShowSharingModal(true)
   }
 
   // List name editing functions
@@ -583,6 +595,140 @@ export default function TodoApp({ listId }: TodoAppProps) {
       setToastMessage('Liste in diesem Browser gepinnt')
       setToastType('success')
       setToastVisible(true)
+    }
+  }
+  
+  // Load admin and sharing data
+  useEffect(() => {
+    if (!isAuthReady || !user || !isFirebaseConfigured() || !db) return
+
+    const adminsRef = ref(db, `lists/${listId}/admins`)
+    const guestLinksRef = ref(db, `lists/${listId}/guestLinks`)
+    const passwordsRef = ref(db, `lists/${listId}/passwords`)
+
+    const unsubscribeAdmins = onValue(adminsRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        const adminsList = Object.keys(data).map(adminId => ({
+          uid: adminId,
+          ...data[adminId]
+        } as Admin))
+        setAdmins(adminsList)
+        
+        // Check if current user is admin
+        const isCurrentUserAdmin = adminsList.some(admin => admin.uid === user.uid)
+        setCurrentUserRole(isCurrentUserAdmin ? 'admin' : 'normal')
+      } else {
+        setAdmins([])
+        setCurrentUserRole('normal')
+      }
+    })
+
+    const unsubscribeGuestLinks = onValue(guestLinksRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        const linksList = Object.keys(data).map(linkId => ({
+          id: linkId,
+          ...data[linkId]
+        } as GuestLink))
+        setGuestLinks(linksList)
+      } else {
+        setGuestLinks([])
+      }
+    })
+
+    const unsubscribePasswords = onValue(passwordsRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        setPasswordSettings(data as PasswordSettings)
+      } else {
+        setPasswordSettings({
+          enabledModes: {
+            adminPasswordEnabled: false,
+            normalPasswordEnabled: false,
+            guestPasswordEnabled: false
+          }
+        })
+      }
+    })
+
+    return () => {
+      off(adminsRef, 'value', unsubscribeAdmins)
+      off(guestLinksRef, 'value', unsubscribeGuestLinks)
+      off(passwordsRef, 'value', unsubscribePasswords)
+    }
+  }, [isAuthReady, user, listId])
+  
+  // Sharing functions
+  const handleCreateGuestLink = async () => {
+    if (!user || !isFirebaseConfigured() || !db) return
+    
+    const guestLinksRef = ref(db, `lists/${listId}/guestLinks`)
+    const newLinkRef = push(guestLinksRef)
+    
+    await set(newLinkRef, {
+      createdBy: user.uid,
+      createdAt: serverTimestamp(),
+      revoked: false
+    })
+  }
+  
+  const handleRevokeGuestLink = async (linkId: string) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+    
+    const linkRef = ref(db, `lists/${listId}/guestLinks/${linkId}`)
+    await update(linkRef, {
+      revoked: true,
+      revokedAt: serverTimestamp(),
+      revokedBy: user.uid
+    })
+  }
+  
+  const handleClaimAdmin = async (password?: string) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+    
+    // If there are existing admins and a password is required
+    if (admins.length > 0 && passwordSettings.adminPassword) {
+      if (!password || password !== passwordSettings.adminPassword) {
+        throw new Error('Falsches Admin-Passwort')
+      }
+    }
+    
+    const adminRef = ref(db, `lists/${listId}/admins/${user.uid}`)
+    await set(adminRef, {
+      uid: user.uid,
+      name: userName,
+      claimedAt: serverTimestamp(),
+      isLocallyStored: false
+    })
+    
+    setToastMessage('Du bist jetzt Admin dieser Liste')
+    setToastType('success')
+    setToastVisible(true)
+  }
+  
+  const handleSetPassword = async (type: 'admin' | 'normal' | 'guest', password: string) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+    
+    const passwordRef = ref(db, `lists/${listId}/passwords`)
+    const enabledModesRef = ref(db, `lists/${listId}/passwords/enabledModes`)
+    
+    if (password.trim() === '') {
+      // Disable password protection for this type
+      await update(passwordRef, {
+        [`${type}Password`]: null
+      })
+      await update(enabledModesRef, {
+        [`${type}PasswordEnabled`]: false
+      })
+    } else {
+      // Set password and enable protection
+      await update(passwordRef, {
+        [`${type}Password`]: password.trim()
+      })
+      await update(enabledModesRef, {
+        [`${type}PasswordEnabled`]: true
+      })
     }
   }
   
@@ -680,12 +826,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
               </button>
               <button 
                 onClick={copyLinkToClipboard}
-                className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border ${
-                  copied 
-                    ? 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100' 
-                    : 'bg-white text-blue-500 border-gray-200 hover:bg-blue-50'
-                }`}
-                title={copied ? 'Link kopiert!' : 'Link teilen'}
+                className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border bg-white text-blue-500 border-gray-200 hover:bg-blue-50"
+                title="Liste teilen"
               >
                 <Link className="w-4 h-4" />
               </button>
@@ -768,6 +910,22 @@ export default function TodoApp({ listId }: TodoAppProps) {
         onDeleteAll={handleDeleteAll}
       />
 
+      {/* Sharing Modal */}
+      <SharingModal
+        isOpen={showSharingModal}
+        onClose={() => setShowSharingModal(false)}
+        listId={listId}
+        listName={listName}
+        currentUserRole={currentUserRole}
+        admins={admins}
+        guestLinks={guestLinks}
+        passwordSettings={passwordSettings}
+        onCreateGuestLink={handleCreateGuestLink}
+        onRevokeGuestLink={handleRevokeGuestLink}
+        onClaimAdmin={handleClaimAdmin}
+        onSetPassword={handleSetPassword}
+      />
+      
       {/* Toast Notification */}
       <ToastNotification
         message={toastMessage}

@@ -30,6 +30,7 @@ import DebugPanel from './debug-panel'
 import DeletedTodosTrash from './deleted-todos-trash'
 import ToastNotification from './toast-notification'
 import SharingModal from './sharing-modal'
+import PasswordPrompt from './password-prompt'
 
 interface TodoAppProps {
   listId: string
@@ -69,6 +70,13 @@ export default function TodoApp({ listId }: TodoAppProps) {
       guestPasswordEnabled: false
     }
   })
+
+  // Password protection state
+  const [isPasswordProtected, setIsPasswordProtected] = useState<boolean | null>(null)
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [isCheckingPassword, setIsCheckingPassword] = useState(false)
+  const [hasValidPassword, setHasValidPassword] = useState(false)
 
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
@@ -641,6 +649,14 @@ export default function TodoApp({ listId }: TodoAppProps) {
       const data = snapshot.val()
       if (data) {
         setPasswordSettings(data as PasswordSettings)
+        // Check if normal password protection is enabled
+        const isProtected = data.enabledModes?.normalPasswordEnabled === true
+        setIsPasswordProtected(isProtected)
+        
+        // If password protection is enabled and we don't have a valid password, show prompt
+        if (isProtected && !hasValidPassword) {
+          setShowPasswordPrompt(true)
+        }
       } else {
         setPasswordSettings({
           enabledModes: {
@@ -649,6 +665,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
             guestPasswordEnabled: false
           }
         })
+        setIsPasswordProtected(false)
       }
     })
 
@@ -730,6 +747,57 @@ export default function TodoApp({ listId }: TodoAppProps) {
         [`${type}PasswordEnabled`]: true
       })
     }
+  }
+
+  // Password validation functions
+  const handlePasswordSubmit = async (password: string) => {
+    setIsCheckingPassword(true)
+    setPasswordError('')
+
+    try {
+      // Check if the entered password matches the stored normal password
+      if (password === passwordSettings.normalPassword) {
+        setHasValidPassword(true)
+        setShowPasswordPrompt(false)
+        setPasswordError('')
+        
+        // Store password validation in sessionStorage to persist during session
+        sessionStorage.setItem(`password-validated-${listId}`, 'true')
+      } else {
+        setPasswordError('Falsches Passwort')
+      }
+    } catch (error) {
+      setPasswordError('Fehler beim Überprüfen des Passworts')
+    } finally {
+      setIsCheckingPassword(false)
+    }
+  }
+
+  const handlePasswordCancel = () => {
+    // Redirect to homepage when password is cancelled
+    window.location.href = '/'
+  }
+
+  // Check if password was already validated in this session
+  useEffect(() => {
+    const wasValidated = sessionStorage.getItem(`password-validated-${listId}`) === 'true'
+    if (wasValidated) {
+      setHasValidPassword(true)
+    }
+  }, [listId])
+
+  // Show password prompt if password protection is enabled and no valid password
+  if (isPasswordProtected && !hasValidPassword && showPasswordPrompt) {
+    return (
+      <PasswordPrompt
+        listName={listName || listId}
+        requiredRole="normal"
+        onPasswordSubmit={handlePasswordSubmit}
+        onCancel={handlePasswordCancel}
+        error={passwordError}
+        isLoading={isCheckingPassword}
+      />
+    )
   }
   
   if (!isAuthReady) {

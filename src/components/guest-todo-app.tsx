@@ -12,18 +12,20 @@ import {
   serverTimestamp,
   set,
   off,
-  get
+  get,
+  update
 } from 'firebase/database'
 import { Zap, Eye, ArrowLeft, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
-import { Todo, User, GuestLink } from '@/types/todo'
+import { Todo, User, GuestLink, PasswordSettings } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import DebugPanel from './debug-panel'
 import ToastNotification from './toast-notification'
+import PasswordPrompt from './password-prompt'
 
 interface GuestTodoAppProps {
   listId: string
@@ -45,6 +47,20 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
   const [listName, setListName] = useState('')
   const [guestLink, setGuestLink] = useState<GuestLink | null>(null)
   const [isValidGuestLink, setIsValidGuestLink] = useState<boolean | null>(null)
+  
+  // Password protection state
+  const [passwordSettings, setPasswordSettings] = useState<PasswordSettings>({
+    enabledModes: {
+      adminPasswordEnabled: false,
+      normalPasswordEnabled: false,
+      guestPasswordEnabled: false
+    }
+  })
+  const [isPasswordProtected, setIsPasswordProtected] = useState<boolean | null>(null)
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [isCheckingPassword, setIsCheckingPassword] = useState(false)
+  const [hasValidPassword, setHasValidPassword] = useState(false)
   
   // Toast notification state
   const [toastVisible, setToastVisible] = useState(false)
@@ -136,7 +152,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     }
   }, [])
 
-  // Validate guest link
+  // Load password settings and validate guest link
   useEffect(() => {
     if (!isAuthReady || !isFirebaseConfigured() || !db) return
 
@@ -174,8 +190,36 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
       }
     }
 
+    // Load password settings
+    const passwordsRef = ref(db!, `lists/${listId}/passwords`)
+    const unsubscribePasswords = onValue(passwordsRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        setPasswordSettings(data as PasswordSettings)
+        // Check if guest password protection is enabled
+        const isProtected = data.enabledModes?.guestPasswordEnabled === true
+        setIsPasswordProtected(isProtected)
+        
+        // If password protection is enabled and we don't have a valid password, show prompt
+        if (isProtected && !hasValidPassword) {
+          setShowPasswordPrompt(true)
+        }
+      } else {
+        setPasswordSettings({
+          enabledModes: {
+            adminPasswordEnabled: false,
+            normalPasswordEnabled: false,
+            guestPasswordEnabled: false
+          }
+        })
+        setIsPasswordProtected(false)
+      }
+    })
+
     validateGuestLink()
-  }, [isAuthReady, listId, guestId])
+
+    return () => off(passwordsRef, 'value', unsubscribePasswords)
+  }, [isAuthReady, listId, guestId, hasValidPassword])
 
   // Load list name from Firebase
   useEffect(() => {
@@ -298,7 +342,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     }
   }, [isAuthReady, user, userName, listId, isValidGuestLink])
 
-  // Real-time Todo Synchronization (readonly)
+  // Real-time Todo Synchronization (with guest completion)
   useEffect(() => {
     if (!isAuthReady || !user || !isValidGuestLink) return
 
@@ -345,9 +389,82 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     return () => off(todosRef, 'value', unsubscribe)
   }, [isAuthReady, user, listId, isValidGuestLink])
 
+  // Guest Todo Completion Handler
+  const handleToggleComplete = async (todoId: string, currentCompleted: boolean) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+
+    try {
+      const todoRef = ref(db!, `lists/${listId}/todos/${todoId}`)
+      await update(todoRef, {
+        completed: !currentCompleted,
+        completedAt: !currentCompleted ? serverTimestamp() : null,
+        completedBy: !currentCompleted ? user.uid : null,
+        completedByName: !currentCompleted ? `${userName} (Gast)` : null
+      })
+      
+      console.log(`${!currentCompleted ? '✅' : '⏹️'} Guest ${!currentCompleted ? 'completed' : 'uncompleted'} todo: ${todoId}`)
+    } catch (error) {
+      console.error('❌ Error toggling todo completion:', error)
+      setToastMessage('Fehler beim Aktualisieren der Aufgabe')
+      setToastType('warning')
+      setToastVisible(true)
+    }
+  }
+
   // Handle back navigation
   const handleBackToList = () => {
     router.push(`/list/${listId}`)
+  }
+
+  // Password validation functions
+  const handlePasswordSubmit = async (password: string) => {
+    setIsCheckingPassword(true)
+    setPasswordError('')
+
+    try {
+      // Check if the entered password matches the stored guest password
+      if (password === passwordSettings.guestPassword) {
+        setHasValidPassword(true)
+        setShowPasswordPrompt(false)
+        setPasswordError('')
+        
+        // Store password validation in sessionStorage to persist during session
+        sessionStorage.setItem(`guest-password-validated-${listId}`, 'true')
+      } else {
+        setPasswordError('Falsches Passwort')
+      }
+    } catch (error) {
+      setPasswordError('Fehler beim Überprüfen des Passworts')
+    } finally {
+      setIsCheckingPassword(false)
+    }
+  }
+
+  const handlePasswordCancel = () => {
+    // Redirect to homepage when password is cancelled
+    window.location.href = '/'
+  }
+
+  // Check if password was already validated in this session
+  useEffect(() => {
+    const wasValidated = sessionStorage.getItem(`guest-password-validated-${listId}`) === 'true'
+    if (wasValidated) {
+      setHasValidPassword(true)
+    }
+  }, [listId])
+
+  // Show password prompt if password protection is enabled and no valid password
+  if (isPasswordProtected && !hasValidPassword && showPasswordPrompt) {
+    return (
+      <PasswordPrompt
+        listName={listName || listId}
+        requiredRole="guest"
+        onPasswordSubmit={handlePasswordSubmit}
+        onCancel={handlePasswordCancel}
+        error={passwordError}
+        isLoading={isCheckingPassword}
+      />
+    )
   }
 
   // Loading state
@@ -463,7 +580,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
             <div>
               <h3 className="font-semibold text-purple-800">Gast-Zugang</h3>
               <p className="text-sm text-purple-600">
-                Du kannst Todos ansehen und abhaken, aber keine neuen erstellen oder löschen.
+                Du kannst Todos ansehen und abhaken. Klicke auf eine Aufgabe um sie zu erledigen.
               </p>
             </div>
           </div>
@@ -483,21 +600,22 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
             todos.map((todo) => (
               <div
                 key={todo.id}
-                className={`bg-white rounded-xl p-4 shadow-sm border hover:shadow-md transition-all duration-300 ${
-                  todo.completed ? 'border-green-200 bg-green-50' : 'border-gray-200'
+                className={`bg-white rounded-xl p-4 shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer ${
+                  todo.completed ? 'border-green-200 bg-green-50' : 'border-gray-200 hover:border-purple-200'
                 }`}
+                onClick={() => handleToggleComplete(todo.id, todo.completed)}
               >
                 <div className="flex items-center space-x-3">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                     todo.completed 
                       ? 'bg-green-500 border-green-500' 
-                      : 'border-gray-300'
+                      : 'border-gray-300 hover:border-purple-400'
                   }`}>
                     {todo.completed && (
                       <Check className="w-3 h-3 text-white" />
                     )}
                   </div>
-                  <p className={`flex-1 ${
+                  <p className={`flex-1 select-none ${
                     todo.completed 
                       ? 'line-through text-green-700' 
                       : 'text-slate-800'

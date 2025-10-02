@@ -88,7 +88,7 @@ export const getOnlineStatus = (user: User): {
     ? getLastSeenText(user.lastSeen)
     : ''
 
-  // Determine status based on activity
+  // Determine status based on activity (check offline first, then inactive)
   if (isUserOnline(user)) {
     return {
       state: 'online',
@@ -99,22 +99,22 @@ export const getOnlineStatus = (user: User): {
     }
   }
 
-  if (isInactive(user)) {
+  if (isOffline(user)) {
     return {
-      state: 'inactive',
-      icon: '🟡',
-      color: 'yellow',
-      text: 'Inaktiv',
+      state: 'offline',
+      icon: '⚫',
+      color: 'gray',
+      text: 'Offline',
       lastSeenText
     }
   }
 
-  // isOffline
+  // isInactive (between 2-5 minutes)
   return {
-    state: 'offline',
-    icon: '⚫',
-    color: 'gray',
-    text: 'Offline',
+    state: 'inactive',
+    icon: '🟡',
+    color: 'yellow',
+    text: 'Inaktiv',
     lastSeenText
   }
 }

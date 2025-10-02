@@ -143,4 +143,44 @@ describe('getOnlineStatus', () => {
     expect(status.text).toBe('Online')
     expect(status.lastSeenText).toBe('vor 1 Minute')
   })
+
+  test('should return inactive status for user between 2 and 5 minutes', () => {
+    const now = Date.now()
+    const user = {
+      id: '2',
+      name: 'TestUser2',
+      color: '#00ff00',
+      lastSeen: now - 3 * 60 * 1000, // 3 minutes ago
+      isTyping: false,
+      editingTodoId: null
+    }
+
+    const status = getOnlineStatus(user)
+
+    expect(status.state).toBe('inactive')
+    expect(status.icon).toBe('🟡')
+    expect(status.color).toBe('yellow')
+    expect(status.text).toBe('Inaktiv')
+    expect(status.lastSeenText).toBe('vor 3 Minuten')
+  })
+
+  test('should return offline status for user inactive more than 5 minutes', () => {
+    const now = Date.now()
+    const user = {
+      id: '3',
+      name: 'TestUser3',
+      color: '#0000ff',
+      lastSeen: now - 10 * 60 * 1000, // 10 minutes ago
+      isTyping: false,
+      editingTodoId: null
+    }
+
+    const status = getOnlineStatus(user)
+
+    expect(status.state).toBe('offline')
+    expect(status.icon).toBe('⚫')
+    expect(status.color).toBe('gray')
+    expect(status.text).toBe('Offline')
+    expect(status.lastSeenText).toBe('vor 10 Minuten')
+  })
 })

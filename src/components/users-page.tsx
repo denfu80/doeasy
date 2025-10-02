@@ -5,19 +5,20 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Users, Crown, Zap, Edit3, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  signInAnonymously, 
+import {
+  signInAnonymously,
   onAuthStateChanged,
   User as FirebaseUser
 } from 'firebase/auth'
-import { 
-  ref, 
-  onValue, 
+import {
+  ref,
+  onValue,
   off
 } from 'firebase/database'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName } from '@/lib/name-generator'
 import { User } from '@/types/todo'
+import { filterRecentlyActiveUsers, sortUsersByActivity } from '@/lib/presence-utils'
 
 interface UsersPageProps {
   listId: string
@@ -94,36 +95,19 @@ export default function UsersPage({ listId }: UsersPageProps) {
     const unsubscribePresence = onValue(presenceRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
-        const now = Date.now()
-        const presentUsers = Object.keys(data)
+        const allUsers = Object.keys(data)
           .map(userId => ({
             id: userId,
             ...data[userId]
           } as User))
-          .filter(user => {
-            // Show users who are online or were online in the last 24 hours (for users page)
-            const isOnline = user.onlineAt && typeof user.onlineAt === 'object'
-            const lastSeen = user.lastSeen || user.onlineAt
-            const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
-            const timeSinceLastSeen = now - lastSeenTime
-            return isOnline || timeSinceLastSeen < 24 * 60 * 60 * 1000 // 24 hours
-          })
-          .sort((a, b) => {
-            // Sort current user first, then by online status, then by last seen
-            if (a.id === user.uid) return -1
-            if (b.id === user.uid) return 1
-            
-            const aOnline = a.onlineAt && typeof a.onlineAt === 'object'
-            const bOnline = b.onlineAt && typeof b.onlineAt === 'object'
-            if (aOnline && !bOnline) return -1
-            if (!aOnline && bOnline) return 1
-            
-            const aTime = typeof (a.lastSeen || a.onlineAt) === 'number' ? (a.lastSeen || a.onlineAt) : 0
-            const bTime = typeof (b.lastSeen || b.onlineAt) === 'number' ? (b.lastSeen || b.onlineAt) : 0
-            return (bTime as number) - (aTime as number)
-          })
 
-        setUsers(presentUsers)
+        // Filter users who are online or were active in the last 24 hours (users page shows longer history)
+        const activeUsers = filterRecentlyActiveUsers(allUsers, 24 * 60) // 24 hours in minutes
+
+        // Sort by current user first, then online status, then last seen time
+        const sortedUsers = sortUsersByActivity(activeUsers, user.uid)
+
+        setUsers(sortedUsers)
       } else {
         setUsers([])
       }

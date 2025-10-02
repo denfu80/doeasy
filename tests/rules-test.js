@@ -82,13 +82,59 @@ class RulesTest {
     }
   }
 
+  // Test: Presence Utils integration with Firebase Rules
+  async testPresenceUtils() {
+    console.log('\n📝 Test: Presence Utils with Firebase Rules')
+
+    try {
+      await signInAnonymously(this.auth)
+      const userId = this.auth.currentUser.uid
+
+      const listId = 'test-presence-utils'
+
+      // Test writing presence data that matches our utils expectations
+      const presenceRef = ref(this.database, `lists/${listId}/presence/${userId}`)
+
+      // Test 1: Write valid presence data (should work)
+      const validPresence = {
+        name: "TestUser",
+        color: "#ff0000",
+        onlineAt: { '.sv': 'timestamp' }, // Firebase timestamp
+        lastSeen: { '.sv': 'timestamp' },
+        isTyping: false,
+        editingTodoId: null
+      }
+
+      await set(presenceRef, validPresence)
+      console.log('✅ PASS: Valid presence data accepted')
+
+      // Test 2: Try to write offline state (onlineAt = null)
+      const offlinePresence = {
+        name: "TestUser",
+        color: "#ff0000",
+        onlineAt: null,
+        lastSeen: { '.sv': 'timestamp' },
+        isTyping: false,
+        editingTodoId: null
+      }
+
+      await set(presenceRef, offlinePresence)
+      console.log('✅ PASS: Offline presence state accepted')
+
+      return true
+    } catch (error) {
+      console.log('❌ FAIL: Presence utils test failed:', error.code)
+      return false
+    }
+  }
+
   async runTests() {
     await this.setup()
 
     const results = []
 
-    // Nur der eine Basis-Test
     results.push(await this.testBasicAuth())
+    results.push(await this.testPresenceUtils())
 
     const passed = results.filter(r => r === true).length
     const total = results.length

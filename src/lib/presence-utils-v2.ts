@@ -53,6 +53,45 @@ export const isOffline = (user: User): boolean => {
 }
 
 /**
+ * Filter users by time threshold
+ * @param users - Array of users to filter
+ * @param maxMinutes - Maximum minutes since last activity (default: 5 minutes = OFFLINE_THRESHOLD)
+ * @returns filtered array of users
+ */
+export const filterUsersByTime = (users: User[], maxMinutes?: number): User[] => {
+  const now = Date.now()
+  const threshold = maxMinutes ? maxMinutes * 60 * 1000 : OFFLINE_THRESHOLD_MS
+
+  return users.filter(user => {
+    if (!user.lastSeen || typeof user.lastSeen !== 'number') {
+      return false
+    }
+    return (now - user.lastSeen) < threshold
+  })
+}
+
+/**
+ * Sort users by last seen time (most recent first)
+ * @param users - Array of users to sort
+ * @param currentUserId - Optional current user ID to always put first
+ * @returns sorted array of users
+ */
+export const sortUsersByLastSeen = (users: User[], currentUserId?: string): User[] => {
+  return [...users].sort((a, b) => {
+    // Current user first
+    if (currentUserId) {
+      if (a.id === currentUserId) return -1
+      if (b.id === currentUserId) return 1
+    }
+
+    // Then by last seen time
+    const aTime = (typeof a.lastSeen === 'number' ? a.lastSeen : 0)
+    const bTime = (typeof b.lastSeen === 'number' ? b.lastSeen : 0)
+    return bTime - aTime
+  })
+}
+
+/**
  * Get comprehensive online status for a user
  * @param user - User object to check
  * @returns Status object with state, icon, color, text, and lastSeenText

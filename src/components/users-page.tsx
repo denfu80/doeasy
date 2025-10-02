@@ -18,7 +18,7 @@ import {
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName } from '@/lib/name-generator'
 import { User } from '@/types/todo'
-import { isUserOnline, getOnlineStatus } from '@/lib/presence-utils-v2'
+import { isUserOnline, getOnlineStatus, filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils-v2'
 
 interface UsersPageProps {
   listId: string
@@ -101,24 +101,11 @@ export default function UsersPage({ listId }: UsersPageProps) {
             ...data[userId]
           } as User))
 
-        // Filter users active in last 24 hours (no offline threshold, just check lastSeen)
-        const now = Date.now()
-        const activeUsers = allUsers.filter(user => {
-          if (!user.lastSeen || typeof user.lastSeen !== 'number') return false
-          return (now - user.lastSeen) < 24 * 60 * 60 * 1000 // 24 hours
-        })
+        // Filter users active in last 24 hours
+        const activeUsers = filterUsersByTime(allUsers, 24 * 60) // 24 hours in minutes
 
         // Sort: current user first, then by last seen time
-        const sortedUsers = [...activeUsers].sort((a, b) => {
-          // Current user first
-          if (a.id === user.uid) return -1
-          if (b.id === user.uid) return 1
-
-          // Then by last seen time
-          const aTime = (typeof a.lastSeen === 'number' ? a.lastSeen : 0)
-          const bTime = (typeof b.lastSeen === 'number' ? b.lastSeen : 0)
-          return bTime - aTime
-        })
+        const sortedUsers = sortUsersByLastSeen(activeUsers, user.uid)
 
         setUsers(sortedUsers)
       } else {

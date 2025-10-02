@@ -73,11 +73,11 @@ export default function UsersPage({ listId }: UsersPageProps) {
     }
 
     let cleanup: (() => void) | null = null
-    
+
     initFirebase().then((cleanupFn) => {
       cleanup = cleanupFn
     })
-    
+
     return () => {
       if (cleanup && typeof cleanup === 'function') {
         cleanup()
@@ -91,7 +91,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
 
     const presenceRef = ref(db, `lists/${listId}/presence`)
     const listNameRef = ref(db, `lists/${listId}/metadata/name`)
-    
+
     const unsubscribePresence = onValue(presenceRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
@@ -136,12 +136,12 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const isOnline = (user: User) => {
     const hasActiveSession = user.onlineAt && typeof user.onlineAt === 'object'
     if (hasActiveSession) return true
-    
+
     const now = Date.now()
     const lastSeen = user.lastSeen || user.onlineAt
     const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
     const timeSinceLastSeen = now - lastSeenTime
-    
+
     return timeSinceLastSeen < 2 * 60 * 1000 // 2 minutes
   }
 
@@ -154,7 +154,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
     const lastSeen = user.lastSeen || user.onlineAt
     const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
     const diff = now - lastSeenTime
-    
+
     if (diff < 60000) {
       return 'Gerade offline'
     } else if (diff < 3600000) {
@@ -218,7 +218,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Zurück
               </Button>
-              
+
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
                   <Users className="w-5 h-5 text-white" />
@@ -262,7 +262,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                   <div className="flex items-center space-x-4">
                     {/* Avatar */}
                     <div className="relative">
-                      <div 
+                      <div
                         className={`w-12 h-12 rounded-full flex items-center justify-center border-2 shadow-md ${
                           isCurrentUser(listUser.id) 
                             ? 'border-yellow-300 ring-2 ring-yellow-400 ring-opacity-50' 
@@ -273,7 +273,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                         <span className="text-sm font-bold text-white drop-shadow-sm">
                           {getInitials(listUser.name || listUser.id)}
                         </span>
-                        
+
                         {/* Online indicator */}
                         {isOnline(listUser) && (
                           <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white shadow-sm" />
@@ -296,14 +296,14 @@ export default function UsersPage({ listId }: UsersPageProps) {
                               className="font-semibold bg-white text-slate-800 px-3 py-1 rounded-lg border-2 border-purple-300 focus:border-purple-500 focus:outline-none text-sm min-w-32"
                               placeholder="Dein Name..."
                             />
-                            <button 
+                            <button
                               onClick={handleSaveName}
                               className="p-1 text-green-500 hover:text-green-700 hover:bg-green-50 rounded transition-colors"
                               title="Speichern"
                             >
                               <Check className="w-4 h-4" />
                             </button>
-                            <button 
+                            <button
                               onClick={handleCancelEdit}
                               className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                               title="Abbrechen"
@@ -316,7 +316,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                             <h3 className="font-semibold text-slate-800">
                               {listUser.name}
                             </h3>
-                            
+
                             {/* Edit button for current user */}
                             {isCurrentUser(listUser.id) && (
                               <button
@@ -327,7 +327,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                                 <Edit3 className="w-3 h-3" />
                               </button>
                             )}
-                        
+
                             {/* Admin badge (placeholder for later) */}
                             {index === 0 && !isCurrentUser(listUser.id) && (
                               <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5">
@@ -338,7 +338,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                           </div>
                         )}
                       </div>
-                      
+
                       <p className={`text-sm ${
                         isOnline(listUser) 
                           ? 'text-green-600 font-medium' 

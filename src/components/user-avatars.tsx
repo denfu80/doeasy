@@ -185,7 +185,7 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
                                 zIndex: isCurrentUser ? (isExpanded ? 50 : 100) : user.zIndex,
                                 transform: isCurrentUser && isExpanded ? 'rotate(-360deg)' : 'rotate(0deg)'
                             }}
-                            title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} ${getOfflineTimeString(user)}`}
+                            title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} - ${getOfflineTimeString(user)}`}
                             onClick={() => handleAvatarClick(user)}
                         >
               <span className="text-sm font-bold text-white drop-shadow-sm">

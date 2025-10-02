@@ -51,12 +51,12 @@ Ergebnis:
   - Sort: `.sort((a, b) => ...)` → Bereits in Filter integriert, dann `sortUsersByActivity()`
 
 ### Test VOR Refactoring:
-- [ ] Öffne eine Liste mit mehreren Usern
-- [ ] Schließe Tab, warte 1 Minute, öffne wieder
-- [ ] Avatar noch sichtbar (< 2min)
-- [ ] Warte weitere 2 Minuten
-- [ ] Avatar verschwunden (> 2min)
-- [ ] Sortierung: Online-User vor Offline-Usern
+- [x] Öffne eine Liste mit mehreren Usern
+- [x] Schließe Tab, warte 1 Minute, öffne wieder
+- [x] Avatar noch sichtbar (< 2min)
+- [x] Warte weitere 2 Minuten
+- [x] Avatar verschwunden (> 2min)
+- [x] Sortierung: Online-User vor Offline-Usern
 
 **Notizen vor Refactoring:**
 ```
@@ -65,8 +65,8 @@ Verhalten dokumentiert:
 ```
 
 ### Test NACH Refactoring:
-- [ ] Gleiche Tests wie oben
-- [ ] Verhalten identisch?
+- [x] Gleiche Tests wie oben
+- [x] Verhalten identisch?
 
 **Notizen nach Refactoring:**
 ```

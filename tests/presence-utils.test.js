@@ -300,7 +300,7 @@ describe('Presence Utils', () => {
     test('should return yellow indicator for recently active user', () => {
       const user = createMockUser('1', {
         onlineAt: null,
-        lastSeen: mockNow - 1 * 60 * 1000 // 1 minute ago
+        lastSeen: mockNow - 60 * 1000 // 1 minute ago
       })
 
       const status = getOnlineStatusIndicator(user)

@@ -33,8 +33,11 @@ export const getLastSeenTime = (user: User): number => {
 export const isRecentlyActive = (user: User, maxMinutes: number = 2): boolean => {
   // First check if user is currently online
   if (isUserOnline(user)) {
+      // log
+      console.log(`User ${user.name} is currently online.`)
     return true
   }
+  //console.log(`User ${user.name} is not online. Checking last seen time...`)
 
   // Check if user was seen within the time threshold
   const now = Date.now()
@@ -90,8 +93,8 @@ export const filterRecentlyActiveUsers = (users: User[], maxMinutes: number = 2)
  * @returns formatted string like "⚫ Gerade offline" or "🕐 vor 5 Minuten"
  */
 export const getOfflineTimeString = (user: User): string => {
-  // If user is online, return online indicator
-  if (isUserOnline(user)) {
+  // If user is recently active (online or < 2min), return online
+  if (isRecentlyActive(user, 2)) {
     return '🟢 Online'
   }
 

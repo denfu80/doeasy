@@ -8,12 +8,12 @@
         // Allow read/write access to any authenticated user (anonymous or signed-in)
         ".read": "auth != null",
         ".write": "auth != null",
-
+        
         // Todos structure
         "todos": {
           "$todoId": {
             // Allow flexible todo structure with activity tracking fields
-
+            
             // Todo fields validation
             "text": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
@@ -36,7 +36,7 @@
             "deletedBy": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
             },
-
+            
             // Activity tracking fields
             "completedAt": {
               ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
@@ -56,27 +56,26 @@
             "restoredBy": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
             },
-
+            
             // Prevent additional fields
             "$other": {
               ".validate": false
             }
           }
         },
-
+        
         // Presence structure
         "presence": {
           // Allow all authenticated users to read presence data (for avatars)
           ".read": "auth != null",
-
+          
           "$userId": {
             // Users can only write their own presence
-            ".write": "auth != null",
-
-
+            ".write": "auth != null && auth.uid == $userId",
+            
             // Validate presence structure
             ".validate": "newData.hasChildren(['name', 'color']) && (newData.hasChild('onlineAt') || newData.hasChild('lastSeen'))",
-
+            
             // Presence fields validation
             "name": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
@@ -96,20 +95,20 @@
             "editingTodoId": {
               ".validate": "newData.isString() || newData.val() == null"
             },
-
+            
             // Prevent additional fields
             "$other": {
               ".validate": false
             }
           }
         },
-
+        
         // List metadata (optional)
         "metadata": {
           // Allow read/write access to any authenticated user
           ".read": "auth != null",
           ".write": "auth != null",
-
+          
           // Allow flexible metadata structure - name field is optional
           "name": {
             ".validate": "(newData.isString() && newData.val().length > 0 && newData.val().length <= 100) || newData.val() == null"
@@ -130,15 +129,15 @@
             ".validate": "newData.isBoolean()"
           }
         },
-
+        
         // Admin and password system
         "admins": {
           ".read": "auth != null",
           ".write": "auth != null",
-
+          
           "$adminId": {
             ".validate": "newData.hasChildren(['uid', 'name']) && newData.child('uid').val() == $adminId",
-
+            
             "uid": {
               ".validate": "newData.isString() && newData.val() == $adminId"
             },
@@ -153,12 +152,12 @@
             }
           }
         },
-
+        
         // Password protection settings
         "passwords": {
           ".read": "auth != null",
           ".write": "auth != null",
-
+          
           "adminPassword": {
             ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
           },
@@ -170,7 +169,7 @@
           },
           "enabledModes": {
             ".validate": "newData.hasChildren() || newData.val() == null",
-
+            
             "adminPasswordEnabled": {
               ".validate": "newData.isBoolean()"
             },
@@ -182,15 +181,15 @@
             }
           }
         },
-
+        
         // Guest links management
         "guestLinks": {
           ".read": "auth != null",
           ".write": "auth != null",
-
+          
           "$guestLinkId": {
             ".validate": "newData.hasChildren(['createdBy', 'createdAt'])",
-
+            
             "createdBy": {
               ".validate": "newData.isString()"
             },
@@ -208,14 +207,14 @@
             }
           }
         },
-
+        
         // Prevent additional top-level fields
         "$other": {
           ".validate": false
         }
       }
     },
-
+    
     // Test endpoint for connection testing
     "test": {
       ".read": "auth != null",
@@ -230,13 +229,13 @@
         }
       }
     },
-
+    
     // Global stats (read-only)
     "stats": {
       ".read": true,
       ".write": false
     },
-
+    
     // Prevent access to any other paths
     "$other": {
       ".read": false,

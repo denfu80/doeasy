@@ -15,6 +15,7 @@
     "firebase:test": "node firebase-quick-test.js",
     "test": "jest",
     "test:rules": "node tests/simple-rules-test.js",
+    "test:rules:extended": "node tests/extended-rules-test.js",
     "test:watch": "jest --watch"
   },
   "dependencies": {

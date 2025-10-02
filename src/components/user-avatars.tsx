@@ -2,7 +2,8 @@ import {User} from '@/types/todo'
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {Check, Edit3} from 'lucide-react'
 import {useRouter} from 'next/navigation'
-import {getOfflineTimeString, isRecentlyActive, sortUsersByActivity} from '@/lib/presence-utils'
+import {isUserOnline, getOnlineStatus} from '@/lib/presence-utils-v2'
+import {sortUsersByActivity} from '@/lib/presence-utils'
 
 interface UserAvatarsProps {
     users: User[]
@@ -115,7 +116,8 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
         >
             {sortedUsers.slice(0, 5).map(user => {
                 const isCurrentUser = user.id === currentUserId
-                const userIsOnline = isRecentlyActive(user)
+                const userIsOnline = isUserOnline(user)
+                const status = getOnlineStatus(user)
 
                 return (
                     <div key={user.id} className="relative">
@@ -185,7 +187,7 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
                                 zIndex: isCurrentUser ? (isExpanded ? 50 : 100) : user.zIndex,
                                 transform: isCurrentUser && isExpanded ? 'rotate(-360deg)' : 'rotate(0deg)'
                             }}
-                            title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} - ${getOfflineTimeString(user)}`}
+                            title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} - ${status.icon} ${status.text} (${status.lastSeenText})`}
                             onClick={() => handleAvatarClick(user)}
                         >
               <span className="text-sm font-bold text-white drop-shadow-sm">

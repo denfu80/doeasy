@@ -7,7 +7,7 @@
  * Time threshold in minutes for considering a user "online"
  * Users who were active within this timeframe are shown as online
  */
-export const ONLINE_THRESHOLD_MINUTES = 2
+export const ONLINE_THRESHOLD_MINUTES = 1
 
 /**
  * Time threshold in milliseconds for considering a user "online"

@@ -6,13 +6,13 @@
 const { isUserOnline, isInactive, isOffline, getOnlineStatus } = require('../src/lib/presence-utils-v2')
 
 describe('isUserOnline', () => {
-  test('should return true for user who was active in the last 2 minutes', () => {
+  test('should return true for user who was active in the last 1 minutes', () => {
     const now = Date.now()
     const user = {
       id: '1',
       name: 'TestUser',
       color: '#ff0000',
-      lastSeen: now - 60 * 1000, // 1 minute ago
+      lastSeen: now - 30 * 1000, // half a minute ago
       isTyping: false,
       editingTodoId: null
     }
@@ -56,7 +56,7 @@ describe('isInactive', () => {
       id: '1',
       name: 'TestUser',
       color: '#ff0000',
-      lastSeen: now - 60 * 1000, // 1 minute ago
+      lastSeen: now - 30 * 1000, // 1 minute ago
       isTyping: false,
       editingTodoId: null
     }
@@ -124,13 +124,13 @@ describe('isOffline', () => {
 })
 
 describe('getOnlineStatus', () => {
-  test('should return online status for user active within 2 minutes', () => {
+  test('should return online status for user active within 1 minutes', () => {
     const now = Date.now()
     const user = {
       id: '1',
       name: 'TestUser',
       color: '#ff0000',
-      lastSeen: now - 60 * 1000, // 1 minute ago
+      lastSeen: now - 30 * 1000, // half a minute ago
       isTyping: false,
       editingTodoId: null
     }
@@ -141,7 +141,7 @@ describe('getOnlineStatus', () => {
     expect(status.icon).toBe('🟢')
     expect(status.color).toBe('green')
     expect(status.text).toBe('Online')
-    expect(status.lastSeenText).toBe('vor 1 Minute')
+    expect(status.lastSeenText).toBe('gerade eben')
   })
 
   test('should return inactive status for user between 2 and 5 minutes', () => {

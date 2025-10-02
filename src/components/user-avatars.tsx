@@ -193,11 +193,14 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
                 {getInitials(user.name || user.id)}
               </span>
 
-                            {/* Online indicator */}
-                            {userIsOnline && (
-                                <div
-                                    className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white shadow-sm"/>
-                            )}
+                            {/* Status indicator */}
+                            <div
+                                className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
+                                    status.state === 'online' ? 'bg-green-400' :
+                                    status.state === 'inactive' ? 'bg-yellow-400' :
+                                    'bg-gray-400'
+                                }`}
+                            />
 
                             {/* Current user indicator */}
                             {isCurrentUser && (

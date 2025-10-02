@@ -252,7 +252,6 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const updatePresence = async () => {
       const userPresence = {
         ...baseUserPresence,
-        onlineAt: serverTimestamp(),
         lastSeen: serverTimestamp()
       }
       
@@ -303,22 +302,20 @@ export default function TodoApp({ listId }: TodoAppProps) {
     // Handle disconnect using visibility API (onDisconnect not available in web SDK)
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        set(userRef, { 
-          ...baseUserPresence, 
-          lastSeen: serverTimestamp(), 
-          onlineAt: null 
+        set(userRef, {
+          ...baseUserPresence,
+          lastSeen: serverTimestamp()
         })
       } else {
         updatePresence()
       }
     }
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('beforeunload', () => {
-      set(userRef, { 
-        ...baseUserPresence, 
-        lastSeen: serverTimestamp(), 
-        onlineAt: null 
+      set(userRef, {
+        ...baseUserPresence,
+        lastSeen: serverTimestamp()
       })
     })
     

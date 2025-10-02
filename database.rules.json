@@ -74,7 +74,7 @@
             ".write": "auth != null && auth.uid == $userId",
             
             // Validate presence structure
-            ".validate": "newData.hasChildren(['name', 'color']) && (newData.hasChild('onlineAt') || newData.hasChild('lastSeen'))",
+            ".validate": "newData.hasChildren(['name', 'color', 'lastSeen'])",
             
             // Presence fields validation
             "name": {
@@ -82,9 +82,6 @@
             },
             "color": {
               ".validate": "newData.isString() && newData.val().matches(/^#[0-9a-fA-F]{6}$/)"
-            },
-            "onlineAt": {
-              ".validate": "newData.val() == now || newData.val() == null"
             },
             "lastSeen": {
               ".validate": "newData.isNumber() || newData.val() == now"

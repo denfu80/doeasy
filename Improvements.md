@@ -27,6 +27,10 @@ Users-Page (/list/[id]/users): 24 Stunden
 
 - Es gibt keine Möglichkeit auf die Startseite zu kommen (Logo als Link?)
 
+### Todo Liste
+- erledigt von steht da nicht sondern nur wer es erstellt hat
+- item log
+
 ## Ideen
 
 - Eigene Farbe ändern

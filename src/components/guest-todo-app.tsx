@@ -35,11 +35,11 @@ interface GuestTodoAppProps {
 
 export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
   const router = useRouter()
-  
+
   // Firebase and Auth state
   const [user, setUser] = useState<FirebaseUser | null>(null)
   const [isAuthReady, setIsAuthReady] = useState(false)
-  
+
   // App state
   const [todos, setTodos] = useState<Todo[]>([])
   const [users, setUsers] = useState<User[]>([])
@@ -48,7 +48,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
   const [listName, setListName] = useState('')
   const [guestLink, setGuestLink] = useState<GuestLink | null>(null)
   const [isValidGuestLink, setIsValidGuestLink] = useState<boolean | null>(null)
-  
+
   // Password protection state
   const [passwordSettings, setPasswordSettings] = useState<PasswordSettings>({
     enabledModes: {
@@ -62,19 +62,19 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
   const [passwordError, setPasswordError] = useState('')
   const [isCheckingPassword, setIsCheckingPassword] = useState(false)
   const [hasValidPassword, setHasValidPassword] = useState(false)
-  
+
   // Toast notification state
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('info')
-  
+
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
     const trimmedName = newName.trim()
     _setUserName(trimmedName)
     localStorage.setItem('macheinfach-username', trimmedName)
   }
-  
+
   // Use ref to ensure Firebase initialization only runs once
   const firebaseInitialized = useRef(false)
 
@@ -82,9 +82,9 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
   useEffect(() => {
     if (firebaseInitialized.current) return
     firebaseInitialized.current = true
-    
+
     if (typeof window === 'undefined') return
-    
+
     const showFirebaseError = (reason: string, error?: unknown) => {
       console.error('❌ Firebase fehlt:', reason, error)
       setFirebaseStatus(`error: ${reason}`)
@@ -98,7 +98,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
 
       console.log('🔐 Initializing Firebase Auth for Guest...')
       setFirebaseStatus('connected')
-      
+
       try {
         if (auth.currentUser) {
           console.log('✅ User already authenticated:', auth.currentUser.uid)
@@ -116,7 +116,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
         console.log('🔐 No current user, attempting anonymous sign-in...')
         const userCredential = await signInAnonymously(auth)
         console.log('✅ Anonymous sign-in successful:', userCredential.user.uid)
-        
+
         setUser(userCredential.user)
         let savedName = localStorage.getItem('macheinfach-username')
         if (!savedName) {
@@ -141,11 +141,11 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     }
 
     let cleanup: (() => void) | null = null
-    
+
     initFirebase().then((cleanupFn) => {
       cleanup = cleanupFn
     })
-    
+
     return () => {
       if (cleanup && typeof cleanup === 'function') {
         cleanup()
@@ -161,10 +161,10 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
       try {
         const guestLinkRef = ref(db!, `lists/${listId}/guestLinks/${guestId}`)
         const snapshot = await get(guestLinkRef)
-        
+
         if (snapshot.exists()) {
           const linkData = snapshot.val() as GuestLink
-          
+
           // Check if link is revoked
           if (linkData.revoked) {
             setIsValidGuestLink(false)
@@ -173,7 +173,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
             setToastVisible(true)
             return
           }
-          
+
           setGuestLink({ ...linkData, id: guestId })
           setIsValidGuestLink(true)
         } else {
@@ -200,7 +200,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
         // Check if guest password protection is enabled
         const isProtected = data.enabledModes?.guestPasswordEnabled === true
         setIsPasswordProtected(isProtected)
-        
+
         // If password protection is enabled and we don't have a valid password, show prompt
         if (isProtected && !hasValidPassword) {
           setShowPasswordPrompt(true)
@@ -227,7 +227,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     if (!isAuthReady || !isValidGuestLink || !isFirebaseConfigured() || !db) return
 
     const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
-    
+
     const unsubscribe = onValue(listNameRef, (snapshot) => {
       const name = snapshot.val()
       setListName(name || listId)
@@ -250,20 +250,19 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
 
     const userColor = generateColor(user.uid)
     const baseUserPresence = {
-      color: userColor, 
+      color: userColor,
       name: `${userName} (Gast)`,
       isTyping: false,
       editingTodoId: null
     }
-    
+
     // Set guest presence
     const updatePresence = async () => {
       const userPresence = {
         ...baseUserPresence,
-        onlineAt: serverTimestamp(),
         lastSeen: serverTimestamp()
       }
-      
+
       try {
         await set(userRef, userPresence)
         console.log('✅ Guest presence updated successfully')
@@ -271,36 +270,34 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
         console.error('❌ Guest presence update failed:', error.code, error.message)
       }
     }
-    
+
     setTimeout(updatePresence, 100)
-    
+
     const heartbeatInterval = setInterval(() => {
       if (!document.hidden) {
         updatePresence()
       }
     }, 30000)
-    
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        set(userRef, { 
-          ...baseUserPresence, 
-          lastSeen: serverTimestamp(), 
-          onlineAt: null 
+        set(userRef, {
+          ...baseUserPresence,
+          lastSeen: serverTimestamp()
         })
       } else {
         updatePresence()
       }
     }
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('beforeunload', () => {
-      set(userRef, { 
-        ...baseUserPresence, 
-        lastSeen: serverTimestamp(), 
-        onlineAt: null 
+      set(userRef, {
+        ...baseUserPresence,
+        lastSeen: serverTimestamp()
       })
     })
-    
+
     const unsubscribe = onValue(presenceRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
@@ -354,7 +351,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
             ...data[todoId]
           } as Todo))
           .filter(todo => todo.text && todo.text.trim().length > 0)
-        
+
         const activeTodos = allTodos
           .filter(todo => !todo.deletedAt)
           .sort((a, b) => {
@@ -365,7 +362,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
             const bTime = typeof b.createdAt === 'number' ? b.createdAt : 0
             return aTime - bTime
           })
-        
+
         setTodos(activeTodos)
         console.log(`📝 Guest loaded ${activeTodos.length} todos for list ${listId}`)
       } else {
@@ -387,13 +384,13 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
 
     try {
       const todoRef = ref(db!, `lists/${listId}/todos/${todoId}`)
+      console.log(`🔄 Guest toggling todo ${todoId} to ${!currentCompleted ? 'completed' : 'uncompleted'}`)
       await update(todoRef, {
         completed: !currentCompleted,
         completedAt: !currentCompleted ? serverTimestamp() : null,
-        completedBy: !currentCompleted ? user.uid : null,
-        completedByName: !currentCompleted ? `${userName} (Gast)` : null
+        completedBy: !currentCompleted ? user.uid : null
       })
-      
+
       console.log(`${!currentCompleted ? '✅' : '⏹️'} Guest ${!currentCompleted ? 'completed' : 'uncompleted'} todo: ${todoId}`)
     } catch (error) {
       console.error('❌ Error toggling todo completion:', error)
@@ -419,7 +416,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
         setHasValidPassword(true)
         setShowPasswordPrompt(false)
         setPasswordError('')
-        
+
         // Store password validation in sessionStorage to persist during session
         sessionStorage.setItem(`guest-password-validated-${listId}`, 'true')
       } else {
@@ -481,7 +478,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Gast-Link ungültig</h1>
           <p className="text-slate-600 mb-4">Dieser Link ist nicht verfügbar oder wurde widerrufen.</p>
-          <button 
+          <button
             onClick={() => router.push('/')}
             className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg transition-colors"
           >
@@ -518,14 +515,14 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
               </div>
             </div>
             <div className="flex items-center space-x-2 md:space-x-4">
-              <UserAvatars 
-                users={users} 
+              <UserAvatars
+                users={users}
                 currentUserId={user?.uid}
                 userName={userName}
                 onNameChange={setUserName}
                 listId={listId}
               />
-              <button 
+              <button
                 onClick={handleBackToList}
                 className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border bg-white text-slate-500 border-gray-200 hover:bg-gray-50"
                 title="Zur normalen Ansicht"

@@ -1,22 +1,23 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
-import { 
-  signInAnonymously, 
+import {
+  signInAnonymously,
   onAuthStateChanged,
   User as FirebaseUser
 } from 'firebase/auth'
-import { 
-  ref, 
-  push, 
-  onValue, 
-  update, 
+import {
+  ref,
+  push,
+  onValue,
+  update,
   remove,
   serverTimestamp,
   set,
   off
 } from 'firebase/database'
 import { Zap, Link, Edit2, Check, X, Pin, PinOff } from 'lucide-react'
+import { filterRecentlyActiveUsers, sortUsersByActivity } from '@/lib/presence-utils'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
@@ -324,35 +325,24 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const unsubscribe = onValue(presenceRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
-        const now = Date.now()
-        const presentUsers = Object.keys(data)
+        const allUsers = Object.keys(data)
           .map(userId => ({
             id: userId,
             ...data[userId]
           } as User))
-          .filter(user => {
-            // Only show users who are online or were online in the last 2 minutes
-            const isOnline = user.onlineAt && typeof user.onlineAt === 'object'
-            const lastSeen = user.lastSeen || user.onlineAt
-            const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
-            const timeSinceLastSeen = now - lastSeenTime
-            return isOnline || timeSinceLastSeen < 2 * 60 * 1000 // 2 minutes
-          })
-          .sort((a, b) => {
-            // Sort by online status first, then by last seen
-            const aOnline = a.onlineAt && typeof a.onlineAt === 'object'
-            const bOnline = b.onlineAt && typeof b.onlineAt === 'object'
-            if (aOnline && !bOnline) return -1
-            if (!aOnline && bOnline) return 1
-            const aTime = typeof (a.lastSeen || a.onlineAt) === 'number' ? (a.lastSeen || a.onlineAt) : 0
-            const bTime = typeof (b.lastSeen || b.onlineAt) === 'number' ? (b.lastSeen || b.onlineAt) : 0
-            return (bTime as number) - (aTime as number)
-          })
-        
-        presentUsers.forEach((user, index) => {
-          user.zIndex = presentUsers.length - index
+
+        // Filter users who are online or recently active (2 minutes)
+        const activeUsers = filterRecentlyActiveUsers(allUsers, 2)
+
+        // Sort by online status and last seen time
+        const sortedUsers = sortUsersByActivity(activeUsers)
+
+        // Assign z-index for stacking order
+        sortedUsers.forEach((user, index) => {
+          user.zIndex = sortedUsers.length - index
         })
-        setUsers(presentUsers)
+
+        setUsers(sortedUsers)
       } else {
         setUsers([])
       }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Users, Crown, Zap, Edit3, Check, X } from 'lucide-react'
+import { ArrowLeft, Users, Crown, Edit3, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -19,6 +19,7 @@ import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName } from '@/lib/name-generator'
 import { User } from '@/types/todo'
 import { filterRecentlyActiveUsers, sortUsersByActivity } from '@/lib/presence-utils'
+import { isUserOnline, getOnlineStatus } from '@/lib/presence-utils-v2'
 
 interface UsersPageProps {
   listId: string
@@ -134,39 +135,12 @@ export default function UsersPage({ listId }: UsersPageProps) {
   }
 
   const isOnline = (user: User) => {
-    const hasActiveSession = user.onlineAt && typeof user.onlineAt === 'object'
-    if (hasActiveSession) return true
-
-    const now = Date.now()
-    const lastSeen = user.lastSeen || user.onlineAt
-    const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
-    const timeSinceLastSeen = now - lastSeenTime
-
-    return timeSinceLastSeen < 2 * 60 * 1000 // 2 minutes
+    return isUserOnline(user)
   }
 
   const getLastSeenText = (user: User) => {
-    if (isOnline(user)) {
-      return 'Online'
-    }
-
-    const now = Date.now()
-    const lastSeen = user.lastSeen || user.onlineAt
-    const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
-    const diff = now - lastSeenTime
-
-    if (diff < 60000) {
-      return 'Gerade offline'
-    } else if (diff < 3600000) {
-      const minutes = Math.floor(diff / 60000)
-      return `Offline seit ${minutes}m`
-    } else if (diff < 86400000) {
-      const hours = Math.floor(diff / 3600000)
-      return `Offline seit ${hours}h`
-    } else {
-      const days = Math.floor(diff / 86400000)
-      return `Offline seit ${days}d`
-    }
+    const status = getOnlineStatus(user)
+    return status.text
   }
 
   const handleBack = () => {

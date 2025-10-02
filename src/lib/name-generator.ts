@@ -17,8 +17,8 @@ export const generateFunnyName = (): string => {
 }
 
 // Helper to generate a random color for user avatars
-const hashCode = (str: string): number => 
-  str.split("").reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0)
+const hashCode = (str: string): number =>
+  str.split("").reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0) >>> 0
 
 const intToHex = (num: number): string => 
   num.toString(16).padStart(6, "0").substring(0, 6)

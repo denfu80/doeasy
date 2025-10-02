@@ -49,6 +49,19 @@ npm run dev
 
 Die App läuft dann unter `http://localhost:3000`
 
+### Firebase Setup & Testing
+
+```bash
+# Firebase Emulator starten (für lokale Entwicklung)
+firebase emulators:start --only auth,database
+
+# Firebase Rules testen
+npm run test:rules
+
+# Production Rules deployen
+npm run firebase:deploy:rules
+```
+
 ### Firebase Setup (Erforderlich)
 
 Für Real-time Kollaboration:

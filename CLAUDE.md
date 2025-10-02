@@ -62,8 +62,11 @@ npx shadcn@latest add [component-name]
 # Example: Add more components
 npx shadcn@latest add dialog toast
 
-# Firebase emulator (after setup)
-npm run firebase:emulator
+# Firebase emulator
+npm run firebase:emulators
+
+# Test Firebase database rules
+npm run test:rules
 ```
 
 ### Project Structure
@@ -102,8 +105,12 @@ npm run firebase:emulator
 │   │   └── utils.ts                # shadcn/ui utility functions
 │   └── types/
 │       └── todo.ts                 # TypeScript type definitions
+├── tests/
+│   └── rules-test.js           # Firebase rules testing (minimal setup)
 ├── design/                     # Design prototypes and requirements
 ├── components.json             # shadcn/ui configuration
+├── firebase.json               # Firebase configuration with emulator setup
+├── database.rules.json         # Firebase Realtime Database security rules
 ├── next.config.ts              # Next.js configuration
 ├── tailwind.config.ts          # Tailwind CSS with shadcn/ui theme
 └── tsconfig.json               # TypeScript configuration
@@ -118,7 +125,7 @@ npm run firebase:emulator
 - **Responsive Design**: Mobile-first approach with Tailwind CSS breakpoints
 - **TypeScript**: Strict typing for all components and functions
 - **Code Style**: Follow Next.js and React best practices, use functional components with hooks
-- **Testing**: Write tests for critical functionality (to be added)
+- **Testing**: Firebase rules testing with local emulator setup (`npm run test:rules`)
 - **Performance**: Optimize for mobile devices, implement proper loading states
 - **Branding**: Use "mach.einfach" consistently, maintain playful but professional tone
 - **Animations**: Leverage Tailwind's built-in animations (animate-pulse, animate-bounce, etc.)
@@ -144,7 +151,7 @@ NEXT_PUBLIC_HOMEPAGE_STYLE=terminal
 
 ## Firebase Integration
 
-**⚠️ Firebase is required for the app to function.** No demo mode is available.
+**✅ Firebase is fully configured and production-ready.**
 
 - Firebase Realtime Database for real-time todo synchronization
 - Firebase Anonymous Authentication with SSR-safe implementation
@@ -152,6 +159,26 @@ NEXT_PUBLIC_HOMEPAGE_STYLE=terminal
 - Dynamic import with ssr: false to avoid Next.js SSR conflicts
 - localStorage as backup system for data safety
 - Human-readable list IDs using human-id package for better UX
+- **Comprehensive security rules** with validation and access control
+- **Local testing setup** with Firebase Emulator Suite
+
+### Firebase Testing
+
+The project includes local Firebase rules testing:
+
+```bash
+# Start Firebase emulator
+firebase emulators:start --only auth,database
+
+# Run rules tests
+npm run test:rules
+```
+
+Test setup includes:
+- Authentication requirement validation
+- Data structure validation
+- User access control testing
+- Minimal test framework for incremental development
 
 ## Current Setup Status
 

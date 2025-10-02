@@ -29,6 +29,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Mobile-first responsive design** with gradients and animations
 - **Single-action homepage** focusing on "MACHEN" (creating lists)
 - **German language interface** with fun, energetic messaging
+- **Guest access system** with password protection for controlled sharing
+- **Pin/unpin lists** on homepage for quick access
+- **Activity tracking** with last user action timestamps
+- **User management page** for list administrators
 
 ## Development Workflow
 
@@ -66,10 +70,12 @@ npm run firebase:emulator
 ```
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx               # Root layout
-│   │   ├── page.tsx                # Homepage router (switches between designs)
-│   │   ├── list/[id]/page.tsx      # Individual todo list pages
-│   │   └── globals.css             # Global styles with shadcn/ui variables
+│   │   ├── layout.tsx                        # Root layout
+│   │   ├── page.tsx                         # Homepage router (switches between designs)
+│   │   ├── list/[id]/page.tsx              # Individual todo list pages
+│   │   ├── list/[id]/guest/[guestId]/page.tsx  # Guest access with password protection
+│   │   ├── list/[id]/users/page.tsx        # User management page
+│   │   └── globals.css                     # Global styles with shadcn/ui variables
 │   ├── components/
 │   │   ├── playful-homepage.tsx    # Main mach.einfach design (gradients, pink/purple)
 │   │   ├── terminal-homepage.tsx   # Alternative terminal/hacker design
@@ -80,6 +86,10 @@ npm run firebase:emulator
 │   │   ├── user-avatars.tsx        # User presence and avatar system
 │   │   ├── deleted-todos-trash.tsx # Trash/restore functionality
 │   │   ├── toast-notification.tsx  # Toast notification system
+│   │   ├── guest-todo-app.tsx      # Guest access component
+│   │   ├── password-prompt.tsx     # Password protection UI
+│   │   ├── sharing-modal.tsx       # Share options and link generation
+│   │   ├── users-page.tsx          # User management interface
 │   │   ├── debug-panel.tsx         # Development debugging
 │   │   └── ui/                     # shadcn/ui components (Button, Badge, Card, Input)
 │   ├── lib/
@@ -87,6 +97,8 @@ npm run firebase:emulator
 │   │   ├── firebase-test.ts        # Firebase connection testing
 │   │   ├── name-generator.ts       # Funny name generation
 │   │   ├── offline-storage.ts      # localStorage wrapper
+│   │   ├── readable-id-service.ts  # Human-readable ID generation
+│   │   ├── realtime-test.ts        # Real-time functionality testing
 │   │   └── utils.ts                # shadcn/ui utility functions
 │   └── types/
 │       └── todo.ts                 # TypeScript type definitions

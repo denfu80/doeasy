@@ -17,7 +17,7 @@ import {
 } from 'firebase/database'
 import { Zap, Eye, ArrowLeft, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils-v2'
+import { filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'

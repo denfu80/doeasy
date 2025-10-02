@@ -18,7 +18,7 @@ import {
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName } from '@/lib/name-generator'
 import { User } from '@/types/todo'
-import { isUserOnline, getOnlineStatus, filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils-v2'
+import { isUserOnline, getOnlineStatus, filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
 
 interface UsersPageProps {
   listId: string

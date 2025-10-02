@@ -15,8 +15,7 @@
     "firebase:test": "node firebase-quick-test.js",
     "test": "jest",
     "test:rules": "node tests/rules-test.js",
-    "test:presence": "jest tests/presence-utils.test.js",
-    "test:presence:v2": "jest tests/presence-utils-v2.test.js"
+    "test:presence": "jest tests/presence-utils.test.js"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

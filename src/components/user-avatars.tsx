@@ -2,8 +2,7 @@ import {User} from '@/types/todo'
 import {useCallback, useEffect, useRef, useState} from 'react'
 import {Check, Edit3} from 'lucide-react'
 import {useRouter} from 'next/navigation'
-import {isUserOnline, getOnlineStatus} from '@/lib/presence-utils-v2'
-import {sortUsersByActivity} from '@/lib/presence-utils'
+import {isUserOnline, getOnlineStatus, sortUsersByLastSeen} from '@/lib/presence-utils'
 
 interface UserAvatarsProps {
     users: User[]
@@ -71,7 +70,7 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
     }
 
     // Sort users to show current user first, then others
-    const sortedUsers = sortUsersByActivity(users, currentUserId)
+    const sortedUsers = sortUsersByLastSeen(users, currentUserId)
 
     const getInitials = (name: string) => {
         return name

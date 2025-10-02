@@ -1,150 +1,159 @@
 /**
- * Presence Utility Functions
- * Centralized logic for user online status and last seen functionality
+ * Presence Utility Functions V2
+ * Clean TDD approach - only using lastSeen
  */
 
 import { User } from '@/types/todo'
+import { ONLINE_THRESHOLD_MS, OFFLINE_THRESHOLD_MS } from './presence-config'
 
 /**
- * Check if a user is currently online (has active session)
+ * Check if a user is currently online
+ * Only uses lastSeen timestamp
  * @param user - User object to check
- * @returns true if user has active onlineAt timestamp
+ * @returns true if user is online (active within last 2 minutes)
  */
 export const isUserOnline = (user: User): boolean => {
-  return !!(user.onlineAt && typeof user.onlineAt === 'object')
-}
-
-/**
- * Get the last seen timestamp for a user
- * @param user - User object
- * @returns timestamp as number, 0 if no valid timestamp found
- */
-export const getLastSeenTime = (user: User): number => {
-  const lastSeen = user.lastSeen || user.onlineAt
-  return typeof lastSeen === 'number' ? lastSeen : 0
-}
-
-/**
- * Check if user was recently active (online or within time threshold)
- * @param user - User object to check
- * @param maxMinutes - Maximum minutes since last activity (default: 2)
- * @returns true if user is online or was active within threshold
- */
-export const isRecentlyActive = (user: User, maxMinutes: number = 2): boolean => {
-  // First check if user is currently online
-  if (isUserOnline(user)) {
-      // log
-      console.log(`User ${user.name} is currently online.`)
-    return true
+  // Check if lastSeen exists and is a number
+  if (!user.lastSeen || typeof user.lastSeen !== 'number') {
+    return false
   }
-  //console.log(`User ${user.name} is not online. Checking last seen time...`)
 
-  // Check if user was seen within the time threshold
+  // User is online if lastSeen was within the threshold
   const now = Date.now()
-  const lastSeenTime = getLastSeenTime(user)
-  const timeSinceLastSeen = now - lastSeenTime
+  const timeSinceLastSeen = now - user.lastSeen
 
-  return timeSinceLastSeen < maxMinutes * 60 * 1000
+  return timeSinceLastSeen < ONLINE_THRESHOLD_MS
 }
 
 /**
- * Sort users by online status and activity
- * Online users first, then by most recent activity
+ * Check if a user is inactive
+ * @param user - User object to check
+ * @returns true if user is inactive (more than 2 minutes since last activity)
+ */
+export const isInactive = (user: User): boolean => {
+  return !isUserOnline(user)
+}
+
+/**
+ * Check if a user is offline
+ * @param user - User object to check
+ * @returns true if user is offline (more than 5 minutes since last activity)
+ */
+export const isOffline = (user: User): boolean => {
+  // Check if lastSeen exists and is a number
+  if (!user.lastSeen || typeof user.lastSeen !== 'number') {
+    return true // No lastSeen = offline
+  }
+
+  // User is offline if lastSeen was more than 5 minutes ago
+  const now = Date.now()
+  const timeSinceLastSeen = now - user.lastSeen
+
+  return timeSinceLastSeen >= OFFLINE_THRESHOLD_MS
+}
+
+/**
+ * Filter users by time threshold
+ * @param users - Array of users to filter
+ * @param maxMinutes - Maximum minutes since last activity (default: 5 minutes = OFFLINE_THRESHOLD)
+ * @returns filtered array of users
+ */
+export const filterUsersByTime = (users: User[], maxMinutes?: number): User[] => {
+  const now = Date.now()
+  const threshold = maxMinutes ? maxMinutes * 60 * 1000 : OFFLINE_THRESHOLD_MS
+
+  return users.filter(user => {
+    if (!user.lastSeen || typeof user.lastSeen !== 'number') {
+      return false
+    }
+    return (now - user.lastSeen) < threshold
+  })
+}
+
+/**
+ * Sort users by last seen time (most recent first)
  * @param users - Array of users to sort
  * @param currentUserId - Optional current user ID to always put first
  * @returns sorted array of users
  */
-export const sortUsersByActivity = (users: User[], currentUserId?: string): User[] => {
+export const sortUsersByLastSeen = (users: User[], currentUserId?: string): User[] => {
   return [...users].sort((a, b) => {
-    // Always put current user first
+    // Current user first
     if (currentUserId) {
       if (a.id === currentUserId) return -1
       if (b.id === currentUserId) return 1
     }
 
-    // Sort by online status first
-    const aOnline = isUserOnline(a)
-    const bOnline = isUserOnline(b)
-
-    if (aOnline && !bOnline) return -1
-    if (!aOnline && bOnline) return 1
-
-    // If both have same online status, sort by last seen time
-    const aTime = getLastSeenTime(a)
-    const bTime = getLastSeenTime(b)
-
-    return bTime - aTime // Most recent first
+    // Then by last seen time
+    const aTime = (typeof a.lastSeen === 'number' ? a.lastSeen : 0)
+    const bTime = (typeof b.lastSeen === 'number' ? b.lastSeen : 0)
+    return bTime - aTime
   })
 }
 
 /**
- * Filter users by activity within time threshold
- * @param users - Array of users to filter
- * @param maxMinutes - Maximum minutes since last activity
- * @returns filtered array of users
+ * Get comprehensive online status for a user
+ * @param user - User object to check
+ * @returns Status object with state, icon, color, text, and lastSeenText
  */
-export const filterRecentlyActiveUsers = (users: User[], maxMinutes: number = 2): User[] => {
-  return users.filter(user => isRecentlyActive(user, maxMinutes))
-}
-
-/**
- * Get a human readable offline time string
- * @param user - User object
- * @returns formatted string like "⚫ Gerade offline" or "🕐 vor 5 Minuten"
- */
-export const getOfflineTimeString = (user: User): string => {
-  // If user is recently active (online or < 2min), return online
-  if (isRecentlyActive(user, 2)) {
-    return '🟢 Online'
-  }
-
-  const now = Date.now()
-  const lastSeenTime = getLastSeenTime(user)
-  const diff = now - lastSeenTime
-
-  if (diff < 60000) { // < 1 minute
-    return '⚫ Gerade offline'
-  } else if (diff < 3600000) { // < 1 hour
-    const minutes = Math.floor(diff / 60000)
-    return `🕐 vor ${minutes} Minute${minutes === 1 ? '' : 'n'}`
-  } else if (diff < 86400000) { // < 1 day
-    const hours = Math.floor(diff / 3600000)
-    return `🕐 vor ${hours} Stunde${hours === 1 ? '' : 'n'}`
-  } else { // >= 1 day
-    const days = Math.floor(diff / 86400000)
-    return `📅 vor ${days} Tag${days === 1 ? '' : 'en'}`
-  }
-}
-
-/**
- * Get online status indicator for UI
- * @param user - User object
- * @returns object with status indicator and text
- */
-export const getOnlineStatusIndicator = (user: User): {
-  indicator: string,
+export const getOnlineStatus = (user: User): {
+  state: 'online' | 'inactive' | 'offline',
+  icon: string,
+  color: string,
   text: string,
-  className: string
+  lastSeenText: string
 } => {
+  // Calculate time since last seen
+  const getLastSeenText = (lastSeen: number): string => {
+    const now = Date.now()
+    const diff = now - lastSeen
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+
+    if (minutes < 1) {
+      return 'gerade eben'
+    } else if (minutes < 60) {
+      return `vor ${minutes} Minute${minutes === 1 ? '' : 'n'}`
+    } else if (hours < 24) {
+      return `vor ${hours} Stunde${hours === 1 ? '' : 'n'}`
+    } else {
+      return `vor ${days} Tag${days === 1 ? '' : 'en'}`
+    }
+  }
+
+  // Get last seen text if available
+  const lastSeenText = (user.lastSeen && typeof user.lastSeen === 'number')
+    ? getLastSeenText(user.lastSeen)
+    : ''
+
+  // Determine status based on activity (check offline first, then inactive)
   if (isUserOnline(user)) {
     return {
-      indicator: '🟢',
+      state: 'online',
+      icon: '🟢',
+      color: 'green',
       text: 'Online',
-      className: 'text-green-600'
+      lastSeenText
     }
   }
 
-  if (isRecentlyActive(user, 2)) {
+  if (isOffline(user)) {
     return {
-      indicator: '🟡',
-      text: 'Kürzlich aktiv',
-      className: 'text-yellow-600'
+      state: 'offline',
+      icon: '⚫',
+      color: 'gray',
+      text: 'Offline',
+      lastSeenText
     }
   }
 
+  // isInactive (between 2-5 minutes)
   return {
-    indicator: '⚫',
-    text: 'Offline',
-    className: 'text-gray-400'
+    state: 'inactive',
+    icon: '🟡',
+    color: 'yellow',
+    text: 'Inaktiv',
+    lastSeenText
   }
 }

@@ -17,7 +17,7 @@ import {
   off
 } from 'firebase/database'
 import { Zap, Link, Edit2, Check, X, Pin, PinOff } from 'lucide-react'
-import { filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils-v2'
+import { filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'

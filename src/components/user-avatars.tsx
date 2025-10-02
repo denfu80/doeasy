@@ -2,6 +2,7 @@ import { User } from '@/types/todo'
 import { useState, useRef, useEffect } from 'react'
 import { Check, Edit3 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { isRecentlyActive, getOfflineTimeString, sortUsersByActivity } from '@/lib/presence-utils'
 
 interface UserAvatarsProps {
   users: User[]
@@ -60,16 +61,7 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
   }, [isExpanded, isEditing])
 
   // Sort users to show current user first, then others
-  const sortedUsers = [...users].sort((a, b) => {
-    if (a.id === currentUserId) return -1
-    if (b.id === currentUserId) return 1
-    // Sort others by online status
-    const aOnline = a.onlineAt && typeof a.onlineAt === 'object'
-    const bOnline = b.onlineAt && typeof b.onlineAt === 'object'
-    if (aOnline && !bOnline) return -1
-    if (!aOnline && bOnline) return 1
-    return 0
-  })
+  const sortedUsers = sortUsersByActivity(users, currentUserId)
 
   const getInitials = (name: string) => {
     return name
@@ -80,39 +72,6 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
       .toUpperCase()
   }
 
-  const isOnline = (user: User) => {
-    // Check if user has active onlineAt timestamp
-    const hasActiveSession = user.onlineAt && typeof user.onlineAt === 'object'
-    if (hasActiveSession) return true
-    
-    // Otherwise check if user was seen in the last 2 minutes
-    const now = Date.now()
-    const lastSeen = user.lastSeen || user.onlineAt
-    const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
-    const timeSinceLastSeen = now - lastSeenTime
-    
-    return timeSinceLastSeen < 2 * 60 * 1000 // 2 minutes
-  }
-
-  const getOfflineTime = (user: User) => {
-    const now = Date.now()
-    const lastSeen = user.lastSeen || user.onlineAt
-    const lastSeenTime = typeof lastSeen === 'number' ? lastSeen : 0
-    const diff = now - lastSeenTime
-    
-    if (diff < 60000) { // < 1 minute
-      return '⚫ Gerade offline'
-    } else if (diff < 3600000) { // < 1 hour
-      const minutes = Math.floor(diff / 60000)
-      return `⚫ Offline seit ${minutes}m`
-    } else if (diff < 86400000) { // < 1 day
-      const hours = Math.floor(diff / 3600000)
-      return `⚫ Offline seit ${hours}h`
-    } else {
-      const days = Math.floor(diff / 86400000)
-      return `⚫ Offline seit ${days}d`
-    }
-  }
 
   const handleAvatarClick = (user: User) => {
     if (user.id === currentUserId) {
@@ -153,7 +112,7 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
     >
       {sortedUsers.slice(0, 5).map(user => {
         const isCurrentUser = user.id === currentUserId
-        const userIsOnline = isOnline(user)
+        const userIsOnline = isRecentlyActive(user)
         
         return (
           <div key={user.id} className="relative">
@@ -221,7 +180,7 @@ export default function UserAvatars({ users, currentUserId, userName, onNameChan
                 zIndex: isCurrentUser ? (isExpanded ? 50 : 100) : user.zIndex,
                 transform: isCurrentUser && isExpanded ? 'rotate(-360deg)' : 'rotate(0deg)'
               }}
-              title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} ${userIsOnline ? '🟢 Online' : getOfflineTime(user)}`}
+              title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} ${getOfflineTimeString(user)}`}
               onClick={() => handleAvatarClick(user)}
             >
               <span className="text-sm font-bold text-white drop-shadow-sm">

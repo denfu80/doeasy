@@ -5,8 +5,6 @@
 -- evtl. offline Avatare anzeigen?
 - Es gibt keine Möglichkeit alte Offline-Nutzer zu entfernen
 - http://localhost:3000/list/real-trains-care/users/ geht ein Nutzer direkt auf die Nutzerseite und klickt zurück kommt er auf die vorherige Seite (nicht die Startseite)
-- Gast Avatar hat eine Klammer auf im Avatar nach dem Buchstaben
-- Namensänderungen in user liste werden erst beim verlassen der liste übernommen (auch andere nutzer der liste sehen die änderungen erst dann)
 
 ##### Überdenken: Anzeige der Nutzer
 Avatar-Anzeige (todo-app/guest-todo-app): 2 Minuten

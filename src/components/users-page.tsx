@@ -200,7 +200,13 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map(word => word.charAt(0))
+      .filter(word => word.length > 0)
+      .map(word => {
+        // Find first alphanumeric character
+        const match = word.match(/[a-zA-Z0-9]/)
+        return match ? match[0] : ''
+      })
+      .filter(char => char !== '')
       .join('')
       .substring(0, 2)
       .toUpperCase()

@@ -21,6 +21,7 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
     const [clickedUserId, setClickedUserId] = useState<string | null>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -63,6 +64,15 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
         }
     }, [isExpanded, isEditing, userName])
 
+    // Cleanup click timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (clickTimeoutRef.current) {
+                clearTimeout(clickTimeoutRef.current)
+            }
+        }
+    }, [])
+
     const handleNameCancel = () => {
         setEditingName(userName || '')
         setIsEditing(false)
@@ -83,21 +93,39 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
 
 
     const handleAvatarClick = (user: User) => {
+        // Highlight effect for clicked avatar
+        setClickedUserId(user.id)
+        setTimeout(() => setClickedUserId(null), 600)
+
+        // Single click: Navigate to users page for any avatar
+        if (clickTimeoutRef.current) {
+            // This is part of a double-click, cancel single-click action
+            clearTimeout(clickTimeoutRef.current)
+            clickTimeoutRef.current = null
+            return
+        }
+
+        clickTimeoutRef.current = setTimeout(() => {
+            clickTimeoutRef.current = null
+            // Single click confirmed - navigate to users page
+            router.push(`/list/${listId}/users`)
+        }, 250) // Wait 250ms to detect double-click
+    }
+
+    const handleAvatarDoubleClick = (user: User) => {
+        // Clear single-click timeout
+        if (clickTimeoutRef.current) {
+            clearTimeout(clickTimeoutRef.current)
+            clickTimeoutRef.current = null
+        }
+
+        // Double-click on own avatar: Open name editor
         if (user.id === currentUserId) {
             if (!isExpanded) {
                 setIsExpanded(true)
             } else if (!isEditing) {
                 setIsEditing(true)
             }
-        } else {
-            // Highlight effect for clicked avatar
-            setClickedUserId(user.id)
-            setTimeout(() => setClickedUserId(null), 600)
-
-            // Navigate to users page after short delay
-            setTimeout(() => {
-                router.push(`/list/${listId}/users`)
-            }, 300)
         }
     }
 
@@ -186,8 +214,9 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
                                 zIndex: isCurrentUser ? (isExpanded ? 50 : 100) : user.zIndex,
                                 transform: isCurrentUser && isExpanded ? 'rotate(-360deg)' : 'rotate(0deg)'
                             }}
-                            title={`${user.name}${isCurrentUser ? ' (Du) - Klick zum Bearbeiten' : ''} - ${status.icon} ${status.text} (${status.lastSeenText})`}
+                            title={`${user.name}${isCurrentUser ? ' (Du) - Doppelklick zum Bearbeiten' : ''} - ${status.icon} ${status.text} (${status.lastSeenText})`}
                             onClick={() => handleAvatarClick(user)}
+                            onDoubleClick={() => handleAvatarDoubleClick(user)}
                         >
               <span className="text-sm font-bold text-white drop-shadow-sm">
                 {getInitials(user.name || user.id)}

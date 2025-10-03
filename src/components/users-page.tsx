@@ -23,6 +23,7 @@ import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { User } from '@/types/todo'
 import { isUserOnline, getOnlineStatus, filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
+import ToastNotification from './toast-notification'
 
 interface UsersPageProps {
   listId: string
@@ -42,8 +43,8 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const [allUsersList, setAllUsersList] = useState<User[]>([])
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('info')
   const [lastDeletedUser, setLastDeletedUser] = useState<{id: string, data: any} | null>(null)
-  const [showUndoButton, setShowUndoButton] = useState(false)
 
   // Firebase Authentication
   useEffect(() => {
@@ -320,21 +321,14 @@ export default function UsersPage({ listId }: UsersPageProps) {
 
       // Show undo toast
       setToastMessage(`"${userName}" wurde entfernt`)
-      setShowUndoButton(true)
+      setToastType('warning')
       setToastVisible(true)
-
-      // Auto-hide after 5 seconds
-      setTimeout(() => {
-        setToastVisible(false)
-        setShowUndoButton(false)
-        setLastDeletedUser(null)
-      }, 5000)
     } catch (error) {
       console.error('Failed to delete user:', error)
       setToastMessage('Fehler beim Entfernen des Nutzers')
-      setShowUndoButton(false)
+      setToastType('warning')
+      setLastDeletedUser(null)
       setToastVisible(true)
-      setTimeout(() => setToastVisible(false), 3000)
     }
   }
 
@@ -347,16 +341,15 @@ export default function UsersPage({ listId }: UsersPageProps) {
       await set(userPresenceRef, lastDeletedUser.data)
 
       setToastMessage('Nutzer wiederhergestellt')
-      setShowUndoButton(false)
+      setToastType('success')
       setLastDeletedUser(null)
       setToastVisible(true)
-      setTimeout(() => setToastVisible(false), 2000)
     } catch (error) {
       console.error('Failed to restore user:', error)
       setToastMessage('Fehler beim Wiederherstellen')
-      setShowUndoButton(false)
+      setToastType('warning')
+      setLastDeletedUser(null)
       setToastVisible(true)
-      setTimeout(() => setToastVisible(false), 3000)
     }
   }
 
@@ -374,9 +367,8 @@ export default function UsersPage({ listId }: UsersPageProps) {
 
     if (oldUsers.length === 0) {
       setToastMessage('Keine alten Nutzer zum Aufräumen gefunden')
-      setShowUndoButton(false)
+      setToastType('info')
       setToastVisible(true)
-      setTimeout(() => setToastVisible(false), 3000)
       return
     }
 
@@ -389,15 +381,13 @@ export default function UsersPage({ listId }: UsersPageProps) {
       await Promise.all(deletePromises)
 
       setToastMessage(`${oldUsers.length} alte Nutzer wurden entfernt`)
-      setShowUndoButton(false)
+      setToastType('success')
       setToastVisible(true)
-      setTimeout(() => setToastVisible(false), 3000)
     } catch (error) {
       console.error('Failed to cleanup old users:', error)
       setToastMessage('Fehler beim Aufräumen')
-      setShowUndoButton(false)
+      setToastType('warning')
       setToastVisible(true)
-      setTimeout(() => setToastVisible(false), 3000)
     }
   }
 
@@ -607,19 +597,14 @@ export default function UsersPage({ listId }: UsersPageProps) {
       </main>
 
       {/* Toast Notification */}
-      {toastVisible && (
-        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-purple-200 px-4 py-3 z-50 animate-in slide-in-from-bottom flex items-center gap-3">
-          <p className="text-sm font-medium text-slate-800">{toastMessage}</p>
-          {showUndoButton && (
-            <button
-              onClick={handleUndoDelete}
-              className="text-sm font-semibold text-purple-600 hover:text-purple-800 underline transition-colors"
-            >
-              Rückgängig
-            </button>
-          )}
-        </div>
-      )}
+      <ToastNotification
+        message={toastMessage}
+        type={toastType}
+        isVisible={toastVisible}
+        onClose={() => setToastVisible(false)}
+        onUndo={lastDeletedUser ? handleUndoDelete : undefined}
+        undoText="Rückgängig"
+      />
     </div>
   )
 }

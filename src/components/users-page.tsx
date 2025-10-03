@@ -13,10 +13,13 @@ import {
 import {
   ref,
   onValue,
-  off
+  off,
+  update,
+  serverTimestamp,
+  set
 } from 'firebase/database'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
-import { generateFunnyName } from '@/lib/name-generator'
+import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { User } from '@/types/todo'
 import { isUserOnline, getOnlineStatus, filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
 
@@ -84,6 +87,76 @@ export default function UsersPage({ listId }: UsersPageProps) {
       }
     }
   }, [])
+
+  // Real-time Presence Tracking
+  useEffect(() => {
+    if (!isAuthReady || !user || !userName) return
+
+    if (!isFirebaseConfigured() || !db) {
+      console.error('❌ Firebase database not available for presence tracking')
+      return
+    }
+
+    const userRef = ref(db, `lists/${listId}/presence/${user.uid}`)
+    const userColor = generateColor(user.uid)
+
+    const baseUserPresence = {
+      color: userColor,
+      name: userName,
+      isTyping: false,
+      editingTodoId: null
+    }
+
+    // Function to update presence with current timestamp
+    const updatePresence = async () => {
+      const userPresence = {
+        ...baseUserPresence,
+        lastSeen: serverTimestamp()
+      }
+
+      try {
+        await set(userRef, userPresence)
+        console.log('✅ Presence updated successfully on users page')
+      } catch (error: any) {
+        console.error('❌ Presence update failed:', error.code, error.message)
+      }
+    }
+
+    // Set initial presence
+    setTimeout(updatePresence, 100)
+
+    // Set up heartbeat to continuously update presence every 30 seconds
+    const heartbeatInterval = setInterval(() => {
+      if (!document.hidden) {
+        updatePresence()
+      }
+    }, 30000) // 30 seconds
+
+    // Handle disconnect using visibility API
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        set(userRef, {
+          ...baseUserPresence,
+          lastSeen: serverTimestamp()
+        })
+      } else {
+        updatePresence()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', () => {
+      set(userRef, {
+        ...baseUserPresence,
+        lastSeen: serverTimestamp()
+      })
+    })
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearInterval(heartbeatInterval)
+    }
+  }, [isAuthReady, user, userName, listId])
 
   // Load users and list name
   useEffect(() => {
@@ -154,13 +227,27 @@ export default function UsersPage({ listId }: UsersPageProps) {
     setTimeout(() => nameInputRef.current?.focus(), 100)
   }
 
-  const handleSaveName = () => {
+  const handleSaveName = async () => {
     if (editingName.trim()) {
       // Remove line breaks and extra whitespace
       const cleanedName = editingName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim()
       setUserName(cleanedName)
       localStorage.setItem('macheinfach-username', cleanedName)
       setIsEditingName(false)
+
+      // Immediately update Firebase presence with new name
+      if (user && isFirebaseConfigured() && db) {
+        const userRef = ref(db, `lists/${listId}/presence/${user.uid}`)
+        try {
+          await update(userRef, {
+            name: cleanedName,
+            lastSeen: serverTimestamp()
+          })
+          console.log('✅ Name updated in Firebase immediately')
+        } catch (error) {
+          console.error('❌ Failed to update name in Firebase:', error)
+        }
+      }
     }
   }
 

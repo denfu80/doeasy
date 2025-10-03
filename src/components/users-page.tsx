@@ -235,7 +235,18 @@ export default function UsersPage({ listId }: UsersPageProps) {
   }
 
   const handleBack = () => {
-    router.back()
+    // Check if we have browser history within our app
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      // Check if previous page was from our app (list or guest page)
+      const referrer = document.referrer
+      if (referrer && (referrer.includes(`/list/${listId}`) || referrer.includes('/guest/'))) {
+        router.back()
+        return
+      }
+    }
+
+    // Fallback: Navigate to the list page (works for both normal and guest access)
+    router.push(`/list/${listId}`)
   }
 
   const isCurrentUser = (userId: string) => user?.uid === userId

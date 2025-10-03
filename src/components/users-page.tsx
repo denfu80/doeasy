@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Users, Crown, Edit3, Check, X } from 'lucide-react'
+import { ArrowLeft, Users, Crown, Edit3, Check, X, Trash2, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -16,7 +16,8 @@ import {
   off,
   update,
   serverTimestamp,
-  set
+  set,
+  remove
 } from 'firebase/database'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
@@ -37,6 +38,10 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [editingName, setEditingName] = useState('')
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const [showAllUsers, setShowAllUsers] = useState(false)
+  const [allUsersList, setAllUsersList] = useState<User[]>([])
+  const [toastVisible, setToastVisible] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
 
   // Firebase Authentication
   useEffect(() => {
@@ -174,15 +179,21 @@ export default function UsersPage({ listId }: UsersPageProps) {
             ...data[userId]
           } as User))
 
-        // Filter users active in last 24 hours
-        const activeUsers = filterUsersByTime(allUsers, 24 * 60) // 24 hours in minutes
+        // Store all users for potential filtering
+        setAllUsersList(allUsers)
+
+        // Filter based on toggle state
+        const filteredUsers = showAllUsers
+          ? allUsers
+          : filterUsersByTime(allUsers, 24 * 60) // 24 hours in minutes
 
         // Sort: current user first, then by last seen time
-        const sortedUsers = sortUsersByLastSeen(activeUsers, user.uid)
+        const sortedUsers = sortUsersByLastSeen(filteredUsers, user.uid)
 
         setUsers(sortedUsers)
       } else {
         setUsers([])
+        setAllUsersList([])
       }
     })
 
@@ -195,7 +206,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
       off(presenceRef, 'value', unsubscribePresence)
       off(listNameRef, 'value', unsubscribeListName)
     }
-  }, [isAuthReady, user, listId])
+  }, [isAuthReady, user, listId, showAllUsers])
 
   const getInitials = (name: string) => {
     return name
@@ -270,6 +281,71 @@ export default function UsersPage({ listId }: UsersPageProps) {
     }
   }
 
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!isFirebaseConfigured() || !db) return
+
+    // Confirm deletion
+    if (!confirm(`Nutzer "${userName}" wirklich entfernen?`)) {
+      return
+    }
+
+    try {
+      const userPresenceRef = ref(db, `lists/${listId}/presence/${userId}`)
+      await remove(userPresenceRef)
+
+      setToastMessage(`Nutzer "${userName}" wurde entfernt`)
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 3000)
+    } catch (error) {
+      console.error('Failed to delete user:', error)
+      setToastMessage('Fehler beim Entfernen des Nutzers')
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 3000)
+    }
+  }
+
+  const handleBulkCleanup = async () => {
+    if (!isFirebaseConfigured() || !db) return
+
+    const now = Date.now()
+    const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000)
+
+    const oldUsers = allUsersList.filter(u => {
+      if (!u.lastSeen || typeof u.lastSeen !== 'number') return false
+      if (u.id === user?.uid) return false // Don't delete current user
+      return u.lastSeen < sevenDaysAgo
+    })
+
+    if (oldUsers.length === 0) {
+      setToastMessage('Keine alten Nutzer zum Aufräumen gefunden')
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 3000)
+      return
+    }
+
+    if (!confirm(`${oldUsers.length} Nutzer (> 7 Tage offline) wirklich entfernen?`)) {
+      return
+    }
+
+    try {
+      const deletePromises = oldUsers.map(u => {
+        const userPresenceRef = ref(db!, `lists/${listId}/presence/${u.id}`)
+        return remove(userPresenceRef)
+      })
+
+      await Promise.all(deletePromises)
+
+      setToastMessage(`${oldUsers.length} alte Nutzer wurden entfernt`)
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 3000)
+    } catch (error) {
+      console.error('Failed to cleanup old users:', error)
+      setToastMessage('Fehler beim Aufräumen')
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 3000)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
       {/* Header */}
@@ -298,9 +374,39 @@ export default function UsersPage({ listId }: UsersPageProps) {
               </div>
             </div>
 
-            <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
-              {users.length} {users.length === 1 ? 'Nutzer' : 'Nutzer'}
-            </Badge>
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+                {users.length} {users.length === 1 ? 'Nutzer' : 'Nutzer'}
+              </Badge>
+
+              {/* Filter Toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAllUsers(!showAllUsers)}
+                className={`${
+                  showAllUsers
+                    ? 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100'
+                    : 'bg-white text-slate-600 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <Filter className="w-4 h-4 mr-1" />
+                {showAllUsers ? 'Alle' : 'Aktive'}
+              </Button>
+
+              {/* Bulk Cleanup Button */}
+              {showAllUsers && allUsersList.length > users.length && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkCleanup}
+                  className="bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Aufräumen
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -412,8 +518,8 @@ export default function UsersPage({ listId }: UsersPageProps) {
                       </div>
 
                       <p className={`text-sm ${
-                        isOnline(listUser) 
-                          ? 'text-green-600 font-medium' 
+                        isOnline(listUser)
+                          ? 'text-green-600 font-medium'
                           : 'text-slate-500'
                       }`}>
                         {isOnline(listUser) && <span className="mr-1">🟢</span>}
@@ -421,6 +527,16 @@ export default function UsersPage({ listId }: UsersPageProps) {
                       </p>
                     </div>
 
+                    {/* Delete Button - Only for offline users, not for current user */}
+                    {!isCurrentUser(listUser.id) && !isOnline(listUser) && (
+                      <button
+                        onClick={() => handleDeleteUser(listUser.id, listUser.name)}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Nutzer entfernen"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -428,6 +544,13 @@ export default function UsersPage({ listId }: UsersPageProps) {
           )}
         </div>
       </main>
+
+      {/* Toast Notification */}
+      {toastVisible && (
+        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-purple-200 p-4 z-50 animate-in slide-in-from-bottom">
+          <p className="text-sm font-medium text-slate-800">{toastMessage}</p>
+        </div>
+      )}
     </div>
   )
 }

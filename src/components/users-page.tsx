@@ -40,7 +40,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [editingName, setEditingName] = useState('')
   const nameInputRef = useRef<HTMLInputElement>(null)
-  const [showAllUsers, setShowAllUsers] = useState(false)
+  const [showAllUsers, setShowAllUsers] = useState(true)
   const [allUsersList, setAllUsersList] = useState<User[]>([])
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
@@ -427,24 +427,20 @@ export default function UsersPage({ listId }: UsersPageProps) {
             </div>
 
             <div className="flex items-center space-x-2">
-              <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
-                {users.length} {users.length === 1 ? 'Nutzer' : 'Nutzer'}
-              </Badge>
-
               {/* Filter Toggle */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAllUsers(!showAllUsers)}
-                className={`${
-                  showAllUsers
-                    ? 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100'
-                    : 'bg-white text-slate-600 border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <Filter className="w-4 h-4 mr-1" />
-                {showAllUsers ? 'Alle' : 'Aktive'}
-              </Button>
+              {/*<Button*/}
+              {/*  variant="outline"*/}
+              {/*  size="sm"*/}
+              {/*  onClick={() => setShowAllUsers(!showAllUsers)}*/}
+              {/*  className={`${*/}
+              {/*    showAllUsers*/}
+              {/*      ? 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100'*/}
+              {/*      : 'bg-white text-slate-600 border-gray-300 hover:bg-gray-50'*/}
+              {/*  }`}*/}
+              {/*>*/}
+              {/*  <Filter className="w-4 h-4 mr-1" />*/}
+              {/*  {showAllUsers ? 'Alle' : 'Aktive'}*/}
+              {/*</Button>*/}
 
               {/* Bulk Cleanup Button */}
               {showAllUsers && allUsersList.length > users.length && (

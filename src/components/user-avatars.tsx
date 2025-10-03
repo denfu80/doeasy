@@ -131,7 +131,9 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
 
     const handleNameSave = () => {
         if (editingName.trim() && onNameChange) {
-            onNameChange(editingName.trim())
+            // Remove line breaks and extra whitespace
+            const cleanedName = editingName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim()
+            onNameChange(cleanedName)
         }
         setIsEditing(false)
     }
@@ -164,12 +166,16 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
                                             ref={inputRef}
                                             type="text"
                                             value={editingName}
-                                            onChange={(e) => setEditingName(e.target.value)}
+                                            onChange={(e) => {
+                                                // Remove line breaks immediately while typing
+                                                const cleanedValue = e.target.value.replace(/[\r\n]+/g, ' ')
+                                                setEditingName(cleanedValue)
+                                            }}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter') handleNameSave()
                                                 if (e.key === 'Escape') handleNameCancel()
                                             }}
-                                            className="font-semibold bg-purple-50 text-purple-800 px-3 py-1 rounded-lg border-2 border-purple-200 focus:border-purple-400 focus:outline-none text-sm min-w-32"
+                                            className="font-semibold bg-purple-50 text-purple-800 px-3 py-1 rounded-lg border-2 border-purple-200 focus:border-purple-400 focus:outline-none text-sm min-w-32 whitespace-nowrap overflow-hidden text-ellipsis"
                                             placeholder="Dein Name..."
                                         />
                                         <button
@@ -183,7 +189,7 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
                                 ) : (
                                     <>
                     <span
-                        className="font-semibold text-slate-800 cursor-pointer hover:text-purple-700 transition-colors text-sm"
+                        className="font-semibold text-slate-800 cursor-pointer hover:text-purple-700 transition-colors text-sm whitespace-nowrap"
                         onClick={() => setIsEditing(true)}
                     >
                       {userName}

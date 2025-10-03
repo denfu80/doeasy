@@ -156,8 +156,10 @@ export default function UsersPage({ listId }: UsersPageProps) {
 
   const handleSaveName = () => {
     if (editingName.trim()) {
-      setUserName(editingName.trim())
-      localStorage.setItem('macheinfach-username', editingName.trim())
+      // Remove line breaks and extra whitespace
+      const cleanedName = editingName.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim()
+      setUserName(cleanedName)
+      localStorage.setItem('macheinfach-username', cleanedName)
       setIsEditingName(false)
     }
   }
@@ -264,9 +266,13 @@ export default function UsersPage({ listId }: UsersPageProps) {
                               ref={nameInputRef}
                               type="text"
                               value={editingName}
-                              onChange={(e) => setEditingName(e.target.value)}
+                              onChange={(e) => {
+                                // Remove line breaks immediately while typing
+                                const cleanedValue = e.target.value.replace(/[\r\n]+/g, ' ')
+                                setEditingName(cleanedValue)
+                              }}
                               onKeyDown={handleKeyPress}
-                              className="font-semibold bg-white text-slate-800 px-3 py-1 rounded-lg border-2 border-purple-300 focus:border-purple-500 focus:outline-none text-sm min-w-32"
+                              className="font-semibold bg-white text-slate-800 px-3 py-1 rounded-lg border-2 border-purple-300 focus:border-purple-500 focus:outline-none text-sm min-w-32 whitespace-nowrap overflow-hidden text-ellipsis"
                               placeholder="Dein Name..."
                             />
                             <button
@@ -286,7 +292,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                           </div>
                         ) : (
                           <div className="flex items-center space-x-2">
-                            <h3 className="font-semibold text-slate-800">
+                            <h3 className="font-semibold text-slate-800 whitespace-nowrap">
                               {listUser.name}
                             </h3>
 

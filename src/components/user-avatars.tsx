@@ -1,5 +1,5 @@
 import {User} from '@/types/todo'
-import {useCallback, useEffect, useRef, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {Check, Edit3} from 'lucide-react'
 import {useRouter} from 'next/navigation'
 import {isUserOnline, getOnlineStatus, sortUsersByLastSeen} from '@/lib/presence-utils'

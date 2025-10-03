@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { ArrowLeft, Users, Crown, Edit3, Check, X, Trash2, Filter, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -44,7 +45,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('info')
-  const [lastDeletedUser, setLastDeletedUser] = useState<{id: string, data: any} | null>(null)
+  const [lastDeletedUser, setLastDeletedUser] = useState<{id: string, data: Record<string, unknown>} | null>(null)
 
   // Firebase Authentication
   useEffect(() => {
@@ -408,7 +409,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                 Zurück
               </Button>
 
-              <a
+              <Link
                 href="/"
                 className="flex items-center space-x-2 group cursor-pointer"
                 title="Zur Startseite"
@@ -422,7 +423,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                   </h1>
                   <p className="text-sm text-slate-500 font-mono">{listName}</p>
                 </div>
-              </a>
+              </Link>
             </div>
 
             <div className="flex items-center space-x-2">

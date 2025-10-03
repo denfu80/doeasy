@@ -42,6 +42,8 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const [allUsersList, setAllUsersList] = useState<User[]>([])
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
+  const [lastDeletedUser, setLastDeletedUser] = useState<{id: string, data: any} | null>(null)
+  const [showUndoButton, setShowUndoButton] = useState(false)
 
   // Firebase Authentication
   useEffect(() => {
@@ -284,21 +286,64 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (!isFirebaseConfigured() || !db) return
 
-    // Confirm deletion
-    if (!confirm(`Nutzer "${userName}" wirklich entfernen?`)) {
-      return
-    }
-
     try {
+      // Get current user data before deleting
+      const userToDelete = allUsersList.find(u => u.id === userId)
+      if (!userToDelete) return
+
+      // Store for undo
+      setLastDeletedUser({
+        id: userId,
+        data: {
+          color: userToDelete.color,
+          name: userToDelete.name,
+          lastSeen: userToDelete.lastSeen,
+          isTyping: userToDelete.isTyping || false,
+          editingTodoId: userToDelete.editingTodoId || null
+        }
+      })
+
+      // Delete from Firebase
       const userPresenceRef = ref(db, `lists/${listId}/presence/${userId}`)
       await remove(userPresenceRef)
 
-      setToastMessage(`Nutzer "${userName}" wurde entfernt`)
+      // Show undo toast
+      setToastMessage(`"${userName}" wurde entfernt`)
+      setShowUndoButton(true)
       setToastVisible(true)
-      setTimeout(() => setToastVisible(false), 3000)
+
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        setToastVisible(false)
+        setShowUndoButton(false)
+        setLastDeletedUser(null)
+      }, 5000)
     } catch (error) {
       console.error('Failed to delete user:', error)
       setToastMessage('Fehler beim Entfernen des Nutzers')
+      setShowUndoButton(false)
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 3000)
+    }
+  }
+
+  const handleUndoDelete = async () => {
+    if (!lastDeletedUser || !isFirebaseConfigured() || !db) return
+
+    try {
+      // Restore user to Firebase
+      const userPresenceRef = ref(db, `lists/${listId}/presence/${lastDeletedUser.id}`)
+      await set(userPresenceRef, lastDeletedUser.data)
+
+      setToastMessage('Nutzer wiederhergestellt')
+      setShowUndoButton(false)
+      setLastDeletedUser(null)
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 2000)
+    } catch (error) {
+      console.error('Failed to restore user:', error)
+      setToastMessage('Fehler beim Wiederherstellen')
+      setShowUndoButton(false)
       setToastVisible(true)
       setTimeout(() => setToastVisible(false), 3000)
     }
@@ -318,12 +363,9 @@ export default function UsersPage({ listId }: UsersPageProps) {
 
     if (oldUsers.length === 0) {
       setToastMessage('Keine alten Nutzer zum Aufräumen gefunden')
+      setShowUndoButton(false)
       setToastVisible(true)
       setTimeout(() => setToastVisible(false), 3000)
-      return
-    }
-
-    if (!confirm(`${oldUsers.length} Nutzer (> 7 Tage offline) wirklich entfernen?`)) {
       return
     }
 
@@ -336,11 +378,13 @@ export default function UsersPage({ listId }: UsersPageProps) {
       await Promise.all(deletePromises)
 
       setToastMessage(`${oldUsers.length} alte Nutzer wurden entfernt`)
+      setShowUndoButton(false)
       setToastVisible(true)
       setTimeout(() => setToastVisible(false), 3000)
     } catch (error) {
       console.error('Failed to cleanup old users:', error)
       setToastMessage('Fehler beim Aufräumen')
+      setShowUndoButton(false)
       setToastVisible(true)
       setTimeout(() => setToastVisible(false), 3000)
     }
@@ -547,8 +591,16 @@ export default function UsersPage({ listId }: UsersPageProps) {
 
       {/* Toast Notification */}
       {toastVisible && (
-        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-purple-200 p-4 z-50 animate-in slide-in-from-bottom">
+        <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg border border-purple-200 px-4 py-3 z-50 animate-in slide-in-from-bottom flex items-center gap-3">
           <p className="text-sm font-medium text-slate-800">{toastMessage}</p>
+          {showUndoButton && (
+            <button
+              onClick={handleUndoDelete}
+              className="text-sm font-semibold text-purple-600 hover:text-purple-800 underline transition-colors"
+            >
+              Rückgängig
+            </button>
+          )}
         </div>
       )}
     </div>

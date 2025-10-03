@@ -497,13 +497,23 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
         <div className="container mx-auto px-3 md:px-8 py-2.5 md:py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
             <div className="flex items-center space-x-2 md:space-x-3 mb-3 sm:mb-0">
-              <div className="w-7 h-7 md:w-10 md:h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded md:rounded-lg flex items-center justify-center shadow-md">
+              <a
+                href="/"
+                className="w-7 h-7 md:w-10 md:h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded md:rounded-lg flex items-center justify-center shadow-md transition-transform duration-200 hover:scale-110 hover:rotate-12"
+                title="Zur Startseite"
+              >
                 <Eye className="w-4 h-4 md:w-6 md:h-6 text-white" />
-              </div>
+              </a>
               <div className="flex flex-col">
-                <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight">
-                  mach<span className="text-pink-500">.</span>einfach
-                </h1>
+                <a
+                  href="/"
+                  className="group"
+                  title="Zur Startseite"
+                >
+                  <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight group-hover:text-purple-600 transition-colors duration-200">
+                    mach<span className="text-pink-500">.</span>einfach
+                  </h1>
+                </a>
                 <div className="flex items-center space-x-2 mt-1">
                   <span className="text-sm md:text-base text-purple-600 font-bold">
                     {listName} (readonly)

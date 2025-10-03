@@ -1,19 +1,6 @@
 ### Avatar & User
 
 #### Probleme
-- Wenn ein Nutzer alleine ist, kommt er nicht auf die Nutzerliste
--- evtl. offline Avatare anzeigen?
-- Es gibt keine Möglichkeit alte Offline-Nutzer zu entfernen
-- http://localhost:3000/list/real-trains-care/users/ geht ein Nutzer direkt auf die Nutzerseite und klickt zurück kommt er auf die vorherige Seite (nicht die Startseite)
-
-##### Überdenken: Anzeige der Nutzer
-Avatar-Anzeige (todo-app/guest-todo-app): 2 Minuten
-- Nur kürzlich aktive User (letzte 2 Minuten)
-- Für Live-Kollaboration relevant
-
-Users-Page (/list/[id]/users): 24 Stunden
-- Längere Historie (letzte 24 Stunden)
-- Für User-Management gedacht
 
 
 ### UI/UX

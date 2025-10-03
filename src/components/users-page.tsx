@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Users, Crown, Edit3, Check, X, Trash2, Filter } from 'lucide-react'
+import { ArrowLeft, Users, Crown, Edit3, Check, X, Trash2, Filter, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -418,15 +418,21 @@ export default function UsersPage({ listId }: UsersPageProps) {
                 Zurück
               </Button>
 
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
+              <a
+                href="/"
+                className="flex items-center space-x-2 group cursor-pointer"
+                title="Zur Startseite"
+              >
+                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12">
+                  <Zap className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-slate-900">Nutzer</h1>
+                  <h1 className="text-lg font-bold text-slate-900 group-hover:text-purple-600 transition-colors duration-200">
+                    <span className="font-black">mach<span className="text-pink-500">.</span>einfach</span> / Nutzer
+                  </h1>
                   <p className="text-sm text-slate-500 font-mono">{listName}</p>
                 </div>
-              </div>
+              </a>
             </div>
 
             <div className="flex items-center space-x-2">

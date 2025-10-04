@@ -389,44 +389,6 @@ export default function UsersPage({ listId }: UsersPageProps) {
     }
   }
 
-  const handleBulkCleanup = async () => {
-    if (!isFirebaseConfigured() || !db) return
-
-    const now = Date.now()
-    const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000)
-
-    const oldUsers = allUsersList.filter(u => {
-      if (!u.lastSeen || typeof u.lastSeen !== 'number') return false
-      if (u.id === user?.uid) return false // Don't delete current user
-      return u.lastSeen < sevenDaysAgo
-    })
-
-    if (oldUsers.length === 0) {
-      setToastMessage('Keine alten Nutzer zum Aufräumen gefunden')
-      setToastType('info')
-      setToastVisible(true)
-      return
-    }
-
-    try {
-      const deletePromises = oldUsers.map(u => {
-        const userPresenceRef = ref(db!, `lists/${listId}/presence/${u.id}`)
-        return remove(userPresenceRef)
-      })
-
-      await Promise.all(deletePromises)
-
-      setToastMessage(`${oldUsers.length} alte Nutzer wurden entfernt`)
-      setToastType('success')
-      setToastVisible(true)
-    } catch (error) {
-      console.error('Failed to cleanup old users:', error)
-      setToastMessage('Fehler beim Aufräumen')
-      setToastType('warning')
-      setToastVisible(true)
-    }
-  }
-
   const onlineUserCount = users.filter(u => isUserOnline(u)).length
 
   return (
@@ -485,19 +447,6 @@ export default function UsersPage({ listId }: UsersPageProps) {
                   <p className="text-sm text-slate-500 font-mono">{listName}</p>
                 </div>
               </Link>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              {/* Bulk Cleanup Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkCleanup}
-                className="bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100"
-              >
-                <Trash2 className="w-4 h-4 mr-1" />
-                Aufräumen
-              </Button>
             </div>
           </div>
         </div>

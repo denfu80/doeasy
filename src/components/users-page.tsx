@@ -3,9 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Users, Crown, Edit3, Check, X, Trash2, Zap } from 'lucide-react'
+import { ArrowLeft, Users, Edit3, Check, X, Trash2, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
   signInAnonymously,
   onAuthStateChanged,
@@ -597,14 +596,6 @@ export default function UsersPage({ listId }: UsersPageProps) {
                               >
                                 <Edit3 className="w-3 h-3" />
                               </button>
-                            )}
-
-                            {/* Admin badge (placeholder for later) */}
-                            {index === 0 && !isCurrentUser(listUser.id) && (
-                              <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-xs px-2 py-0.5">
-                                <Crown className="w-3 h-3 mr-1" />
-                                Admin
-                              </Badge>
                             )}
                           </div>
                         )}

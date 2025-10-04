@@ -23,7 +23,7 @@ import { sortUsersByLastSeen, isUserOnline } from '@/lib/presence-utils'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { OfflineStorage, getLocalListIds, addLocalListId, removeLocalListId } from '@/lib/offline-storage'
-import { Todo, User } from '@/types/todo'
+import { Todo, User, GuestLink, UserRole } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
@@ -62,6 +62,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   // Sharing state
   const [showSharingModal, setShowSharingModal] = useState(false)
+  const [guestLinks, setGuestLinks] = useState<GuestLink[]>([])
 
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
@@ -573,6 +574,55 @@ export default function TodoApp({ listId }: TodoAppProps) {
       setToastVisible(true)
     }
   }
+  
+  // Load guest links
+  useEffect(() => {
+    if (!isAuthReady || !user || !isFirebaseConfigured() || !db) return
+
+    const guestLinksRef = ref(db, `lists/${listId}/guestLinks`)
+
+    const unsubscribeGuestLinks = onValue(guestLinksRef, (snapshot) => {
+      const data = snapshot.val()
+      if (data) {
+        const linksList = Object.keys(data).map(linkId => ({
+          id: linkId,
+          ...data[linkId]
+        } as GuestLink))
+        setGuestLinks(linksList)
+      } else {
+        setGuestLinks([])
+      }
+    })
+
+    return () => {
+      off(guestLinksRef, 'value', unsubscribeGuestLinks)
+    }
+  }, [isAuthReady, user, listId])
+  
+  // Sharing functions
+  const handleCreateGuestLink = async () => {
+    if (!user || !isFirebaseConfigured() || !db) return
+    
+    const guestLinksRef = ref(db, `lists/${listId}/guestLinks`)
+    const newLinkRef = push(guestLinksRef)
+    
+    await set(newLinkRef, {
+      createdBy: user.uid,
+      createdAt: serverTimestamp(),
+      revoked: false
+    })
+  }
+  
+  const handleRevokeGuestLink = async (linkId: string) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+
+    const linkRef = ref(db, `lists/${listId}/guestLinks/${linkId}`)
+    await update(linkRef, {
+      revoked: true,
+      revokedAt: serverTimestamp(),
+      revokedBy: user.uid
+    })
+  }
 
   if (!isAuthReady) {
     return (
@@ -837,6 +887,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
         onClose={() => setShowSharingModal(false)}
         listId={listId}
         listName={listName}
+        guestLinks={guestLinks}
+        onCreateGuestLink={handleCreateGuestLink}
+        onRevokeGuestLink={handleRevokeGuestLink}
       />
       
       {/* Toast Notification */}

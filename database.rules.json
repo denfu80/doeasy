@@ -126,59 +126,7 @@
             ".validate": "newData.isBoolean()"
           }
         },
-        
-        // Admin and password system
-        "admins": {
-          ".read": "auth != null",
-          ".write": "auth != null",
-          
-          "$adminId": {
-            ".validate": "newData.hasChildren(['uid', 'name']) && newData.child('uid').val() == $adminId",
-            
-            "uid": {
-              ".validate": "newData.isString() && newData.val() == $adminId"
-            },
-            "name": {
-              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
-            },
-            "claimedAt": {
-              ".validate": "newData.isNumber() || newData.val() == now"
-            },
-            "isLocallyStored": {
-              ".validate": "newData.isBoolean()"
-            }
-          }
-        },
-        
-        // Password protection settings
-        "passwords": {
-          ".read": "auth != null",
-          ".write": "auth != null",
-          
-          "adminPassword": {
-            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
-          },
-          "normalPassword": {
-            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
-          },
-          "guestPassword": {
-            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
-          },
-          "enabledModes": {
-            ".validate": "newData.hasChildren() || newData.val() == null",
-            
-            "adminPasswordEnabled": {
-              ".validate": "newData.isBoolean()"
-            },
-            "normalPasswordEnabled": {
-              ".validate": "newData.isBoolean()"
-            },
-            "guestPasswordEnabled": {
-              ".validate": "newData.isBoolean()"
-            }
-          }
-        },
-        
+
         // Guest links management
         "guestLinks": {
           ".read": "auth != null",

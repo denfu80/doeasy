@@ -92,7 +92,6 @@ Das bedeutet, deine Rules funktionieren und blockieren unerlaubte Zugriffe.
 ## 📚 Nächste Schritte
 
 - Tests für Guest-Access System
-- Tests für Password Protection
 - Tests für List Metadata
 - Tests für User Presence System
 - Tests für Smart Delete/Restore

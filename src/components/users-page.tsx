@@ -448,7 +448,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
                 </div>
               </Link>
             </div>
-Bug:           </div>
+         </div>
         </div>
       </header>
 

@@ -417,10 +417,10 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
                 </Link>
                 <div className="flex items-center space-x-2 mt-1">
                   <span className="text-sm md:text-base text-purple-600 font-bold">
-                    {listName} (readonly)
+                    {listName}
                   </span>
                   <p className="text-xs text-slate-400 font-mono hidden sm:block">
-                    readonly access
+                    // readonly access
                   </p>
                 </div>
               </div>

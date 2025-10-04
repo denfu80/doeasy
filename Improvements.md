@@ -11,6 +11,7 @@
 ### Algmein
 
 - Es gibt keine Möglichkeit auf die Startseite zu kommen (Logo als Link?)
+- bug: anpinnen von gastlisten ist wie anpinnen der normalen liste
 
 ### Todo Liste
 - erledigt von steht da nicht sondern nur wer es erstellt hat

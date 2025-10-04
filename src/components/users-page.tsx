@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Users, Crown, Edit3, Check, X, Trash2, Filter, Zap } from 'lucide-react'
+import { ArrowLeft, Users, Crown, Edit3, Check, X, Trash2, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -42,7 +42,6 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const [isEditingName, setIsEditingName] = useState(false)
   const [editingName, setEditingName] = useState('')
   const nameInputRef = useRef<HTMLInputElement>(null)
-  const [showAllUsers, setShowAllUsers] = useState(true)
   const [allUsersList, setAllUsersList] = useState<User[]>([])
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
@@ -186,16 +185,11 @@ export default function UsersPage({ listId }: UsersPageProps) {
             ...data[userId]
           } as User))
 
-        // Store all users for potential filtering
+        // Store all users
         setAllUsersList(allUsers)
 
-        // Filter based on toggle state
-        const filteredUsers = showAllUsers
-          ? allUsers
-          : filterUsersByTime(allUsers, 24 * 60) // 24 hours in minutes
-
         // Sort: current user first, then by last seen time
-        const sortedUsers = sortUsersByLastSeen(filteredUsers, user.uid)
+        const sortedUsers = sortUsersByLastSeen(allUsers, user.uid)
 
         setUsers(sortedUsers)
       } else {

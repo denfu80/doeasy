@@ -16,9 +16,9 @@ import {
   set,
   off
 } from 'firebase/database'
-import { Zap, Link as LinkIcon, Edit2, Check, X, Pin, PinOff } from 'lucide-react'
+import { Zap, Link as LinkIcon, Edit2, Check, X, Pin } from 'lucide-react'
 import Link from 'next/link'
-import { filterUsersByTime, sortUsersByLastSeen, isUserOnline } from '@/lib/presence-utils'
+import { sortUsersByLastSeen, isUserOnline } from '@/lib/presence-utils'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
@@ -330,11 +330,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
             ...data[userId]
           } as User))
 
-        // Filter users active within last 5 minutes (default OFFLINE_THRESHOLD)
-        const activeUsers = filterUsersByTime(allUsers)
-
         // Sort by last seen time (most recent first)
-        const sortedUsers = sortUsersByLastSeen(activeUsers)
+        const sortedUsers = sortUsersByLastSeen(allUsers)
 
         // Assign z-index for stacking order
         sortedUsers.forEach((user, index) => {

@@ -22,9 +22,11 @@ import {
 } from 'firebase/database'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
+import { getLocalListIds, addLocalListId, removeLocalListId } from '@/lib/offline-storage'
 import { User } from '@/types/todo'
-import { isUserOnline, getOnlineStatus, filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
+import { isUserOnline, getOnlineStatus, sortUsersByLastSeen } from '@/lib/presence-utils'
 import ToastNotification from './toast-notification'
+import HeaderActionsMenu from './header-actions-menu'
 
 interface UsersPageProps {
   listId: string
@@ -46,6 +48,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('info')
   const [lastDeletedUser, setLastDeletedUser] = useState<{id: string, data: Record<string, unknown>} | null>(null)
+  const [isPinned, setIsPinned] = useState(false)
 
   // Firebase Authentication
   useEffect(() => {
@@ -236,6 +239,45 @@ export default function UsersPage({ listId }: UsersPageProps) {
     return status.text
   }
 
+  // Check pin status on mount
+  useEffect(() => {
+    const localLists = getLocalListIds()
+    setIsPinned(localLists.includes(listId))
+  }, [listId])
+
+  const handleTogglePin = () => {
+    const localLists = getLocalListIds()
+    const isCurrentlyPinned = localLists.includes(listId)
+
+    if (isCurrentlyPinned) {
+      removeLocalListId(listId)
+      setIsPinned(false)
+      setToastMessage('Liste entpinnt')
+      setToastType('info')
+    } else {
+      addLocalListId(listId)
+      setIsPinned(true)
+      setToastMessage('Liste gepinnt')
+      setToastType('success')
+    }
+    setToastVisible(true)
+  }
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/list/${listId}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setToastMessage('Link in Zwischenablage kopiert!')
+      setToastType('success')
+      setToastVisible(true)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+      setToastMessage('Fehler beim Kopieren des Links')
+      setToastType('warning')
+      setToastVisible(true)
+    }
+  }
+
   const handleBack = () => {
     // Check if we have browser history within our app
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -392,11 +434,37 @@ export default function UsersPage({ listId }: UsersPageProps) {
     }
   }
 
+  const onlineUserCount = users.filter(u => isUserOnline(u)).length
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-purple-100 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-purple-100">
+        {/* Mobile Header (<md) */}
+        <div className="md:hidden px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              className="text-slate-600 hover:text-slate-900 hover:bg-purple-100 -ml-2"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Zurück
+            </Button>
+            <HeaderActionsMenu
+              listId={listId}
+              isPinned={isPinned}
+              onTogglePin={handleTogglePin}
+              onShare={handleShare}
+              userCount={users.length}
+              onlineUserCount={onlineUserCount}
+            />
+          </div>
+        </div>
+
+        {/* Desktop Header (≥md) */}
+        <div className="hidden md:block container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -427,33 +495,16 @@ export default function UsersPage({ listId }: UsersPageProps) {
             </div>
 
             <div className="flex items-center space-x-2">
-              {/* Filter Toggle */}
-              {/*<Button*/}
-              {/*  variant="outline"*/}
-              {/*  size="sm"*/}
-              {/*  onClick={() => setShowAllUsers(!showAllUsers)}*/}
-              {/*  className={`${*/}
-              {/*    showAllUsers*/}
-              {/*      ? 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100'*/}
-              {/*      : 'bg-white text-slate-600 border-gray-300 hover:bg-gray-50'*/}
-              {/*  }`}*/}
-              {/*>*/}
-              {/*  <Filter className="w-4 h-4 mr-1" />*/}
-              {/*  {showAllUsers ? 'Alle' : 'Aktive'}*/}
-              {/*</Button>*/}
-
               {/* Bulk Cleanup Button */}
-              {showAllUsers && allUsersList.length > users.length && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBulkCleanup}
-                  className="bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100"
-                >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Aufräumen
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkCleanup}
+                className="bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Aufräumen
+              </Button>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 ### Avatar & User
 
 #### Probleme
-
+- aktive/alle filter raus - eifach immer alle anzeigen
 
 ### UI/UX
 

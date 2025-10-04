@@ -18,7 +18,7 @@ import {
 } from 'firebase/database'
 import { Zap, Link as LinkIcon, Edit2, Check, X, Pin, PinOff } from 'lucide-react'
 import Link from 'next/link'
-import { filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
+import { filterUsersByTime, sortUsersByLastSeen, isUserOnline } from '@/lib/presence-utils'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
@@ -33,6 +33,7 @@ import DeletedTodosTrash from './deleted-todos-trash'
 import ToastNotification from './toast-notification'
 import SharingModal from './sharing-modal'
 import PasswordPrompt from './password-prompt'
+import HeaderActionsMenu from './header-actions-menu'
 
 interface TodoAppProps {
   listId: string
@@ -799,19 +800,49 @@ export default function TodoApp({ listId }: TodoAppProps) {
     )
   }
 
+  const onlineUserCount = users.filter(u => isUserOnline(u)).length
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
-      {/* Full-width Header */}
-      <header className="w-full bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-sm">
-        <div className="container mx-auto px-3 md:px-8 py-2.5 md:py-4">
+      {/* Mobile Header - Sticky */}
+      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-sm md:static">
+        {/* Mobile Layout (<md) */}
+        <div className="md:hidden px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <Link
+              href="/"
+              className="flex items-center space-x-2"
+              title="Zur Startseite"
+            >
+              <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <h1 className="text-xl font-black text-slate-800 tracking-tight">
+                mach<span className="text-pink-500">.</span>einfach
+              </h1>
+            </Link>
+            <HeaderActionsMenu
+              listId={listId}
+              isPinned={isPinned}
+              onTogglePin={handleTogglePin}
+              onShare={copyLinkToClipboard}
+              userCount={users.length}
+              onlineUserCount={onlineUserCount}
+            />
+          </div>
+          <TodoInput onAddTodo={handleAddTodo} />
+        </div>
+
+        {/* Desktop Layout (≥md) */}
+        <div className="hidden md:block container mx-auto px-8 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-            <div className="flex items-center space-x-2 md:space-x-3 mb-3 sm:mb-0">
+            <div className="flex items-center space-x-3 mb-3 sm:mb-0">
               <Link
                 href="/"
-                className="w-7 h-7 md:w-10 md:h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded md:rounded-lg flex items-center justify-center shadow-md transition-transform duration-200 hover:scale-110 hover:rotate-12"
+                className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md transition-transform duration-200 hover:scale-110 hover:rotate-12"
                 title="Zur Startseite"
               >
-                <Zap className="w-4 h-4 md:w-6 md:h-6 text-white" />
+                <Zap className="w-6 h-6 text-white" />
               </Link>
               <div className="flex flex-col">
                 <Link
@@ -819,7 +850,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
                   className="group"
                   title="Zur Startseite"
                 >
-                  <h1 className="text-xl md:text-3xl font-black text-slate-800 tracking-tight group-hover:text-purple-600 transition-colors duration-200">
+                  <h1 className="text-3xl font-black text-slate-800 tracking-tight group-hover:text-purple-600 transition-colors duration-200">
                     mach<span className="text-pink-500">.</span>einfach
                   </h1>
                 </Link>
@@ -853,31 +884,31 @@ export default function TodoApp({ listId }: TodoAppProps) {
                     </div>
                   ) : (
                     <div className="flex items-center space-x-2 group cursor-pointer" onClick={handleEditListName}>
-                      <span className="text-sm md:text-base text-purple-600 font-bold group-hover:text-purple-700 transition-colors duration-200">
+                      <span className="text-base text-purple-600 font-bold group-hover:text-purple-700 transition-colors duration-200">
                         {listName}
                       </span>
                       <Edit2 className="w-4 h-4 text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                     </div>
                   )}
-                  <p className="text-xs text-slate-400 font-mono hidden sm:block">
+                  <p className="text-xs text-slate-400 font-mono">
                     {isEditingListName ? '// enter = speichern, esc = abbrechen' : '// zum bearbeiten klicken'}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <UserAvatars 
-                users={users} 
+            <div className="flex items-center space-x-4">
+              <UserAvatars
+                users={users}
                 currentUserId={user?.uid}
                 userName={userName}
                 onNameChange={setUserName}
                 listId={listId}
               />
-              <button 
+              <button
                 onClick={handleTogglePin}
-                className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border ${
-                  isPinned 
-                    ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100' 
+                className={`flex items-center justify-center w-10 h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border ${
+                  isPinned
+                    ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100'
                     : 'bg-white text-slate-400 border-gray-200 hover:bg-gray-50 hover:text-slate-600'
                 } ${
                   hasShownPinHint && !isPinned ? 'gentle-pulse-animation' : ''
@@ -890,9 +921,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
                   <Pin className="w-4 h-4" />
                 )}
               </button>
-              <button 
+              <button
                 onClick={copyLinkToClipboard}
-                className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border bg-white text-blue-500 border-gray-200 hover:bg-blue-50"
+                className="flex items-center justify-center w-10 h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border bg-white text-blue-500 border-gray-200 hover:bg-blue-50"
                 title="Liste teilen"
               >
                 <LinkIcon className="w-4 h-4" />
@@ -952,8 +983,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
           </div>
         )}
 
-        {/* Add Todo Form */}
-        <TodoInput onAddTodo={handleAddTodo} />
+        {/* Add Todo Form - Desktop only (mobile has it in sticky header) */}
+        <div className="hidden md:block">
+          <TodoInput onAddTodo={handleAddTodo} />
+        </div>
 
         {/* Todo List */}
         <TodoList 

@@ -12,7 +12,8 @@
 
 - Es gibt keine Möglichkeit auf die Startseite zu kommen (Logo als Link?)
 - bug: anpinnen von gastlisten ist wie anpinnen der normalen liste
-
+- gastschutz
+- 
 ### Todo Liste
 - erledigt von steht da nicht sondern nur wer es erstellt hat
 - item log

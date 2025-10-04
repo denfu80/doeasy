@@ -10,9 +10,10 @@ interface UserAvatarsProps {
     userName?: string
     onNameChange?: (name: string) => void
     listId: string
+    disableNavigation?: boolean
 }
 
-export default function UserAvatars({users, currentUserId, userName, onNameChange, listId}: UserAvatarsProps) {
+export default function UserAvatars({users, currentUserId, userName, onNameChange, listId, disableNavigation}: UserAvatarsProps) {
     const router = useRouter()
     const [isExpanded, setIsExpanded] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -102,6 +103,11 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
         // Highlight effect for clicked avatar
         setClickedUserId(user.id)
         setTimeout(() => setClickedUserId(null), 600)
+
+        // Skip navigation if disabled (e.g., for guest mode)
+        if (disableNavigation) {
+            return
+        }
 
         // Single click: Navigate to users page for any avatar
         if (clickTimeoutRef.current) {

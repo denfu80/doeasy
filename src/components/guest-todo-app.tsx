@@ -18,16 +18,14 @@ import {
 import { Zap, Eye, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { filterUsersByTime, sortUsersByLastSeen, isUserOnline } from '@/lib/presence-utils'
+import { filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
-import { getLocalListIds, addLocalListId, removeLocalListId } from '@/lib/offline-storage'
 import { Todo, User, GuestLink } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import ToastNotification from './toast-notification'
-import HeaderActionsMenu from './header-actions-menu'
 
 interface GuestTodoAppProps {
   listId: string
@@ -50,9 +48,6 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
   const [guestLink, setGuestLink] = useState<GuestLink | null>(null)
   const [isValidGuestLink, setIsValidGuestLink] = useState<boolean | null>(null)
 
-  // Pin state
-  const [isPinned, setIsPinned] = useState(false)
-
   // Toast notification state
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
@@ -67,38 +62,6 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
 
   // Use ref to ensure Firebase initialization only runs once
   const firebaseInitialized = useRef(false)
-
-  // Check if list is pinned
-  useEffect(() => {
-    const localLists = getLocalListIds()
-    const isListPinned = localLists.includes(listId)
-    setIsPinned(isListPinned)
-  }, [listId])
-
-  // Pin/Unpin functionality
-  const handleTogglePin = () => {
-    if (isPinned) {
-      removeLocalListId(listId)
-      setIsPinned(false)
-      setToastMessage('Liste aus diesem Browser entpinnt')
-      setToastType('info')
-      setToastVisible(true)
-    } else {
-      addLocalListId(listId)
-      setIsPinned(true)
-      setToastMessage('Liste in diesem Browser gepinnt')
-      setToastType('success')
-      setToastVisible(true)
-    }
-  }
-
-  const copyLinkToClipboard = () => {
-    const guestUrl = `${window.location.origin}/list/${listId}/guest/${guestId}`
-    navigator.clipboard.writeText(guestUrl)
-    setToastMessage('Gast-Link in Zwischenablage kopiert')
-    setToastType('success')
-    setToastVisible(true)
-  }
 
   // Initialize Firebase Authentication
   useEffect(() => {
@@ -427,24 +390,22 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     )
   }
 
-  const onlineUserCount = users.filter(u => isUserOnline(u)).length
-
   // Valid guest access
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
       {/* Full-width Header */}
       <header className="w-full bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-sm">
         <div className="container mx-auto px-3 md:px-8 py-2.5 md:py-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-2 md:space-x-3 flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+            <div className="flex items-center space-x-2 md:space-x-3 w-full sm:w-auto">
               <Link
                 href="/"
-                className="w-7 h-7 md:w-10 md:h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded md:rounded-lg flex items-center justify-center shadow-md transition-transform duration-200 hover:scale-110 hover:rotate-12 flex-shrink-0"
+                className="w-7 h-7 md:w-10 md:h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded md:rounded-lg flex items-center justify-center shadow-md transition-transform duration-200 hover:scale-110 hover:rotate-12"
                 title="Zur Startseite"
               >
                 <Eye className="w-4 h-4 md:w-6 md:h-6 text-white" />
               </Link>
-              <div className="flex flex-col min-w-0">
+              <div className="flex flex-col">
                 <Link
                   href="/"
                   className="group"
@@ -455,7 +416,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
                   </h1>
                 </Link>
                 <div className="flex items-center space-x-2 mt-1">
-                  <span className="text-sm md:text-base text-purple-600 font-bold truncate">
+                  <span className="text-sm md:text-base text-purple-600 font-bold">
                     {listName}
                   </span>
                   <p className="text-xs text-slate-400 font-mono hidden sm:block">
@@ -464,24 +425,14 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
                 </div>
               </div>
             </div>
-            {/* Mobile: Menu, Desktop: Avatars */}
-            <div className="md:hidden flex-shrink-0">
-              <HeaderActionsMenu
-                listId={listId}
-                isPinned={isPinned}
-                onTogglePin={handleTogglePin}
-                onShare={copyLinkToClipboard}
-                userCount={users.length}
-                onlineUserCount={onlineUserCount}
-              />
-            </div>
-            <div className="hidden md:flex items-center space-x-2 md:space-x-4">
+            <div className="flex items-center space-x-2 md:space-x-4 w-full sm:w-auto justify-end">
               <UserAvatars
                 users={users}
                 currentUserId={user?.uid}
                 userName={userName}
                 onNameChange={setUserName}
                 listId={listId}
+                disableNavigation={true}
               />
             </div>
           </div>

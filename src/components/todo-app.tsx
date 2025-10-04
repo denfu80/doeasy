@@ -804,8 +804,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
-      {/* Mobile Header - Sticky */}
-      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-sm md:static">
+      {/* Sticky Header - All Sizes */}
+      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-sm">
         {/* Mobile Layout (<md) */}
         <div className="md:hidden px-4 py-3">
           <div className="flex items-center justify-between mb-3">

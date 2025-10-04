@@ -15,7 +15,7 @@ import {
   get,
   update
 } from 'firebase/database'
-import { Zap, Eye, ArrowLeft, Check } from 'lucide-react'
+import { Zap, Eye, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
@@ -25,7 +25,6 @@ import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { Todo, User, GuestLink } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
-import DebugPanel from './debug-panel'
 import ToastNotification from './toast-notification'
 
 interface GuestTodoAppProps {
@@ -358,11 +357,6 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     }
   }
 
-  // Handle back navigation
-  const handleBackToList = () => {
-    router.push(`/list/${listId}`)
-  }
-
   // Loading state
   if (!isAuthReady) {
     return (
@@ -439,13 +433,6 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
                 onNameChange={setUserName}
                 listId={listId}
               />
-              <button
-                onClick={handleBackToList}
-                className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border bg-white text-slate-500 border-gray-200 hover:bg-gray-50"
-                title="Zur normalen Ansicht"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </div>
@@ -545,17 +532,6 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
         isVisible={toastVisible}
         onClose={() => setToastVisible(false)}
       />
-
-      {/* Debug Panel (only in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <DebugPanel
-          firebaseStatus={firebaseStatus}
-          user={user}
-          listId={listId}
-          todos={todos}
-          users={users}
-        />
-      )}
     </div>
   )
 }

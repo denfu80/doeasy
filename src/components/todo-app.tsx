@@ -28,7 +28,6 @@ import { Todo, User, GuestLink, UserRole } from '@/types/todo'
 import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
 import TodoList from './todo-list'
-import DebugPanel from './debug-panel'
 import DeletedTodosTrash from './deleted-todos-trash'
 import ToastNotification from './toast-notification'
 import SharingModal from './sharing-modal'
@@ -901,17 +900,6 @@ export default function TodoApp({ listId }: TodoAppProps) {
         onUndo={lastDeletedTodo ? handleUndoDelete : undefined}
         undoText="Wiederherstellen"
       />
-
-      {/* Debug Panel (only in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <DebugPanel
-          firebaseStatus={firebaseStatus}
-          user={user}
-          listId={listId}
-          todos={todos}
-          users={users}
-        />
-      )}
     </div>
   )
 }

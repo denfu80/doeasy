@@ -259,3 +259,121 @@ Before implementing features, collaborate on user stories that define:
 - **Lucide Icons**: For consistent iconography (Plus, Zap, Users, ArrowRight)
 - **Custom Animations**: Tailwind CSS animations for interactive elements
 - **Gradient Design**: Pink-Purple-Blue color scheme throughout the app
+
+# Lessons Learned - Vercel Build Errors
+
+## Häufigste Build-Fehler nach Refactoring
+
+### 1. Funktion/Variable gelöscht aber noch verwendet
+**Problem:** Import/State entfernt → Code nutzt sie noch
+**Symptom:** `Cannot find name 'X'`
+
+**Checkliste vor dem Löschen:**
+```bash
+# Suche ALLE Verwendungen
+grep -r "functionName" src/
+grep -r "stateName" src/
+```
+
+**Beispiel:**
+```typescript
+// ❌ Fehler
+import { filterUsers } from '@/lib/utils'  // Import entfernt
+// Aber Code nutzt es noch:
+const filtered = filterUsers(users)  // Build Error!
+
+// ✅ Richtig
+// 1. Grep nach "filterUsers" in src/
+// 2. ALLE Verwendungen ersetzen/löschen
+// 3. Dann Import entfernen
+```
+
+### 2. useEffect Dependencies nicht aktualisiert
+**Problem:** State Variable gelöscht → useEffect referenziert sie noch
+**Symptom:** `Cannot find name 'X'` in dependency array
+
+**Checkliste:**
+- [ ] useEffect dependency arrays prüfen
+- [ ] useCallback dependency arrays prüfen
+- [ ] useMemo dependency arrays prüfen
+
+**Beispiel:**
+```typescript
+// ❌ Fehler
+const [showAll, setShowAll] = useState(false)  // State gelöscht
+}, [isReady, showAll])  // Build Error!
+
+// ✅ Richtig
+}, [isReady])  // showAll aus Array entfernt
+```
+
+### 3. Unused Imports (Warnings)
+**Problem:** Icons/Module importiert aber nicht verwendet
+**Symptom:** ESLint Warnings (kein Build Error, aber cleanup nötig)
+
+**Checkliste:**
+```bash
+npm run lint  # Zeigt alle Warnings
+```
+
+## Pre-Push Checkliste
+
+### ✅ IMMER vor Push ausführen:
+```bash
+# 1. Type Check
+npx tsc --noEmit
+
+# 2. Lint
+npm run lint
+
+# 3. Build Test
+npm run build
+```
+
+### 🔍 Bei Refactoring zusätzlich:
+```bash
+# Suche nach gelöschten Symbolen
+grep -r "deletedFunctionName" src/
+grep -r "deletedStateName" src/
+grep -r "DeletedComponent" src/
+```
+
+### ⚠️ Besonders kritisch:
+- React Hook Dependencies (useEffect, useCallback, useMemo)
+- Props Interfaces vs. tatsächliche Props
+- Import Statements vs. tatsächliche Verwendung
+
+## Vercel Build vs. Local Build
+
+**Unterschiede:**
+- Vercel: Fresh `node_modules`, kein Cache
+- Vercel: Strict TypeScript Mode
+- Local: Manchmal gecachte Errors
+
+**Best Practice - Simuliere Vercel lokal:**
+```bash
+rm -rf node_modules .next
+npm install
+npm run build
+```
+
+## Quick Reference
+
+| Fehlertyp | Check Command |
+|-----------|---------------|
+| Missing Function/Var | `grep -r "name" src/` |
+| Type Error | `npx tsc --noEmit` |
+| Build Error | `npm run build` |
+| Unused Imports | `npm run lint` |
+
+## Zusammenfassung
+
+**Root Causes (90% aller Build Errors):**
+1. Funktion/Variable gelöscht → noch irgendwo verwendet
+2. useEffect dependencies nicht aktualisiert
+3. Imports entfernt → Code nutzt sie noch
+
+**Lösung:**
+- ✅ **IMMER** `npm run build` lokal VOR Push
+- ✅ **GREP** nach gelöschten Symbolen
+- ✅ **TypeScript** ernst nehmen (nicht nur ESLint)

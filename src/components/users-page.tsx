@@ -207,7 +207,7 @@ export default function UsersPage({ listId }: UsersPageProps) {
       off(presenceRef, 'value', unsubscribePresence)
       off(listNameRef, 'value', unsubscribeListName)
     }
-  }, [isAuthReady, user, listId, showAllUsers])
+  }, [isAuthReady, user, listId])
 
   const getInitials = (name: string) => {
     return name

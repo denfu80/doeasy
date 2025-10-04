@@ -29,10 +29,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Mobile-first responsive design** with gradients and animations
 - **Single-action homepage** focusing on "MACHEN" (creating lists)
 - **German language interface** with fun, energetic messaging
-- **Guest access system** with password protection for controlled sharing
 - **Pin/unpin lists** on homepage for quick access
 - **Activity tracking** with last user action timestamps
-- **User management page** for list administrators
+- **User management page** for collaborative list management
 
 ## Development Workflow
 
@@ -76,7 +75,6 @@ npm run test:rules
 │   │   ├── layout.tsx                        # Root layout
 │   │   ├── page.tsx                         # Homepage router (switches between designs)
 │   │   ├── list/[id]/page.tsx              # Individual todo list pages
-│   │   ├── list/[id]/guest/[guestId]/page.tsx  # Guest access with password protection
 │   │   ├── list/[id]/users/page.tsx        # User management page
 │   │   └── globals.css                     # Global styles with shadcn/ui variables
 │   ├── components/
@@ -89,8 +87,6 @@ npm run test:rules
 │   │   ├── user-avatars.tsx        # User presence and avatar system
 │   │   ├── deleted-todos-trash.tsx # Trash/restore functionality
 │   │   ├── toast-notification.tsx  # Toast notification system
-│   │   ├── guest-todo-app.tsx      # Guest access component
-│   │   ├── password-prompt.tsx     # Password protection UI
 │   │   ├── sharing-modal.tsx       # Share options and link generation
 │   │   ├── users-page.tsx          # User management interface
 │   │   ├── debug-panel.tsx         # Development debugging

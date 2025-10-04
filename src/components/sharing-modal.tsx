@@ -1,29 +1,21 @@
 "use client"
 
 import { useState } from 'react'
-import { X, Link, Copy, QrCode, Eye, Users } from 'lucide-react'
+import { X, Link, Copy, QrCode } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { GuestLink } from '@/types/todo'
 
 interface SharingModalProps {
   isOpen: boolean
   onClose: () => void
   listId: string
   listName: string
-  guestLinks: GuestLink[]
-  onCreateGuestLink: () => void
-  onRevokeGuestLink: (linkId: string) => void
 }
 
 export default function SharingModal({
   isOpen,
   onClose,
   listId,
-  listName,
-  guestLinks,
-  onCreateGuestLink,
-  onRevokeGuestLink
+  listName
 }: SharingModalProps) {
   const [copied, setCopied] = useState<string | null>(null)
   const [showQR, setShowQR] = useState<string | null>(null)
@@ -48,8 +40,6 @@ export default function SharingModal({
   }
 
   if (!isOpen) return null
-
-  const activeGuestLinks = guestLinks.filter(link => !link.revoked)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -104,84 +94,6 @@ export default function SharingModal({
                 <QrCode className="w-4 h-4" />
               </Button>
             </div>
-          </div>
-
-          {/* Guest Link Card */}
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                    <Eye className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-800">Gast-Links</h3>
-                    <p className="text-sm text-slate-600">Nur lesen & abhaken</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                  {activeGuestLinks.length} aktiv
-                </Badge>
-              </div>
-
-              {/* Active Guest Links */}
-              {activeGuestLinks.length > 0 && (
-                <div className="space-y-2 mb-3">
-                  {activeGuestLinks.map((link) => {
-                    const guestLink = `${baseUrl}/list/${listId}/guest/${link.id}`
-                    return (
-                      <div key={link.id} className="bg-white rounded-lg p-3 border">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-slate-800 truncate">
-                              {listName} (readonly)
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              Erstellt: {new Date(typeof link.createdAt === 'number' ? link.createdAt : Date.now()).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-1 ml-2">
-                            <Button
-                              onClick={() => copyToClipboard(guestLink, `guest-${link.id}`)}
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              onClick={() => showQRCode(guestLink, `guest-${link.id}`)}
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                            >
-                              <QrCode className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              onClick={() => onRevokeGuestLink(link.id)}
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Create Guest Link Button */}
-              <Button
-                onClick={onCreateGuestLink}
-                size="sm"
-                className="w-full"
-                variant="outline"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Neuen Gast-Link erstellen
-              </Button>
           </div>
         </div>
 

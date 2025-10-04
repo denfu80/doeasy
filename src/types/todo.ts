@@ -19,14 +19,3 @@ export interface User {
   editingTodoId?: string // Which todo is being edited
   zIndex?: number
 }
-
-export interface GuestLink {
-  id: string
-  createdBy: string
-  createdAt: number | object
-  revoked?: boolean
-  revokedAt?: number | object | null
-  revokedBy?: string | null
-}
-
-export type UserRole = 'normal' | 'guest'

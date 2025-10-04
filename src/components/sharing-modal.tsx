@@ -1,24 +1,19 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { X, Link, Users, Crown, Copy, QrCode, Eye, Key, Lock } from 'lucide-react'
+import { useState } from 'react'
+import { X, Link, Copy, QrCode, Eye, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Admin, GuestLink, UserRole, PasswordSettings } from '@/types/todo'
+import { GuestLink } from '@/types/todo'
 
 interface SharingModalProps {
   isOpen: boolean
   onClose: () => void
   listId: string
   listName: string
-  currentUserRole: UserRole
-  admins: Admin[]
   guestLinks: GuestLink[]
-  passwordSettings: PasswordSettings
   onCreateGuestLink: () => void
   onRevokeGuestLink: (linkId: string) => void
-  onClaimAdmin: (password?: string) => void
-  onSetPassword: (type: 'admin' | 'normal' | 'guest', password: string) => void
 }
 
 export default function SharingModal({
@@ -26,26 +21,12 @@ export default function SharingModal({
   onClose,
   listId,
   listName,
-  currentUserRole,
-  admins,
   guestLinks,
-  passwordSettings,
   onCreateGuestLink,
-  onRevokeGuestLink,
-  onClaimAdmin,
-  onSetPassword
+  onRevokeGuestLink
 }: SharingModalProps) {
   const [copied, setCopied] = useState<string | null>(null)
   const [showQR, setShowQR] = useState<string | null>(null)
-  const [adminPassword, setAdminPassword] = useState('')
-  const [isClaimingAdmin, setIsClaimingAdmin] = useState(false)
-  const [claimError, setClaimError] = useState('')
-  const [showPasswordSettings, setShowPasswordSettings] = useState(false)
-  const [newPasswords, setNewPasswords] = useState({
-    admin: '',
-    normal: '',
-    guest: ''
-  })
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const normalLink = `${baseUrl}/list/${listId}`
@@ -60,52 +41,15 @@ export default function SharingModal({
     }
   }
 
-  const showQRCode = (text: string, type: string) => {
+  const showQRCode = (text: string) => {
     setShowQR(text)
     // Auto-close QR after 10 seconds
     setTimeout(() => setShowQR(null), 10000)
   }
 
-  // Helper functions
-  const handleClaimAdmin = async () => {
-    try {
-      setClaimError('')
-      await onClaimAdmin(adminPassword)
-      setIsClaimingAdmin(false)
-      setAdminPassword('')
-    } catch (error: any) {
-      setClaimError(error.message || 'Falsches Passwort')
-    }
-  }
-
-  const handleSavePasswords = async () => {
-    try {
-      // Save all three passwords
-      const promises = []
-      if (newPasswords.admin !== passwordSettings.adminPassword) {
-        promises.push(onSetPassword('admin', newPasswords.admin))
-      }
-      if (newPasswords.normal !== passwordSettings.normalPassword) {
-        promises.push(onSetPassword('normal', newPasswords.normal))
-      }
-      if (newPasswords.guest !== passwordSettings.guestPassword) {
-        promises.push(onSetPassword('guest', newPasswords.guest))
-      }
-      
-      await Promise.all(promises)
-      setShowPasswordSettings(false)
-      setNewPasswords({ admin: '', normal: '', guest: '' })
-    } catch (error) {
-      console.error('Failed to save passwords:', error)
-    }
-  }
-
   if (!isOpen) return null
 
   const activeGuestLinks = guestLinks.filter(link => !link.revoked)
-  const isAdmin = currentUserRole === 'admin'
-  const hasAdmins = admins.length > 0
-  const hasPasswordProtection = passwordSettings.enabledModes?.adminPasswordEnabled || passwordSettings.enabledModes?.normalPasswordEnabled || passwordSettings.enabledModes?.guestPasswordEnabled
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -153,7 +97,7 @@ export default function SharingModal({
                 {copied === 'normal' ? 'Kopiert!' : 'Link kopieren'}
               </Button>
               <Button
-                onClick={() => showQRCode(normalLink, 'normal')}
+                onClick={() => showQRCode(normalLink)}
                 size="sm"
                 variant="outline"
               >
@@ -162,9 +106,8 @@ export default function SharingModal({
             </div>
           </div>
 
-          {/* Guest Link Card - Only for Admins */}
-          {isAdmin && (
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
+          {/* Guest Link Card */}
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
@@ -239,202 +182,7 @@ export default function SharingModal({
                 <Users className="w-4 h-4 mr-2" />
                 Neuen Gast-Link erstellen
               </Button>
-            </div>
-          )}
-
-          {/* Admin Claim Card - Only for Non-Admins */}
-          {!isAdmin && (
-            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                    <Crown className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-800">Admin werden</h3>
-                    <p className="text-sm text-slate-600">
-                      {hasAdmins ? 'Admin-Passwort eingeben' : 'Liste übernehmen'}
-                    </p>
-                  </div>
-                </div>
-                {hasAdmins && (
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                    {admins.length} Admin{admins.length !== 1 ? 's' : ''}
-                  </Badge>
-                )}
-              </div>
-              
-              {/* Admin Password Input */}
-              {isClaimingAdmin && hasAdmins ? (
-                <div className="space-y-3">
-                  <div>
-                    <input
-                      type="password"
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      placeholder="Admin-Passwort eingeben..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleClaimAdmin()
-                        } else if (e.key === 'Escape') {
-                          setIsClaimingAdmin(false)
-                          setAdminPassword('')
-                          setClaimError('')
-                        }
-                      }}
-                      autoFocus
-                    />
-                    {claimError && (
-                      <p className="text-red-500 text-xs mt-1">{claimError}</p>
-                    )}
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={handleClaimAdmin}
-                      size="sm"
-                      className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white"
-                    >
-                      <Crown className="w-4 h-4 mr-2" />
-                      Übernehmen
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setIsClaimingAdmin(false)
-                        setAdminPassword('')
-                        setClaimError('')
-                      }}
-                      size="sm"
-                      variant="outline"
-                      className="px-3"
-                    >
-                      Abbrechen
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <Button
-                  onClick={() => {
-                    if (hasAdmins) {
-                      setIsClaimingAdmin(true)
-                    } else {
-                      onClaimAdmin()
-                    }
-                  }}
-                  size="sm"
-                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white"
-                >
-                  <Crown className="w-4 h-4 mr-2" />
-                  {hasAdmins ? 'Admin-Passwort eingeben' : 'Jetzt übernehmen'}
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* Password Settings Card - Only for Admins */}
-          {isAdmin && (
-            <div className="bg-gradient-to-br from-gray-50 to-slate-50 border border-gray-200 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gray-500 rounded-lg flex items-center justify-center">
-                    <Lock className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-800">Passwort-Schutz</h3>
-                    <p className="text-sm text-slate-600">
-                      {hasPasswordProtection ? 'Passwörter aktiv' : 'Zusätzliche Sicherheit'}
-                    </p>
-                  </div>
-                </div>
-                {hasPasswordProtection && (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    Aktiv
-                  </Badge>
-                )}
-              </div>
-              
-              {!showPasswordSettings ? (
-                <Button
-                  onClick={() => setShowPasswordSettings(true)}
-                  size="sm"
-                  className="w-full"
-                  variant="outline"
-                >
-                  <Key className="w-4 h-4 mr-2" />
-                  Passwörter verwalten
-                </Button>
-              ) : (
-                <div className="space-y-3">
-                  <div className="text-xs text-gray-600 mb-2">
-                    Leer lassen um Passwort-Schutz zu deaktivieren
-                  </div>
-                  
-                  {/* Admin Password */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Admin-Passwort
-                    </label>
-                    <input
-                      type="password"
-                      value={newPasswords.admin}
-                      onChange={(e) => setNewPasswords({...newPasswords, admin: e.target.value})}
-                      placeholder="Admin-Berechtigung..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  {/* Normal Password */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Normal-Passwort
-                    </label>
-                    <input
-                      type="password"
-                      value={newPasswords.normal}
-                      onChange={(e) => setNewPasswords({...newPasswords, normal: e.target.value})}
-                      placeholder="Vollzugang..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  {/* Guest Password */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Gast-Passwort
-                    </label>
-                    <input
-                      type="password"
-                      value={newPasswords.guest}
-                      onChange={(e) => setNewPasswords({...newPasswords, guest: e.target.value})}
-                      placeholder="Nur lesen..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div className="flex space-x-2 pt-2">
-                    <Button
-                      onClick={handleSavePasswords}
-                      size="sm"
-                      className="flex-1 bg-gray-600 hover:bg-gray-700 text-white"
-                    >
-                      Speichern
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setShowPasswordSettings(false)
-                        setNewPasswords({ admin: '', normal: '', guest: '' })
-                      }}
-                      size="sm"
-                      variant="outline"
-                      className="px-3"
-                    >
-                      Abbrechen
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          </div>
         </div>
 
         {/* QR Code Modal */}

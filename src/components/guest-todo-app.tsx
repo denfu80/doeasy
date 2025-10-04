@@ -22,12 +22,11 @@ import { filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
-import { Todo, User, GuestLink, PasswordSettings } from '@/types/todo'
+import { Todo, User, GuestLink } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import DebugPanel from './debug-panel'
 import ToastNotification from './toast-notification'
-import PasswordPrompt from './password-prompt'
 
 interface GuestTodoAppProps {
   listId: string
@@ -49,20 +48,6 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
   const [listName, setListName] = useState('')
   const [guestLink, setGuestLink] = useState<GuestLink | null>(null)
   const [isValidGuestLink, setIsValidGuestLink] = useState<boolean | null>(null)
-
-  // Password protection state
-  const [passwordSettings, setPasswordSettings] = useState<PasswordSettings>({
-    enabledModes: {
-      adminPasswordEnabled: false,
-      normalPasswordEnabled: false,
-      guestPasswordEnabled: false
-    }
-  })
-  const [isPasswordProtected, setIsPasswordProtected] = useState<boolean | null>(null)
-  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
-  const [passwordError, setPasswordError] = useState('')
-  const [isCheckingPassword, setIsCheckingPassword] = useState(false)
-  const [hasValidPassword, setHasValidPassword] = useState(false)
 
   // Toast notification state
   const [toastVisible, setToastVisible] = useState(false)
@@ -154,7 +139,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     }
   }, [])
 
-  // Load password settings and validate guest link
+  // Validate guest link
   useEffect(() => {
     if (!isAuthReady || !isFirebaseConfigured() || !db) return
 
@@ -192,36 +177,8 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
       }
     }
 
-    // Load password settings
-    const passwordsRef = ref(db!, `lists/${listId}/passwords`)
-    const unsubscribePasswords = onValue(passwordsRef, (snapshot) => {
-      const data = snapshot.val()
-      if (data) {
-        setPasswordSettings(data as PasswordSettings)
-        // Check if guest password protection is enabled
-        const isProtected = data.enabledModes?.guestPasswordEnabled === true
-        setIsPasswordProtected(isProtected)
-
-        // If password protection is enabled and we don't have a valid password, show prompt
-        if (isProtected && !hasValidPassword) {
-          setShowPasswordPrompt(true)
-        }
-      } else {
-        setPasswordSettings({
-          enabledModes: {
-            adminPasswordEnabled: false,
-            normalPasswordEnabled: false,
-            guestPasswordEnabled: false
-          }
-        })
-        setIsPasswordProtected(false)
-      }
-    })
-
     validateGuestLink()
-
-    return () => off(passwordsRef, 'value', unsubscribePasswords)
-  }, [isAuthReady, listId, guestId, hasValidPassword])
+  }, [isAuthReady, listId, guestId])
 
   // Load list name from Firebase
   useEffect(() => {
@@ -404,57 +361,6 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
   // Handle back navigation
   const handleBackToList = () => {
     router.push(`/list/${listId}`)
-  }
-
-  // Password validation functions
-  const handlePasswordSubmit = async (password: string) => {
-    setIsCheckingPassword(true)
-    setPasswordError('')
-
-    try {
-      // Check if the entered password matches the stored guest password
-      if (password === passwordSettings.guestPassword) {
-        setHasValidPassword(true)
-        setShowPasswordPrompt(false)
-        setPasswordError('')
-
-        // Store password validation in sessionStorage to persist during session
-        sessionStorage.setItem(`guest-password-validated-${listId}`, 'true')
-      } else {
-        setPasswordError('Falsches Passwort')
-      }
-    } catch (error) {
-      setPasswordError('Fehler beim Überprüfen des Passworts')
-    } finally {
-      setIsCheckingPassword(false)
-    }
-  }
-
-  const handlePasswordCancel = () => {
-    // Redirect to homepage when password is cancelled
-    window.location.href = '/'
-  }
-
-  // Check if password was already validated in this session
-  useEffect(() => {
-    const wasValidated = sessionStorage.getItem(`guest-password-validated-${listId}`) === 'true'
-    if (wasValidated) {
-      setHasValidPassword(true)
-    }
-  }, [listId])
-
-  // Show password prompt if password protection is enabled and no valid password
-  if (isPasswordProtected && !hasValidPassword && showPasswordPrompt) {
-    return (
-      <PasswordPrompt
-        listName={listName || listId}
-        requiredRole="guest"
-        onPasswordSubmit={handlePasswordSubmit}
-        onCancel={handlePasswordCancel}
-        error={passwordError}
-        isLoading={isCheckingPassword}
-      />
-    )
   }
 
   // Loading state

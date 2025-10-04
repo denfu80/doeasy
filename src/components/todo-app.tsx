@@ -23,7 +23,7 @@ import { sortUsersByLastSeen, isUserOnline } from '@/lib/presence-utils'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { OfflineStorage, getLocalListIds, addLocalListId, removeLocalListId } from '@/lib/offline-storage'
-import { Todo, User, Admin, GuestLink, UserRole, PasswordSettings } from '@/types/todo'
+import { Todo, User, GuestLink, UserRole } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
@@ -32,7 +32,6 @@ import DebugPanel from './debug-panel'
 import DeletedTodosTrash from './deleted-todos-trash'
 import ToastNotification from './toast-notification'
 import SharingModal from './sharing-modal'
-import PasswordPrompt from './password-prompt'
 import HeaderActionsMenu from './header-actions-menu'
 
 interface TodoAppProps {
@@ -60,26 +59,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // Pin state
   const [isPinned, setIsPinned] = useState(false)
   const [hasShownPinHint, setHasShownPinHint] = useState(false)
-  
+
   // Sharing state
   const [showSharingModal, setShowSharingModal] = useState(false)
-  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('normal')
-  const [admins, setAdmins] = useState<Admin[]>([])
   const [guestLinks, setGuestLinks] = useState<GuestLink[]>([])
-  const [passwordSettings, setPasswordSettings] = useState<PasswordSettings>({
-    enabledModes: {
-      adminPasswordEnabled: false,
-      normalPasswordEnabled: false,
-      guestPasswordEnabled: false
-    }
-  })
-
-  // Password protection state
-  const [isPasswordProtected, setIsPasswordProtected] = useState<boolean | null>(null)
-  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
-  const [passwordError, setPasswordError] = useState('')
-  const [isCheckingPassword, setIsCheckingPassword] = useState(false)
-  const [hasValidPassword, setHasValidPassword] = useState(false)
 
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
@@ -592,31 +575,11 @@ export default function TodoApp({ listId }: TodoAppProps) {
     }
   }
   
-  // Load admin and sharing data
+  // Load guest links
   useEffect(() => {
     if (!isAuthReady || !user || !isFirebaseConfigured() || !db) return
 
-    const adminsRef = ref(db, `lists/${listId}/admins`)
     const guestLinksRef = ref(db, `lists/${listId}/guestLinks`)
-    const passwordsRef = ref(db, `lists/${listId}/passwords`)
-
-    const unsubscribeAdmins = onValue(adminsRef, (snapshot) => {
-      const data = snapshot.val()
-      if (data) {
-        const adminsList = Object.keys(data).map(adminId => ({
-          uid: adminId,
-          ...data[adminId]
-        } as Admin))
-        setAdmins(adminsList)
-        
-        // Check if current user is admin
-        const isCurrentUserAdmin = adminsList.some(admin => admin.uid === user.uid)
-        setCurrentUserRole(isCurrentUserAdmin ? 'admin' : 'normal')
-      } else {
-        setAdmins([])
-        setCurrentUserRole('normal')
-      }
-    })
 
     const unsubscribeGuestLinks = onValue(guestLinksRef, (snapshot) => {
       const data = snapshot.val()
@@ -631,34 +594,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
       }
     })
 
-    const unsubscribePasswords = onValue(passwordsRef, (snapshot) => {
-      const data = snapshot.val()
-      if (data) {
-        setPasswordSettings(data as PasswordSettings)
-        // Check if normal password protection is enabled
-        const isProtected = data.enabledModes?.normalPasswordEnabled === true
-        setIsPasswordProtected(isProtected)
-        
-        // If password protection is enabled and we don't have a valid password, show prompt
-        if (isProtected && !hasValidPassword) {
-          setShowPasswordPrompt(true)
-        }
-      } else {
-        setPasswordSettings({
-          enabledModes: {
-            adminPasswordEnabled: false,
-            normalPasswordEnabled: false,
-            guestPasswordEnabled: false
-          }
-        })
-        setIsPasswordProtected(false)
-      }
-    })
-
     return () => {
-      off(adminsRef, 'value', unsubscribeAdmins)
       off(guestLinksRef, 'value', unsubscribeGuestLinks)
-      off(passwordsRef, 'value', unsubscribePasswords)
     }
   }, [isAuthReady, user, listId])
   
@@ -678,7 +615,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   
   const handleRevokeGuestLink = async (linkId: string) => {
     if (!user || !isFirebaseConfigured() || !db) return
-    
+
     const linkRef = ref(db, `lists/${listId}/guestLinks/${linkId}`)
     await update(linkRef, {
       revoked: true,
@@ -686,106 +623,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       revokedBy: user.uid
     })
   }
-  
-  const handleClaimAdmin = async (password?: string) => {
-    if (!user || !isFirebaseConfigured() || !db) return
-    
-    // If there are existing admins and a password is required
-    if (admins.length > 0 && passwordSettings.adminPassword) {
-      if (!password || password !== passwordSettings.adminPassword) {
-        throw new Error('Falsches Admin-Passwort')
-      }
-    }
-    
-    const adminRef = ref(db, `lists/${listId}/admins/${user.uid}`)
-    await set(adminRef, {
-      uid: user.uid,
-      name: userName,
-      claimedAt: serverTimestamp(),
-      isLocallyStored: false
-    })
-    
-    setToastMessage('Du bist jetzt Admin dieser Liste')
-    setToastType('success')
-    setToastVisible(true)
-  }
-  
-  const handleSetPassword = async (type: 'admin' | 'normal' | 'guest', password: string) => {
-    if (!user || !isFirebaseConfigured() || !db) return
-    
-    const passwordRef = ref(db, `lists/${listId}/passwords`)
-    const enabledModesRef = ref(db, `lists/${listId}/passwords/enabledModes`)
-    
-    if (password.trim() === '') {
-      // Disable password protection for this type
-      await update(passwordRef, {
-        [`${type}Password`]: null
-      })
-      await update(enabledModesRef, {
-        [`${type}PasswordEnabled`]: false
-      })
-    } else {
-      // Set password and enable protection
-      await update(passwordRef, {
-        [`${type}Password`]: password.trim()
-      })
-      await update(enabledModesRef, {
-        [`${type}PasswordEnabled`]: true
-      })
-    }
-  }
 
-  // Password validation functions
-  const handlePasswordSubmit = async (password: string) => {
-    setIsCheckingPassword(true)
-    setPasswordError('')
-
-    try {
-      // Check if the entered password matches the stored normal password
-      if (password === passwordSettings.normalPassword) {
-        setHasValidPassword(true)
-        setShowPasswordPrompt(false)
-        setPasswordError('')
-        
-        // Store password validation in sessionStorage to persist during session
-        sessionStorage.setItem(`password-validated-${listId}`, 'true')
-      } else {
-        setPasswordError('Falsches Passwort')
-      }
-    } catch (error) {
-      setPasswordError('Fehler beim Überprüfen des Passworts')
-    } finally {
-      setIsCheckingPassword(false)
-    }
-  }
-
-  const handlePasswordCancel = () => {
-    // Redirect to homepage when password is cancelled
-    window.location.href = '/'
-  }
-
-  // Check if password was already validated in this session
-  useEffect(() => {
-    const wasValidated = sessionStorage.getItem(`password-validated-${listId}`) === 'true'
-    if (wasValidated) {
-      setHasValidPassword(true)
-    }
-  }, [listId])
-
-  // Show password prompt if password protection is enabled and no valid password
-  if (isPasswordProtected && !hasValidPassword && showPasswordPrompt) {
-    return (
-      <PasswordPrompt
-        listName={listName || listId}
-        requiredRole="normal"
-        onPasswordSubmit={handlePasswordSubmit}
-        onCancel={handlePasswordCancel}
-        error={passwordError}
-        isLoading={isCheckingPassword}
-      />
-    )
-  }
-  
   if (!isAuthReady) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
@@ -1049,14 +887,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
         onClose={() => setShowSharingModal(false)}
         listId={listId}
         listName={listName}
-        currentUserRole={currentUserRole}
-        admins={admins}
         guestLinks={guestLinks}
-        passwordSettings={passwordSettings}
         onCreateGuestLink={handleCreateGuestLink}
         onRevokeGuestLink={handleRevokeGuestLink}
-        onClaimAdmin={handleClaimAdmin}
-        onSetPassword={handleSetPassword}
       />
       
       {/* Toast Notification */}

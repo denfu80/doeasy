@@ -805,19 +805,56 @@ export default function TodoApp({ listId }: TodoAppProps) {
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-sm">
         {/* Mobile Layout (<md) */}
         <div className="md:hidden px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <Link
-              href="/"
-              className="flex items-center space-x-2"
-              title="Zur Startseite"
-            >
-              <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-xl font-black text-slate-800 tracking-tight">
-                mach<span className="text-pink-500">.</span>einfach
-              </h1>
-            </Link>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col flex-1 min-w-0">
+              <Link
+                href="/"
+                className="flex items-center space-x-2 mb-1"
+                title="Zur Startseite"
+              >
+                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <h1 className="text-xl font-black text-slate-800 tracking-tight">
+                  mach<span className="text-pink-500">.</span>einfach
+                </h1>
+              </Link>
+              {isEditingListName ? (
+                <div className="flex items-center space-x-1 ml-10">
+                  <input
+                    type="text"
+                    value={editingListNameValue}
+                    onChange={(e) => setEditingListNameValue(e.target.value)}
+                    onKeyDown={handleListNameKeyPress}
+                    onBlur={handleCancelEditListName}
+                    className="bg-white/80 border border-purple-300 rounded px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent flex-1 min-w-0"
+                    placeholder="Listenname..."
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleSaveListName}
+                    className="w-6 h-6 bg-green-400 hover:bg-green-500 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                    title="Speichern"
+                  >
+                    <Check className="w-3 h-3 text-white" />
+                  </button>
+                  <button
+                    onClick={handleCancelEditListName}
+                    className="w-6 h-6 bg-gray-400 hover:bg-gray-500 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                    title="Abbrechen"
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1 ml-10 cursor-pointer group min-w-0" onClick={handleEditListName}>
+                  <span className="text-sm text-purple-600 font-bold group-hover:text-purple-700 transition-colors truncate">
+                    {listName}
+                  </span>
+                  <Edit2 className="w-3 h-3 text-purple-400 opacity-100 transition-opacity flex-shrink-0" />
+                </div>
+              )}
+            </div>
             <HeaderActionsMenu
               listId={listId}
               isPinned={isPinned}

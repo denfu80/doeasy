@@ -448,16 +448,22 @@ export default function PlayfulHomepage() {
                           <p className="font-bold text-slate-700 text-sm leading-tight group-hover:text-purple-700 transition-colors duration-300">
                             {getListName(listId)}
                           </p>
-                          
-                          <p className={`text-xs mt-1 font-mono transition-colors duration-300 ${
-                            unpinConfirm === listId 
-                              ? 'text-orange-500 animate-pulse' 
-                              : 'text-slate-500 group-hover:text-purple-500'
-                          }`}>
-                            {unpinConfirm === listId 
-                              ? `// nochmal klicken zum entpinnen?` 
-                              : formatLastActivity(listId)}
-                          </p>
+
+                          <div className="relative min-h-[20px] mt-1">
+                            <p className={`text-xs font-mono transition-opacity duration-300 ${
+                              unpinConfirm === listId
+                                ? 'opacity-0'
+                                : 'text-slate-500 group-hover:text-purple-500'
+                            }`}>
+                              {formatLastActivity(listId)}
+                            </p>
+
+                            {unpinConfirm === listId && (
+                              <p className="absolute inset-0 text-xs font-mono text-orange-500 animate-pulse">
+                                {`// nochmal klicken zum entpinnen?`}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                       

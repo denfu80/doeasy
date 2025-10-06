@@ -26,6 +26,7 @@ import { Todo, User } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import ToastNotification from './toast-notification'
+import ListDescription from './list-description'
 
 interface GuestTodoAppProps {
   guestId: string
@@ -44,6 +45,7 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
   const [userName, _setUserName] = useState('')
   const [firebaseStatus, setFirebaseStatus] = useState<string>('initializing')
   const [listName, setListName] = useState('')
+  const [listDescription, setListDescription] = useState('')
   const [listId, setListId] = useState<string | null>(null)
   const [isValidGuestLink, setIsValidGuestLink] = useState<boolean | null>(null)
 
@@ -183,13 +185,22 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
     if (!isAuthReady || !isValidGuestLink || !listId || !isFirebaseConfigured() || !db) return
 
     const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
+    const listDescriptionRef = ref(db!, `lists/${listId}/metadata/description`)
 
-    const unsubscribe = onValue(listNameRef, (snapshot) => {
+    const nameUnsubscribe = onValue(listNameRef, (snapshot) => {
       const name = snapshot.val()
       setListName(name || listId)
     })
 
-    return () => off(listNameRef, 'value', unsubscribe)
+    const descriptionUnsubscribe = onValue(listDescriptionRef, (snapshot) => {
+      const description = snapshot.val()
+      setListDescription(description || '')
+    })
+
+    return () => {
+      off(listNameRef, 'value', nameUnsubscribe)
+      off(listDescriptionRef, 'value', descriptionUnsubscribe)
+    }
   }, [listId, isAuthReady, isValidGuestLink])
 
   // Real-time Presence Tracking (readonly)
@@ -480,6 +491,13 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
             </div>
           </div>
         </div>
+
+        {/* List Description (readonly) */}
+        <ListDescription
+          description={listDescription}
+          onSave={() => {}}
+          readOnly={true}
+        />
 
         {/* Todo List (readonly) */}
         <div className="space-y-3">

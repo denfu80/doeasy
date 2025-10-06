@@ -28,6 +28,7 @@ import { Todo, User, GuestLink, UserRole } from '@/types/todo'
 import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
 import TodoList from './todo-list'
+import ListDescription from './list-description'
 import DeletedTodosTrash from './deleted-todos-trash'
 import ToastNotification from './toast-notification'
 import SharingModal from './sharing-modal'
@@ -54,7 +55,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [listName, setListName] = useState('')
   const [isEditingListName, setIsEditingListName] = useState(false)
   const [editingListNameValue, setEditingListNameValue] = useState('')
-  
+
+  // List description state
+  const [listDescription, setListDescription] = useState('')
+
   // Pin state
   const [isPinned, setIsPinned] = useState(false)
   const [hasShownPinHint, setHasShownPinHint] = useState(false)
@@ -78,18 +82,27 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // Initialize offline storage
   const offlineStorage = new OfflineStorage(listId)
   
-  // Load list name from Firebase
+  // Load list name and description from Firebase
   useEffect(() => {
     if (!isFirebaseConfigured() || !db) return
 
     const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
-    
-    const unsubscribe = onValue(listNameRef, (snapshot) => {
+    const listDescriptionRef = ref(db!, `lists/${listId}/metadata/description`)
+
+    const nameUnsubscribe = onValue(listNameRef, (snapshot) => {
       const name = snapshot.val()
-      setListName(name || listId) // Fallback to listId if no name set
+      setListName(name || listId)
     })
 
-    return () => off(listNameRef, 'value', unsubscribe)
+    const descriptionUnsubscribe = onValue(listDescriptionRef, (snapshot) => {
+      const description = snapshot.val()
+      setListDescription(description || '')
+    })
+
+    return () => {
+      off(listNameRef, 'value', nameUnsubscribe)
+      off(listDescriptionRef, 'value', descriptionUnsubscribe)
+    }
   }, [listId])
 
   // Check if list is pinned and show pin hint if needed
@@ -554,6 +567,25 @@ export default function TodoApp({ listId }: TodoAppProps) {
     }
   }
 
+  // Description save handler
+  const handleSaveDescription = async (newDescription: string) => {
+    if (!user || !db) return
+
+    try {
+      const descriptionRef = ref(db, `lists/${listId}/metadata/description`)
+      await set(descriptionRef, newDescription || null)
+
+      setToastMessage('Beschreibung gespeichert')
+      setToastType('success')
+      setToastVisible(true)
+    } catch (error) {
+      console.error('Error saving description:', error)
+      setToastMessage('Fehler beim Speichern der Beschreibung')
+      setToastType('warning')
+      setToastVisible(true)
+    }
+  }
+
   // Pin/Unpin functionality
   const handleTogglePin = () => {
     if (isPinned) {
@@ -899,6 +931,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
         <div className="hidden md:block">
           <TodoInput onAddTodo={handleAddTodo} />
         </div>
+
+        {/* List Description - between input and items */}
+        <ListDescription
+          description={listDescription}
+          onSave={handleSaveDescription}
+        />
 
         {/* Todo List */}
         <TodoList 

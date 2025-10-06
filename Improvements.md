@@ -20,7 +20,8 @@
 
 ## Ideen
 
-- vorschläge für nächste items
+- Beschreibungstext für die Liste
+- vorschläge für nächste items wie bei https://list2go.io/de/list/-Oas331SdgRZqjXhD-zh
 - Eigene Farbe ändern
 - Thema ändern: z.b. mach.einfach -> schenk.einfach
 - Hovereffekt auf Todos für mehr optionen (momentan nur löschen)

@@ -127,7 +127,7 @@ export default function SharingModal({
               {activeGuestLinks.length > 0 && (
                 <div className="space-y-2 mb-3">
                   {activeGuestLinks.map((link) => {
-                    const guestLink = `${baseUrl}/list/${listId}/guest/${link.id}`
+                    const guestLink = `${baseUrl}/guest/${link.id}`
                     return (
                       <div key={link.id} className="bg-white rounded-lg p-3 border">
                         <div className="flex items-center justify-between">

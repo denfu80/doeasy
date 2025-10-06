@@ -1,5 +1,42 @@
 {
   "rules": {
+    // Top-level guest links (decoupled from lists for security)
+    "guestLinks": {
+      "$guestLinkId": {
+        // Allow authenticated users to read guest link data
+        ".read": "auth != null",
+        // Only authenticated users can create/update guest links
+        ".write": "auth != null",
+
+        // Validate guest link structure
+        ".validate": "newData.hasChildren(['listId', 'createdBy', 'createdAt'])",
+
+        "listId": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9\\-]{3,100}$/)"
+        },
+        "createdBy": {
+          ".validate": "newData.isString()"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() || newData.val() == now"
+        },
+        "revoked": {
+          ".validate": "newData.isBoolean()"
+        },
+        "revokedAt": {
+          ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
+        },
+        "revokedBy": {
+          ".validate": "newData.isString() || newData.val() == null"
+        },
+
+        // Prevent additional fields
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+
     // Global read/write rules for lists
     "lists": {
       "$listId": {
@@ -127,32 +164,6 @@
           }
         },
 
-        // Guest links management
-        "guestLinks": {
-          ".read": "auth != null",
-          ".write": "auth != null",
-          
-          "$guestLinkId": {
-            ".validate": "newData.hasChildren(['createdBy', 'createdAt'])",
-            
-            "createdBy": {
-              ".validate": "newData.isString()"
-            },
-            "createdAt": {
-              ".validate": "newData.isNumber() || newData.val() == now"
-            },
-            "revoked": {
-              ".validate": "newData.isBoolean()"
-            },
-            "revokedAt": {
-              ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
-            },
-            "revokedBy": {
-              ".validate": "newData.isString() || newData.val() == null"
-            }
-          }
-        },
-        
         // Prevent additional top-level fields
         "$other": {
           ".validate": false

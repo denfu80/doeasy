@@ -574,19 +574,21 @@ export default function TodoApp({ listId }: TodoAppProps) {
     }
   }
   
-  // Load guest links
+  // Load guest links (from top-level guestLinks, filtered by listId)
   useEffect(() => {
     if (!isAuthReady || !user || !isFirebaseConfigured() || !db) return
 
-    const guestLinksRef = ref(db, `lists/${listId}/guestLinks`)
+    const guestLinksRef = ref(db, `guestLinks`)
 
     const unsubscribeGuestLinks = onValue(guestLinksRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
-        const linksList = Object.keys(data).map(linkId => ({
-          id: linkId,
-          ...data[linkId]
-        } as GuestLink))
+        const linksList = Object.keys(data)
+          .map(linkId => ({
+            id: linkId,
+            ...data[linkId]
+          }))
+          .filter((link: any) => link.listId === listId) as GuestLink[]
         setGuestLinks(linksList)
       } else {
         setGuestLinks([])
@@ -601,11 +603,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // Sharing functions
   const handleCreateGuestLink = async () => {
     if (!user || !isFirebaseConfigured() || !db) return
-    
-    const guestLinksRef = ref(db, `lists/${listId}/guestLinks`)
+
+    const guestLinksRef = ref(db, `guestLinks`)
     const newLinkRef = push(guestLinksRef)
-    
+
     await set(newLinkRef, {
+      listId: listId,
       createdBy: user.uid,
       createdAt: serverTimestamp(),
       revoked: false
@@ -615,7 +618,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const handleRevokeGuestLink = async (linkId: string) => {
     if (!user || !isFirebaseConfigured() || !db) return
 
-    const linkRef = ref(db, `lists/${listId}/guestLinks/${linkId}`)
+    const linkRef = ref(db, `guestLinks/${linkId}`)
     await update(linkRef, {
       revoked: true,
       revokedAt: serverTimestamp(),

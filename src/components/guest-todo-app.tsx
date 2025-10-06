@@ -22,17 +22,16 @@ import { filterUsersByTime, sortUsersByLastSeen } from '@/lib/presence-utils'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
-import { Todo, User, GuestLink } from '@/types/todo'
+import { Todo, User } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import ToastNotification from './toast-notification'
 
 interface GuestTodoAppProps {
-  listId: string
   guestId: string
 }
 
-export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
+export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
   const router = useRouter()
 
   // Firebase and Auth state
@@ -45,7 +44,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
   const [userName, _setUserName] = useState('')
   const [firebaseStatus, setFirebaseStatus] = useState<string>('initializing')
   const [listName, setListName] = useState('')
-  const [guestLink, setGuestLink] = useState<GuestLink | null>(null)
+  const [listId, setListId] = useState<string | null>(null)
   const [isValidGuestLink, setIsValidGuestLink] = useState<boolean | null>(null)
 
   // Toast notification state
@@ -138,17 +137,17 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     }
   }, [])
 
-  // Validate guest link
+  // Validate guest link and load listId
   useEffect(() => {
     if (!isAuthReady || !isFirebaseConfigured() || !db) return
 
     const validateGuestLink = async () => {
       try {
-        const guestLinkRef = ref(db!, `lists/${listId}/guestLinks/${guestId}`)
+        const guestLinkRef = ref(db!, `guestLinks/${guestId}`)
         const snapshot = await get(guestLinkRef)
 
         if (snapshot.exists()) {
-          const linkData = snapshot.val() as GuestLink
+          const linkData = snapshot.val() as { listId: string; revoked?: boolean }
 
           // Check if link is revoked
           if (linkData.revoked) {
@@ -159,7 +158,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
             return
           }
 
-          setGuestLink({ ...linkData, id: guestId })
+          setListId(linkData.listId)
           setIsValidGuestLink(true)
         } else {
           setIsValidGuestLink(false)
@@ -177,11 +176,11 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
     }
 
     validateGuestLink()
-  }, [isAuthReady, listId, guestId])
+  }, [isAuthReady, guestId])
 
   // Load list name from Firebase
   useEffect(() => {
-    if (!isAuthReady || !isValidGuestLink || !isFirebaseConfigured() || !db) return
+    if (!isAuthReady || !isValidGuestLink || !listId || !isFirebaseConfigured() || !db) return
 
     const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
 
@@ -195,7 +194,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
 
   // Real-time Presence Tracking (readonly)
   useEffect(() => {
-    if (!isAuthReady || !user || !userName || !isValidGuestLink) return
+    if (!isAuthReady || !user || !userName || !isValidGuestLink || !listId) return
 
     if (!isFirebaseConfigured() || !db) {
       console.error('❌ Firebase database not available for presence tracking')
@@ -290,7 +289,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
 
   // Real-time Todo Synchronization (with guest completion)
   useEffect(() => {
-    if (!isAuthReady || !user || !isValidGuestLink) return
+    if (!isAuthReady || !user || !isValidGuestLink || !listId) return
 
     if (!isFirebaseConfigured() || !db) {
       console.error('❌ Firebase database not available for todo synchronization')
@@ -337,7 +336,7 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
 
   // Guest Todo Completion Handler
   const handleToggleComplete = async (todoId: string, currentCompleted: boolean) => {
-    if (!user || !isFirebaseConfigured() || !db) return
+    if (!user || !listId || !isFirebaseConfigured() || !db) return
 
     try {
       const todoRef = ref(db!, `lists/${listId}/todos/${todoId}`)
@@ -420,20 +419,22 @@ export default function GuestTodoApp({ listId, guestId }: GuestTodoAppProps) {
                     {listName}
                   </span>
                   <p className="text-xs text-slate-400 font-mono hidden sm:block">
-                    // readonly access
+                    readonly access
                   </p>
                 </div>
               </div>
             </div>
             <div className="flex items-center space-x-2 md:space-x-4 w-full sm:w-auto justify-end">
-              <UserAvatars
-                users={users}
-                currentUserId={user?.uid}
-                userName={userName}
-                onNameChange={setUserName}
-                listId={listId}
-                disableNavigation={true}
-              />
+              {listId && (
+                <UserAvatars
+                  users={users}
+                  currentUserId={user?.uid}
+                  userName={userName}
+                  onNameChange={setUserName}
+                  listId={listId}
+                  disableNavigation={true}
+                />
+              )}
             </div>
           </div>
         </div>

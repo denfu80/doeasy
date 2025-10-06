@@ -83,43 +83,25 @@ export default function ListDescription({
   }
 
   return (
-    <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-2 border-purple-100 overflow-hidden shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white/50 backdrop-blur-sm border-b border-purple-100">
-        <div className="flex items-center space-x-2">
-          <FileText className="w-4 h-4 text-purple-500" />
-        </div>
-
-        <div className="flex items-center space-x-2">
-          {!readOnly && !isEditing && (
-            <button
-              onClick={handleEdit}
-              className="p-1.5 rounded-lg hover:bg-purple-100 text-purple-500 hover:text-purple-700 transition-colors"
-              title="Beschreibung bearbeiten"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
+    <div className="relative">
+      {/* Toggle Button - floating on top right */}
+      {!isEmpty && !readOnly && (
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -top-2 right-2 z-10 p-1.5 rounded-lg bg-white hover:bg-purple-100 text-purple-400 hover:text-purple-600 transition-all shadow-sm border border-purple-100"
+          title={isCollapsed ? 'Beschreibung anzeigen' : 'Beschreibung ausblenden'}
+        >
+          {isCollapsed ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronUp className="w-4 h-4" />
           )}
+        </button>
+      )}
 
-          {!isEmpty && !readOnly && (
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 rounded-lg hover:bg-purple-100 text-purple-500 hover:text-purple-700 transition-colors"
-              title={isCollapsed ? 'Beschreibung anzeigen' : 'Beschreibung ausblenden'}
-            >
-              {isCollapsed ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronUp className="w-4 h-4" />
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Content */}
+      {/* Content Box */}
       {!isCollapsed && (
-        <div className="p-4">
+        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-2 border-purple-100 shadow-sm p-4">
           {isEditing ? (
             // Edit Mode
             <div className="space-y-3">
@@ -165,22 +147,24 @@ export default function ListDescription({
           ) : isEmpty ? (
             // Empty State
             <button
-              onClick={() => !readOnly && setIsEditing(true)}
+              onClick={() => !readOnly && handleEdit()}
               disabled={readOnly}
-              className="w-full py-8 rounded-lg border-2 border-dashed border-purple-200 hover:border-purple-300 hover:bg-purple-50/50 transition-all text-center group disabled:cursor-not-allowed disabled:hover:border-purple-200 disabled:hover:bg-transparent"
+              className="w-full py-6 rounded-lg border-2 border-dashed border-purple-200 hover:border-purple-300 hover:bg-purple-100/50 transition-all text-center group disabled:cursor-not-allowed disabled:hover:border-purple-200 disabled:hover:bg-transparent"
             >
-              <FileText className="w-8 h-8 text-purple-300 group-hover:text-purple-400 mx-auto mb-2 transition-colors" />
+              <Edit2 className="w-6 h-6 text-purple-300 group-hover:text-purple-400 mx-auto mb-2 transition-colors" />
               <p className="text-sm text-purple-500 font-medium group-hover:text-purple-600 transition-colors">
-                {readOnly ? 'Keine Beschreibung' : 'Klicken um Beschreibung hinzuzufügen'}
+                {readOnly ? 'Keine Beschreibung' : 'Beschreibung hinzufügen'}
               </p>
               <p className="text-xs text-purple-400 mt-1 font-mono">
-                // markdown wird unterstützt
+                // markdown unterstützt
               </p>
             </button>
           ) : (
             // View Mode
             <div
-              className="prose prose-sm prose-purple max-w-none cursor-pointer hover:bg-purple-50/50 -m-4 p-4 rounded-lg transition-colors group"
+              className={`prose prose-sm prose-purple max-w-none rounded-lg transition-colors group ${
+                readOnly ? '' : 'cursor-pointer hover:bg-purple-100/50 -m-4 p-4'
+              }`}
               onClick={() => !readOnly && handleEdit()}
             >
               <Markdown

@@ -20,6 +20,7 @@
 
 ## Ideen
 
+- vorschläge für nächste items
 - Eigene Farbe ändern
 - Thema ändern: z.b. mach.einfach -> schenk.einfach
 - Hovereffekt auf Todos für mehr optionen (momentan nur löschen)

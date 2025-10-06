@@ -27,6 +27,7 @@ export default function SharingModal({
 }: SharingModalProps) {
   const [copied, setCopied] = useState<string | null>(null)
   const [showQR, setShowQR] = useState<string | null>(null)
+  const [isCreatingLink, setIsCreatingLink] = useState(false)
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const normalLink = `${baseUrl}/list/${listId}`
@@ -45,6 +46,12 @@ export default function SharingModal({
     setShowQR(text)
     // Auto-close QR after 10 seconds
     setTimeout(() => setShowQR(null), 10000)
+  }
+
+  const handleCreateGuestLink = async () => {
+    setIsCreatingLink(true)
+    await onCreateGuestLink()
+    setTimeout(() => setIsCreatingLink(false), 2000)
   }
 
   if (!isOpen) return null
@@ -174,13 +181,14 @@ export default function SharingModal({
 
               {/* Create Guest Link Button */}
               <Button
-                onClick={onCreateGuestLink}
+                onClick={handleCreateGuestLink}
                 size="sm"
                 className="w-full"
-                variant="outline"
+                variant={isCreatingLink ? 'default' : 'outline'}
+                disabled={isCreatingLink}
               >
                 <Users className="w-4 h-4 mr-2" />
-                Neuen Gast-Link erstellen
+                {isCreatingLink ? 'Erstellt!' : 'Neuen Gast-Link erstellen'}
               </Button>
           </div>
         </div>

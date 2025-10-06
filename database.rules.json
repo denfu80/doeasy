@@ -2,14 +2,15 @@
   "rules": {
     // Top-level guest links (decoupled from lists for security)
     "guestLinks": {
+      // Allow authenticated users to read all guest links
+      ".read": "auth != null",
+
       "$guestLinkId": {
-        // Allow authenticated users to read guest link data
-        ".read": "auth != null",
         // Only authenticated users can create/update guest links
         ".write": "auth != null",
 
         // Validate guest link structure
-        ".validate": "newData.hasChildren(['listId', 'createdBy', 'createdAt'])",
+        ".validate": "newData.hasChildren(['listId', 'createdBy', 'createdAt', 'revoked'])",
 
         "listId": {
           ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9\\-]{3,100}$/)"

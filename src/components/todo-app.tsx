@@ -44,7 +44,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // Firebase and Auth state
   const [user, setUser] = useState<FirebaseUser | null>(null)
   const [isAuthReady, setIsAuthReady] = useState(false)
-  
+
   // App state
   const [todos, setTodos] = useState<Todo[]>([])
   const [deletedTodos, setDeletedTodos] = useState<Todo[]>([])
@@ -52,7 +52,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // Remove unused copied state since we're using sharing modal instead
   const [userName, _setUserName] = useState('') // Renamed state setter
   const [firebaseStatus, setFirebaseStatus] = useState<string>('initializing')
-  
+
   // List name editing state
   const [listName, setListName] = useState('')
   const [isEditingListName, setIsEditingListName] = useState(false)
@@ -95,10 +95,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('info')
   const [lastDeletedTodo, setLastDeletedTodo] = useState<Todo | null>(null)
-  
+
   // Initialize offline storage
   const offlineStorage = new OfflineStorage(listId)
-  
+
   // Load list name and description from Firebase
   useEffect(() => {
     if (!isFirebaseConfigured() || !db) return
@@ -127,11 +127,11 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const localLists = getLocalListIds()
     const isListPinned = localLists.includes(listId)
     setIsPinned(isListPinned)
-    
+
     // Check if we should show pin hint
     const pinHintKey = `pin-hint-shown-${listId}`
     const hasShownHintBefore = localStorage.getItem(pinHintKey) === 'true'
-    
+
     // Show hint if: list is not pinned, user is authenticated, and we haven't shown it before
     if (!isListPinned && !hasShownHintBefore && isAuthReady) {
       // Delay to let the UI settle first
@@ -141,7 +141,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
         setToastVisible(true)
         setHasShownPinHint(true)
         localStorage.setItem(pinHintKey, 'true')
-        
+
         // Auto-stop pulsing after 8 seconds
         setTimeout(() => {
           setHasShownPinHint(false)
@@ -237,14 +237,14 @@ export default function TodoApp({ listId }: TodoAppProps) {
     if (firebaseInitialized.current) {
       return
     }
-    
+
     firebaseInitialized.current = true
-    
+
     // Only run in browser environment
     if (typeof window === 'undefined') {
       return
     }
-    
+
     const showFirebaseError = (reason: string, error?: unknown) => {
       console.error('❌ Firebase fehlt:', reason, error)
       setFirebaseStatus(`error: ${reason}`)
@@ -260,7 +260,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
       console.log('🔐 Initializing Firebase Auth...')
       setFirebaseStatus('connected')
-      
+
       try {
         // Try to get current user first (synchronous)
         if (auth.currentUser) {
@@ -280,7 +280,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
         console.log('🔐 No current user, attempting anonymous sign-in...')
         const userCredential = await signInAnonymously(auth)
         console.log('✅ Anonymous sign-in successful:', userCredential.user.uid)
-        
+
         setUser(userCredential.user)
         let savedName = localStorage.getItem('macheinfach-username')
         if (!savedName) {
@@ -307,11 +307,11 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
     // Call async function and handle cleanup
     let cleanup: (() => void) | null = null
-    
+
     initFirebase().then((cleanupFn) => {
       cleanup = cleanupFn
     })
-    
+
     // Cleanup function
     return () => {
       if (cleanup && typeof cleanup === 'function') {
@@ -334,19 +334,19 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
     const userColor = generateColor(user.uid)
     const baseUserPresence = {
-      color: userColor, 
+      color: userColor,
       name: userName,
       isTyping: false,
       editingTodoId: null
     }
-    
+
     // Function to update presence with current timestamp
     const updatePresence = async () => {
       const userPresence = {
         ...baseUserPresence,
         lastSeen: serverTimestamp()
       }
-      
+
       // Debug auth state before write
       console.log('🔍 DEBUG: Before presence write')
       console.log('User ID from useEffect:', user.uid)
@@ -356,20 +356,20 @@ export default function TodoApp({ listId }: TodoAppProps) {
         isAnonymous: user.isAnonymous,
         providerData: user.providerData.length
       })
-      
+
       try {
         await set(userRef, userPresence)
         console.log('✅ Presence updated successfully')
       } catch (error: any) {
         console.error('❌ Presence update failed:', error.code, error.message)
         console.error('Error details:', error)
-        
+
         // Additional debug info on failure
         console.log('🔍 DEBUG: On failure')
         console.log('Auth current user at failure:', auth?.currentUser?.uid)
         console.log('User from state at failure:', user.uid)
         console.log('Are they equal?', auth?.currentUser?.uid === user.uid)
-        
+
         // Check if we can read the presence path (should work if auth is valid)
         try {
           const { get } = await import('firebase/database')
@@ -380,17 +380,17 @@ export default function TodoApp({ listId }: TodoAppProps) {
         }
       }
     }
-    
+
     // Set initial presence with small delay to ensure auth token is ready
     setTimeout(updatePresence, 100)
-    
+
     // Set up heartbeat to continuously update presence every 30 seconds
     const heartbeatInterval = setInterval(() => {
       if (!document.hidden) {
         updatePresence()
       }
     }, 30000) // 30 seconds
-    
+
     // Handle disconnect using visibility API (onDisconnect not available in web SDK)
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -410,7 +410,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
         lastSeen: serverTimestamp()
       })
     })
-    
+
     const unsubscribe = onValue(presenceRef, (snapshot) => {
       const data = snapshot.val()
       if (data) {
@@ -461,7 +461,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
             ...data[todoId]
           } as Todo))
           .filter(todo => todo.text && todo.text.trim().length > 0) // Filter out empty todos
-        
+
         // Separate active and deleted todos
         const activeTodos = allTodos
           .filter(todo => !todo.deletedAt)
@@ -474,7 +474,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
             const bTime = typeof b.createdAt === 'number' ? b.createdAt : 0
             return aTime - bTime
           })
-        
+
         const recentlyDeletedTodos = allTodos
           .filter(todo => todo.deletedAt)
           .sort((a, b) => {
@@ -484,7 +484,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
             return (bTime as number) - (aTime as number)
           })
           .slice(0, 10) // Keep only last 10 deleted todos
-        
+
         setTodos(activeTodos)
         setDeletedTodos(recentlyDeletedTodos)
         // Also save to offline storage as backup
@@ -508,7 +508,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // CRUD Functions
   const handleAddTodo = async (text: string) => {
     if (!user || !isFirebaseConfigured() || !db) return
-    
+
     const todosRef = ref(db, `lists/${listId}/todos`)
     await push(todosRef, {
       text,
@@ -577,12 +577,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
     setShowConfirmDialog(false)
     setPendingToggle(null)
   }
-  
+
   const handleUpdateTodo = async (id: string, text: string) => {
     if (!isFirebaseConfigured() || !db) return
 
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
-    await update(todoRef, { 
+    await update(todoRef, {
       text,
       updatedAt: serverTimestamp(),
       updatedBy: userName || 'Unknown'
@@ -591,20 +591,20 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   const handleDeleteTodo = async (id: string) => {
     if (!user || !isFirebaseConfigured() || !db) return
-    
+
     const todoToDelete = todos.find(todo => todo.id === id)
     if (!todoToDelete) return
-    
+
     // Store for undo functionality
     setLastDeletedTodo(todoToDelete)
 
     // Firebase - soft delete
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
-    await update(todoRef, { 
+    await update(todoRef, {
       deletedAt: serverTimestamp(),
       deletedBy: userName || user.uid
     })
-    
+
     // Show undo toast
     setToastMessage(`"${todoToDelete.text}" wurde gelöscht`)
     setToastType('warning')
@@ -616,7 +616,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
     // Firebase - restore todo
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
-    await update(todoRef, { 
+    await update(todoRef, {
       deletedAt: null,
       deletedBy: null,
       restoredAt: serverTimestamp(),
@@ -634,7 +634,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   const handleUndoDelete = async () => {
     if (!lastDeletedTodo) return
-    
+
     // Restore the last deleted todo
     await handleRestoreTodo(lastDeletedTodo.id)
     setLastDeletedTodo(null)
@@ -660,9 +660,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
       const todoRef = ref(db!, `lists/${listId}/todos/${todo.id}`)
       return remove(todoRef)
     })
-    
+
     await Promise.all(deletePromises)
-    
+
     // Show success message
     setToastMessage(`${deletedTodos.length} Todo${deletedTodos.length !== 1 ? 's' : ''} endgültig gelöscht`)
     setToastType('success')
@@ -681,10 +681,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   const handleSaveListName = async () => {
     if (!isFirebaseConfigured() || !db) return
-    
+
     const newName = editingListNameValue.trim()
     const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
-    
+
     if (newName && newName !== listId) {
       // Save custom name to Firebase
       await set(listNameRef, newName)
@@ -692,7 +692,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       // Remove custom name (use listId as default)
       await set(listNameRef, null)
     }
-    
+
     setIsEditingListName(false)
     setEditingListNameValue('')
   }
@@ -748,7 +748,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       setToastVisible(true)
     }
   }
-  
+
   // Load guest links (from top-level guestLinks, filtered by listId)
   useEffect(() => {
     console.log('🔗 Guest links useEffect triggered', {
@@ -849,7 +849,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       setToastVisible(true)
     }
   }
-  
+
   const handleRevokeGuestLink = async (linkId: string) => {
     if (!user || !isFirebaseConfigured() || !db) return
 
@@ -892,7 +892,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     } catch (error) {
       console.error('Error toggling guest link:', error)
       setToastMessage('❌ Fehler beim Ändern des Link-Status')
-      setToastType('error')
+      setToastType('warning')
       setToastVisible(true)
     }
   }
@@ -933,7 +933,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     } catch (error) {
       console.error('Error updating guest link:', error)
       setToastMessage('❌ Fehler beim Aktualisieren des Gast-Links')
-      setToastType('error')
+      setToastType('warning')
       setToastVisible(true)
     }
   }
@@ -949,16 +949,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   const handleTogglePasswordProtection = async () => {
     if (isPasswordProtected) {
-      // Remove password protection - if already unlocked, just confirm and remove
-      if (isUnlocked) {
-        // Show confirmation dialog
-        setShowConfirmDialog(true)
-        setPendingToggle({ id: 'password-remove', completed: false })
-      } else {
-        // Not unlocked yet, need to verify password first
-        setPasswordMode('remove')
-        setShowPasswordPrompt(true)
-      }
+      // Remove password protection - always show confirmation
+      setShowConfirmDialog(true)
+      setPendingToggle({ id: 'password-remove', completed: false })
     } else {
       // Lock (set password)
       setPasswordMode('set')
@@ -994,34 +987,6 @@ export default function TodoApp({ listId }: TodoAppProps) {
       } catch (error) {
         console.error('Error setting password:', error)
         setPasswordError('Fehler beim Setzen des Passworts')
-      }
-    } else if (passwordMode === 'remove') {
-      // Remove password protection - verify first, then remove
-      try {
-        const hashedPassword = await hashPassword(password)
-        const passwordRef = ref(db, `lists/${listId}/metadata/password`)
-        const { get } = await import('firebase/database')
-        const snapshot = await get(passwordRef)
-        const passwordData = snapshot.val()
-
-        if (passwordData?.hashedPassword === hashedPassword) {
-          // Password correct - remove password protection
-          await set(passwordRef, null)
-          setIsPasswordProtected(false)
-          setIsUnlocked(true)
-          setShowPasswordPrompt(false)
-          sessionStorage.removeItem(`unlocked-${listId}`)
-
-          setToastMessage('🔓 Passwortschutz wurde entfernt')
-          setToastType('success')
-          setToastVisible(true)
-        } else {
-          // Password incorrect
-          setPasswordError('Falsches Passwort')
-        }
-      } catch (error) {
-        console.error('Error removing password:', error)
-        setPasswordError('Fehler beim Entfernen des Passworts')
       }
     } else {
       // Verify password (for initial access)
@@ -1342,7 +1307,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
         </div>
 
         {/* Todo List */}
-        <TodoList 
+        <TodoList
           todos={todos}
           users={users}
           currentUserId={user?.uid}
@@ -1374,7 +1339,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
         onToggleGuestLink={handleToggleGuestLink}
         onEditGuestLink={handleEditGuestLink}
       />
-      
+
       {/* Toast Notification */}
       <ToastNotification
         message={toastMessage}

@@ -320,7 +320,7 @@ export default function SharingModal({
             expiresInDays: getEditingLink()?.expiresAt
               ? Math.ceil((getEditingLink()!.expiresAt - Date.now()) / (1000 * 60 * 60 * 24))
               : null,
-            password: undefined
+            password: getEditingLink()?.password || ''
           }}
           isEditing={true}
         />

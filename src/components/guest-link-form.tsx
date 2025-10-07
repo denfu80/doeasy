@@ -34,6 +34,7 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
   useEffect(() => {
     if (initialData) {
       setFormData(initialData)
+      setConfirmPassword(initialData.password || '')
       if (initialData.name || initialData.guestDisplayName || initialData.password) {
         setShowAdvanced(true)
       }
@@ -52,11 +53,6 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
   }, [isOpen])
 
   const handleSubmit = () => {
-    if (formData.password && formData.password !== confirmPassword) {
-      setError('Passwörter stimmen nicht überein')
-      return
-    }
-
     const submitData: GuestLinkFormData = {
       name: formData.name?.trim() || undefined,
       guestDisplayName: formData.guestDisplayName?.trim() || undefined,
@@ -204,20 +200,18 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
               <span>Passwort (optional)</span>
             </label>
             <Input
-              type="password"
+              type="text"
               placeholder="Passwort für diesen Link"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full mb-2"
-            />
-            <Input
-              type="password"
-              placeholder="Passwort bestätigen"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full"
             />
-            <p className="text-xs text-slate-500 mt-1">Unabhängig vom Listen-Passwort</p>
+            <p className="text-xs text-slate-500 mt-1">
+              {isEditing
+                ? 'Passwort wird im Klartext gespeichert • Leerlassen zum Entfernen'
+                : 'Wird im Klartext gespeichert • Nur Missbrauchsschutz'
+              }
+            </p>
           </div>
             </>
           )}

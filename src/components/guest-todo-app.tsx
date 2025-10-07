@@ -153,14 +153,6 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
     }
   }, [])
 
-  // Hash password helper
-  const hashPassword = async (password: string): Promise<string> => {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(password)
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-  }
 
   // Validate guest link and load listId
   useEffect(() => {
@@ -472,22 +464,15 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
   const handlePasswordSubmit = async (password: string) => {
     if (!guestLinkData) return
 
-    try {
-      const hashedPassword = await hashPassword(password)
-
-      if (guestLinkData.password === hashedPassword) {
-        setIsUnlocked(true)
-        setShowPasswordPrompt(false)
-        setPasswordError('')
-        setToastMessage('✅ Zugang gewährt')
-        setToastType('success')
-        setToastVisible(true)
-      } else {
-        setPasswordError('Falsches Passwort')
-      }
-    } catch (error) {
-      console.error('Error verifying password:', error)
-      setPasswordError('Fehler beim Überprüfen des Passworts')
+    if (guestLinkData.password === password) {
+      setIsUnlocked(true)
+      setShowPasswordPrompt(false)
+      setPasswordError('')
+      setToastMessage('✅ Zugang gewährt')
+      setToastType('success')
+      setToastVisible(true)
+    } else {
+      setPasswordError('Falsches Passwort')
     }
   }
 

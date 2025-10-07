@@ -817,8 +817,6 @@ export default function TodoApp({ listId }: TodoAppProps) {
         ? Date.now() + (data.expiresInDays * 24 * 60 * 60 * 1000)
         : null
 
-      const hashedPassword = data.password ? await hashPassword(data.password) : undefined
-
       // Build guest link object, only including defined values
       const guestLinkData: any = {
         listId: listId,
@@ -833,7 +831,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
       if (data.name) guestLinkData.name = data.name
       if (data.guestDisplayName) guestLinkData.guestDisplayName = data.guestDisplayName
       if (expiresAt) guestLinkData.expiresAt = expiresAt
-      if (hashedPassword) guestLinkData.password = hashedPassword
+      if (data.password) guestLinkData.password = data.password
 
       await set(newLinkRef, guestLinkData)
 
@@ -918,9 +916,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
         updates.expiresAt = null
       }
 
-      if (data.password) {
-        const hashedPassword = await hashPassword(data.password)
-        updates.password = hashedPassword
+      if (data.password !== undefined) {
+        updates.password = data.password || null
       }
 
       await update(linkRef, updates)

@@ -85,7 +85,7 @@ export default function PasswordPrompt({
               {mode === 'set' ? 'Neues Passwort' : mode === 'remove' ? 'Aktuelles Passwort' : 'Passwort'}
             </label>
             <input
-              type="password"
+              type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -101,7 +101,7 @@ export default function PasswordPrompt({
                 Passwort bestätigen
               </label>
               <input
-                type="password"
+                type="text"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -141,13 +141,10 @@ export default function PasswordPrompt({
         {mode === 'set' && (
           <div className="mt-4 space-y-2">
             <p className="text-xs text-slate-500 text-center">
-              Das Passwort schützt diese Liste vor unbefugtem Zugriff
+              Nur Missbrauchsschutz • Passwort wird im Klartext gespeichert
             </p>
             <p className="text-xs text-amber-600 text-center font-medium">
-              ⚠️ Bei Verlust gibt es keine Wiederherstellung
-            </p>
-            <p className="text-xs text-slate-400 text-center">
-              Keine sensiblen Daten speichern - das Tool ist nicht dafür ausgelegt
+              ⚠️ Nicht für sensible Daten geeignet
             </p>
           </div>
         )}
@@ -157,8 +154,8 @@ export default function PasswordPrompt({
           </p>
         )}
         {mode === 'verify' && (
-          <p className="text-xs text-amber-600 mt-4 text-center font-medium">
-            ⚠️ Passwort vergessen? Keine Wiederherstellung möglich
+          <p className="text-xs text-slate-500 mt-4 text-center">
+            Nur Missbrauchsschutz • Passwort ist sichtbar
           </p>
         )}
       </div>

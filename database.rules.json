@@ -40,7 +40,7 @@
           ".validate": "newData.isNumber() || newData.val() == null"
         },
         "password": {
-          ".validate": "newData.isString() && newData.val().length == 64"
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
         },
         "lastAccessAt": {
           ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"

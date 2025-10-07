@@ -33,6 +33,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Pin/unpin lists** on homepage for quick access
 - **Activity tracking** with last user action timestamps
 - **User management page** for viewing active users
+- **Password protection** for private lists (SHA-256 hashed, session-based unlocking)
+- **Contextual tooltips** for guiding users to discover features (pin, name edit, password)
 
 ## Development Workflow
 
@@ -92,6 +94,9 @@ npm run test:rules
 │   │   ├── guest-todo-app.tsx      # Guest access component (read-only)
 │   │   ├── sharing-modal.tsx       # Share options and link generation
 │   │   ├── users-page.tsx          # User management interface
+│   │   ├── password-prompt.tsx     # Password protection modal
+│   │   ├── header-actions-menu.tsx # Mobile menu with pin/lock/share actions
+│   │   ├── confirm-dialog.tsx      # Reusable confirmation dialog
 │   │   ├── debug-panel.tsx         # Development debugging
 │   │   └── ui/                     # shadcn/ui components (Button, Badge, Card, Input)
 │   ├── lib/
@@ -178,6 +183,141 @@ Test setup includes:
 - Data structure validation
 - User access control testing
 - Minimal test framework for incremental development
+
+## Feature Deep Dives
+
+### Password Protection
+
+**Overview:**
+Lists can be protected with a password to restrict access. Users must enter the correct password to view or edit the list.
+
+**Implementation Details:**
+- **Location**: `src/components/todo-app.tsx`, `src/components/password-prompt.tsx`, `src/components/header-actions-menu.tsx`
+- **Icon**: Lock (closed) when protected, Unlock (open) when not protected
+- **Storage**: Password is hashed with SHA-256 and stored in Firebase at `lists/{listId}/metadata/password`
+- **Session Management**: Successful unlock stores flag in `sessionStorage` for the current browser session
+- **Guest Lists**: Guest links (`/list/[id]/guest/[guestId]`) bypass password protection completely
+
+**User Flow:**
+1. **Locking a List** (Setting Password):
+   - User clicks Unlock icon (open lock)
+   - Modal prompts for new password and confirmation
+   - Password must match in both fields
+   - Password is hashed with SHA-256 before storing
+   - Success toast: "🔒 Liste ist jetzt passwortgeschützt"
+
+2. **Unlocking a List** (Entering Password):
+   - When loading a password-protected list, modal appears automatically
+   - User enters password
+   - Password is hashed and compared with stored hash
+   - On success: List unlocks and session is marked as unlocked
+   - On failure: Error message "Falsches Passwort"
+   - Cancel redirects to homepage
+
+3. **Removing Password Protection**:
+   - User clicks Lock icon (closed lock)
+   - Modal prompts for current password verification
+   - On success: Password is removed from Firebase
+   - Success toast: "🔓 Passwortschutz wurde entfernt"
+
+**Technical Implementation:**
+```typescript
+// Password hashing (client-side, SHA-256)
+const hashPassword = async (password: string): Promise<string> => {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// Firebase structure
+lists/{listId}/metadata/password: {
+  hashedPassword: string (64 chars, SHA-256 hex)
+  createdBy: string
+  createdAt: timestamp
+  updatedAt?: timestamp
+}
+
+// Session unlocking
+sessionStorage.setItem(`unlocked-${listId}`, 'true')
+```
+
+**UI/UX Notes:**
+- Lock button shows green background when list is protected
+- Button pulses gently if password hint tooltip is active
+- Mobile: Lock option appears in HeaderActionsMenu dropdown
+- Desktop: Lock button appears next to Pin and Share buttons
+- Note in sharing modal: Guest links explicitly state "Kein Passwortschutz"
+
+### Contextual Tooltip System
+
+**Overview:**
+The app uses contextual tooltips to guide users to discover features without overwhelming the UI. Tooltips appear automatically once per list per feature, with staggered timing to avoid collisions.
+
+**Pattern:**
+```typescript
+// Tooltip state
+const [hasShownFeatureHint, setHasShownFeatureHint] = useState(false)
+
+// localStorage key pattern
+const hintKey = `feature-hint-shown-${listId}`
+const hasShownBefore = localStorage.getItem(hintKey) === 'true'
+
+// Show logic (in useEffect)
+if (!hasShownBefore && isAuthReady && otherConditions) {
+  setTimeout(() => {
+    setToastMessage('💡 Tipp: Feature-Beschreibung')
+    setToastType('info')
+    setToastVisible(true)
+    setHasShownFeatureHint(true)
+    localStorage.setItem(hintKey, 'true')
+
+    // Auto-stop visual indicator after 8 seconds
+    setTimeout(() => {
+      setHasShownFeatureHint(false)
+    }, 8000)
+  }, delayInMs)
+}
+```
+
+**Implemented Tooltips:**
+1. **Pin Hint** (Delay: 0ms, immediately after auth ready)
+   - Key: `pin-hint-shown-${listId}`
+   - Message: "💡 Tipp: Pinne diese Liste, um sie schnell wiederzufinden!"
+   - Condition: List is not pinned
+   - Visual: Pin button pulses with `gentle-pulse-animation` class
+
+2. **Name Edit Hint** (Delay: 5000ms)
+   - Key: `name-hint-shown-${listId}`
+   - Message: "✨ Tipp: Hover über deinen Avatar, um deinen Namen anzupassen!"
+   - Condition: User has not customized their name (`macheinfach-username-customized !== 'true'`)
+   - Visual: User's own avatar pulses
+
+3. **Password Hint** (Delay: 10000ms)
+   - Key: `password-hint-shown-${listId}`
+   - Message: "🔒 Tipp: Schütze diese Liste mit einem Passwort!"
+   - Condition: List is not password-protected and is unlocked
+   - Visual: Lock/Unlock button pulses
+
+**Best Practices:**
+- **Stagger timing**: Each tooltip has increasing delay to avoid overlapping (0ms, 5s, 10s, etc.)
+- **Per-list tracking**: Use `${listId}` in localStorage key to show hints once per list
+- **Visual indicators**: Use `gentle-pulse-animation` CSS class for 8 seconds
+- **Auto-dismissal**: Visual indicators stop after 8 seconds, but toast can be manually dismissed
+- **Condition checks**: Always check relevant state before showing (e.g., isPinned, hasCustomName, isPasswordProtected)
+
+**CSS Animation:**
+```css
+@keyframes gentle-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.gentle-pulse-animation {
+  animation: gentle-pulse 2s ease-in-out infinite;
+}
+```
 
 ## Current Setup Status
 

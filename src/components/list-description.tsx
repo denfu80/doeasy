@@ -156,7 +156,8 @@ export default function ListDescription({
                 {readOnly ? 'Keine Beschreibung' : 'Beschreibung hinzufügen'}
               </p>
               <p className="text-xs text-purple-400 mt-1 font-mono">
-                // markdown unterstützt
+                {/* markdown unterstützt */}
+                &#47;&#47; markdown unterstützt
               </p>
             </button>
           ) : (

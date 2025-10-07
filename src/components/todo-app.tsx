@@ -16,14 +16,14 @@ import {
   set,
   off
 } from 'firebase/database'
-import { Zap, Link as LinkIcon, Edit2, Check, X, Pin } from 'lucide-react'
+import { Zap, Link as LinkIcon, Edit2, Check, X, Pin, Lock, Unlock } from 'lucide-react'
 import Link from 'next/link'
 import { sortUsersByLastSeen, isUserOnline } from '@/lib/presence-utils'
 
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { OfflineStorage, getLocalListIds, addLocalListId, removeLocalListId } from '@/lib/offline-storage'
-import { Todo, User, GuestLink, UserRole } from '@/types/todo'
+import { Todo, User, GuestLink, UserRole, ListPassword } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
@@ -34,6 +34,7 @@ import ToastNotification from './toast-notification'
 import SharingModal from './sharing-modal'
 import HeaderActionsMenu from './header-actions-menu'
 import ConfirmDialog from './confirm-dialog'
+import PasswordPrompt from './password-prompt'
 
 interface TodoAppProps {
   listId: string
@@ -64,6 +65,14 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [isPinned, setIsPinned] = useState(false)
   const [hasShownPinHint, setHasShownPinHint] = useState(false)
   const [hasShownNameHint, setHasShownNameHint] = useState(false)
+
+  // Password protection state
+  const [isPasswordProtected, setIsPasswordProtected] = useState(false)
+  const [isUnlocked, setIsUnlocked] = useState(false)
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
+  const [passwordMode, setPasswordMode] = useState<'set' | 'verify'>('set')
+  const [passwordError, setPasswordError] = useState<string>('')
+  const [hasShownPasswordHint, setHasShownPasswordHint] = useState(false)
 
   // Sharing state
   const [showSharingModal, setShowSharingModal] = useState(false)
@@ -164,6 +173,60 @@ export default function TodoApp({ listId }: TodoAppProps) {
       }, 5000)
     }
   }, [listId, isAuthReady, userName])
+
+  // Load password protection status and check if unlocked
+  useEffect(() => {
+    if (!isFirebaseConfigured() || !db || !isAuthReady) return
+
+    const passwordRef = ref(db, `lists/${listId}/metadata/password`)
+
+    const unsubscribe = onValue(passwordRef, (snapshot) => {
+      const passwordData = snapshot.val()
+      const hasPassword = !!passwordData?.hashedPassword
+
+      setIsPasswordProtected(hasPassword)
+
+      // Check if we have unlocked this list in this session
+      const sessionUnlocked = sessionStorage.getItem(`unlocked-${listId}`)
+
+      if (hasPassword && !sessionUnlocked) {
+        // List is locked, show password prompt
+        setIsUnlocked(false)
+        setPasswordMode('verify')
+        setShowPasswordPrompt(true)
+      } else {
+        // List is unlocked or has no password
+        setIsUnlocked(true)
+      }
+    })
+
+    return () => {
+      off(passwordRef, 'value', unsubscribe)
+    }
+  }, [listId, isAuthReady])
+
+  // Show password hint once per list
+  useEffect(() => {
+    const passwordHintKey = `password-hint-shown-${listId}`
+    const hasShownHintBefore = localStorage.getItem(passwordHintKey) === 'true'
+
+    // Show hint if: list is not password protected and we haven't shown it before
+    if (!isPasswordProtected && !hasShownHintBefore && isAuthReady && isUnlocked) {
+      // Delay to let the UI settle and avoid collision with other hints
+      setTimeout(() => {
+        setToastMessage('🔒 Tipp: Schütze diese Liste mit einem Passwort!')
+        setToastType('info')
+        setToastVisible(true)
+        setHasShownPasswordHint(true)
+        localStorage.setItem(passwordHintKey, 'true')
+
+        // Auto-stop pulsing after 8 seconds
+        setTimeout(() => {
+          setHasShownPasswordHint(false)
+        }, 8000)
+      }, 10000) // Show after 10 seconds to avoid collision
+    }
+  }, [listId, isAuthReady, isPasswordProtected, isUnlocked])
 
   // Use ref to ensure Firebase initialization only runs once (React StrictMode protection)
   const firebaseInitialized = useRef(false)
@@ -757,6 +820,109 @@ export default function TodoApp({ listId }: TodoAppProps) {
     }
   }
 
+  // Password protection functions
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  const handleTogglePasswordProtection = () => {
+    if (isPasswordProtected) {
+      // Unlock (remove password)
+      setPasswordMode('verify')
+      setShowPasswordPrompt(true)
+    } else {
+      // Lock (set password)
+      setPasswordMode('set')
+      setShowPasswordPrompt(true)
+    }
+  }
+
+  const handlePasswordConfirm = async (password: string) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+
+    setPasswordError('')
+
+    if (passwordMode === 'set') {
+      // Set new password
+      try {
+        const hashedPassword = await hashPassword(password)
+        const passwordRef = ref(db, `lists/${listId}/metadata/password`)
+        await set(passwordRef, {
+          hashedPassword,
+          createdBy: user.uid,
+          createdAt: serverTimestamp()
+        })
+
+        setIsPasswordProtected(true)
+        setIsUnlocked(true)
+        setShowPasswordPrompt(false)
+        sessionStorage.setItem(`unlocked-${listId}`, 'true')
+
+        setToastMessage('🔒 Liste ist jetzt passwortgeschützt')
+        setToastType('success')
+        setToastVisible(true)
+        setHasShownPasswordHint(false)
+      } catch (error) {
+        console.error('Error setting password:', error)
+        setPasswordError('Fehler beim Setzen des Passworts')
+      }
+    } else {
+      // Verify password
+      try {
+        const hashedPassword = await hashPassword(password)
+        const passwordRef = ref(db, `lists/${listId}/metadata/password`)
+        const { get } = await import('firebase/database')
+        const snapshot = await get(passwordRef)
+        const passwordData = snapshot.val()
+
+        if (passwordData?.hashedPassword === hashedPassword) {
+          // Password correct
+          if (isPasswordProtected) {
+            // Unlocking to remove password
+            await set(passwordRef, null)
+            setIsPasswordProtected(false)
+            setIsUnlocked(true)
+            setShowPasswordPrompt(false)
+            sessionStorage.removeItem(`unlocked-${listId}`)
+
+            setToastMessage('🔓 Passwortschutz wurde entfernt')
+            setToastType('success')
+            setToastVisible(true)
+          } else {
+            // Just unlocking for viewing
+            setIsUnlocked(true)
+            setShowPasswordPrompt(false)
+            sessionStorage.setItem(`unlocked-${listId}`, 'true')
+
+            setToastMessage('🔓 Liste entsperrt')
+            setToastType('success')
+            setToastVisible(true)
+          }
+        } else {
+          // Password incorrect
+          setPasswordError('Falsches Passwort')
+        }
+      } catch (error) {
+        console.error('Error verifying password:', error)
+        setPasswordError('Fehler beim Überprüfen des Passworts')
+      }
+    }
+  }
+
+  const handlePasswordCancel = () => {
+    setShowPasswordPrompt(false)
+    setPasswordError('')
+
+    // If list is locked and user cancels, redirect to home
+    if (isPasswordProtected && !isUnlocked) {
+      window.location.href = '/'
+    }
+  }
+
   if (!isAuthReady) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
@@ -829,7 +995,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
             <HeaderActionsMenu
               listId={listId}
               isPinned={isPinned}
+              isPasswordProtected={isPasswordProtected}
               onTogglePin={handleTogglePin}
+              onTogglePasswordProtection={handleTogglePasswordProtection}
               onShare={copyLinkToClipboard}
               userCount={users.length}
               onlineUserCount={onlineUserCount}
@@ -925,6 +1093,23 @@ export default function TodoApp({ listId }: TodoAppProps) {
                   <Pin className="w-4 h-4" />
                 ) : (
                   <Pin className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={handleTogglePasswordProtection}
+                className={`flex items-center justify-center w-10 h-10 rounded-full shadow-sm hover:shadow-md transition-all duration-200 border ${
+                  isPasswordProtected
+                    ? 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'
+                    : 'bg-white text-slate-400 border-gray-200 hover:bg-gray-50 hover:text-slate-600'
+                } ${
+                  hasShownPasswordHint && !isPasswordProtected ? 'gentle-pulse-animation' : ''
+                }`}
+                title={isPasswordProtected ? 'Passwortschutz entfernen' : 'Mit Passwort schützen'}
+              >
+                {isPasswordProtected ? (
+                  <Lock className="w-4 h-4" />
+                ) : (
+                  <Unlock className="w-4 h-4" />
                 )}
               </button>
               <button
@@ -1054,6 +1239,15 @@ export default function TodoApp({ listId }: TodoAppProps) {
         onConfirm={confirmToggleTodo}
         onCancel={cancelToggleTodo}
         variant="warning"
+      />
+
+      {/* Password Prompt */}
+      <PasswordPrompt
+        isOpen={showPasswordPrompt}
+        mode={passwordMode}
+        onConfirm={handlePasswordConfirm}
+        onCancel={handlePasswordCancel}
+        error={passwordError}
       />
     </div>
   )

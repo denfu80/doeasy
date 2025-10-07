@@ -1,6 +1,6 @@
 "use client"
 
-import { MoreVertical, Users, Link as LinkIcon, Pin, PinOff } from 'lucide-react'
+import { MoreVertical, Users, Link as LinkIcon, Pin, PinOff, Lock, Unlock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import {
   DropdownMenu,
@@ -14,7 +14,9 @@ import { Badge } from '@/components/ui/badge'
 interface HeaderActionsMenuProps {
   listId: string
   isPinned: boolean
+  isPasswordProtected: boolean
   onTogglePin: () => void
+  onTogglePasswordProtection: () => void
   onShare: () => void
   userCount: number
   onlineUserCount: number
@@ -23,7 +25,9 @@ interface HeaderActionsMenuProps {
 export default function HeaderActionsMenu({
   listId,
   isPinned,
+  isPasswordProtected,
   onTogglePin,
+  onTogglePasswordProtection,
   onShare,
   userCount,
   onlineUserCount
@@ -72,6 +76,20 @@ export default function HeaderActionsMenu({
             <>
               <Pin className="w-4 h-4 mr-2" />
               <span>Pinnen</span>
+            </>
+          )}
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onClick={onTogglePasswordProtection} className="cursor-pointer">
+          {isPasswordProtected ? (
+            <>
+              <Unlock className="w-4 h-4 mr-2" />
+              <span>Passwortschutz entfernen</span>
+            </>
+          ) : (
+            <>
+              <Lock className="w-4 h-4 mr-2" />
+              <span>Mit Passwort schützen</span>
             </>
           )}
         </DropdownMenuItem>

@@ -146,7 +146,7 @@
           // Allow read/write access to any authenticated user
           ".read": "auth != null",
           ".write": "auth != null",
-          
+
           // Allow flexible metadata structure - name field is optional
           "name": {
             ".validate": "(newData.isString() && newData.val().length > 0 && newData.val().length <= 100) || newData.val() == null"
@@ -165,6 +165,24 @@
           },
           "isPublic": {
             ".validate": "newData.isBoolean()"
+          },
+
+          // Password protection structure
+          "password": {
+            ".validate": "newData.hasChildren(['hashedPassword', 'createdBy', 'createdAt']) || newData.val() == null",
+
+            "hashedPassword": {
+              ".validate": "newData.isString() && newData.val().length == 64"
+            },
+            "createdBy": {
+              ".validate": "newData.isString()"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() || newData.val() == now"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() || newData.val() == now"
+            }
           }
         },
 

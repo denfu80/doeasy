@@ -410,7 +410,9 @@ export default function UsersPage({ listId }: UsersPageProps) {
             <HeaderActionsMenu
               listId={listId}
               isPinned={isPinned}
+              isPasswordProtected={false}
               onTogglePin={handleTogglePin}
+              onTogglePasswordProtection={() => {}}
               onShare={handleShare}
               userCount={users.length}
               onlineUserCount={onlineUserCount}

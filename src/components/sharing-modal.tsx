@@ -122,7 +122,7 @@ export default function SharingModal({
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-800">Gast-Links</h3>
-                    <p className="text-sm text-slate-600">Nur lesen & abhaken</p>
+                    <p className="text-sm text-slate-600">Nur lesen & abhaken • Kein Passwortschutz</p>
                   </div>
                 </div>
                 <Badge variant="secondary" className="bg-purple-100 text-purple-800">

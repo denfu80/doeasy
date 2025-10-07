@@ -32,4 +32,11 @@ export interface GuestLink {
   revokedBy?: string | null
 }
 
+export interface ListPassword {
+  hashedPassword: string
+  createdBy: string
+  createdAt: number | object
+  updatedAt?: number | object
+}
+
 export type UserRole = 'normal' | 'guest'

@@ -70,6 +70,7 @@ Gast-Kommentare
 
 ## Ideen
 
+- responsive von öffnen von listen
 - vorschläge für nächste items wie bei https://list2go.io/de/list/-Oas331SdgRZqjXhD-zh
 - Hovereffekt auf Todos für mehr optionen (momentan nur löschen)
 - Drag & Drop Sortierung der Todos

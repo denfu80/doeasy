@@ -184,6 +184,15 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
             return
           }
 
+          // Check if link is disabled
+          if (linkData.disabled) {
+            setIsValidGuestLink(false)
+            setToastMessage('Dieser Gast-Link ist momentan deaktiviert')
+            setToastType('warning')
+            setToastVisible(true)
+            return
+          }
+
           // Check if link is expired
           if (linkData.expiresAt && linkData.expiresAt < Date.now()) {
             setIsValidGuestLink(false)

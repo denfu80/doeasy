@@ -493,11 +493,13 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
         </div>
 
         {/* List Description (readonly) */}
-        <ListDescription
-          description={listDescription}
-          onSave={() => {}}
-          readOnly={true}
-        />
+        <div className="mb-6">
+          <ListDescription
+            description={listDescription}
+            onSave={() => {}}
+            readOnly={true}
+          />
+        </div>
 
         {/* Todo List (readonly) */}
         <div className="space-y-3">

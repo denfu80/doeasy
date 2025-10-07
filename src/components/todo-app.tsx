@@ -933,10 +933,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
         </div>
 
         {/* List Description - between input and items */}
-        <ListDescription
-          description={listDescription}
-          onSave={handleSaveDescription}
-        />
+        <div className="mb-6">
+          <ListDescription
+            description={listDescription}
+            onSave={handleSaveDescription}
+          />
+        </div>
 
         {/* Todo List */}
         <TodoList 

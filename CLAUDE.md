@@ -261,6 +261,11 @@ sessionStorage.setItem(`unlocked-${listId}`, 'true')
 - Desktop: Lock button appears next to Pin and Share buttons
 - Note in sharing modal: Guest links explicitly state "Kein Passwortschutz"
 
+**Important Warnings:**
+- ⚠️ **No password recovery**: If password is lost, there is no way to recover access
+- ⚠️ **Not for sensitive data**: This tool is not designed for storing sensitive information
+- These warnings are displayed prominently in the password modals
+
 **Access Control:**
 - **List View** (`/list/[id]`): Password prompt blocks all content until correct password is entered
 - **Users View** (`/list/[id]/users`): Same password protection applies - users page is also locked

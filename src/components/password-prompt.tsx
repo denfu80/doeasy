@@ -139,13 +139,26 @@ export default function PasswordPrompt({
         </form>
 
         {mode === 'set' && (
-          <p className="text-xs text-slate-500 mt-4 text-center">
-            Das Passwort schützt diese Liste vor unbefugtem Zugriff
-          </p>
+          <div className="mt-4 space-y-2">
+            <p className="text-xs text-slate-500 text-center">
+              Das Passwort schützt diese Liste vor unbefugtem Zugriff
+            </p>
+            <p className="text-xs text-amber-600 text-center font-medium">
+              ⚠️ Bei Verlust gibt es keine Wiederherstellung
+            </p>
+            <p className="text-xs text-slate-400 text-center">
+              Keine sensiblen Daten speichern - das Tool ist nicht dafür ausgelegt
+            </p>
+          </div>
         )}
         {mode === 'remove' && (
           <p className="text-xs text-slate-500 mt-4 text-center">
             Nach dem Entfernen kann jeder auf die Liste zugreifen
+          </p>
+        )}
+        {mode === 'verify' && (
+          <p className="text-xs text-amber-600 mt-4 text-center font-medium">
+            ⚠️ Passwort vergessen? Keine Wiederherstellung möglich
           </p>
         )}
       </div>

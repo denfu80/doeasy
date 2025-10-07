@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock, Pin, PinOff } from "lucide-react"
+import { Plus, Zap, Users, ArrowRight, Mic, Share2, Clock, Pin, PinOff, Lock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { generateReadableId } from "@/lib/readable-id-service"
@@ -19,6 +19,7 @@ export default function PlayfulHomepage() {
   const [unpinConfirm, setUnpinConfirm] = useState<string | null>(null)
   const [listNames, setListNames] = useState<Record<string, string>>({})
   const [lastActivity, setLastActivity] = useState<Record<string, {timestamp: number, user: string, action?: string}>>({})
+  const [passwordProtected, setPasswordProtected] = useState<Record<string, boolean>>({})
   const [, forceUpdate] = useState({})
   const router = useRouter()
 
@@ -97,9 +98,21 @@ export default function PlayfulHomepage() {
           }
         }
       })
-      
+
+      // Listen to password protection status
+      const passwordRef = ref(db!, `lists/${listId}/metadata/password`)
+      const passwordUnsubscribe = onValue(passwordRef, (snapshot) => {
+        const passwordData = snapshot.val()
+        const hasPassword = !!passwordData?.hashedPassword
+        setPasswordProtected(prev => ({
+          ...prev,
+          [listId]: hasPassword
+        }))
+      })
+
       unsubscribes.push(() => off(listNameRef, 'value', nameUnsubscribe))
       unsubscribes.push(() => off(todosRef, 'value', activityUnsubscribe))
+      unsubscribes.push(() => off(passwordRef, 'value', passwordUnsubscribe))
     })
 
     return () => {
@@ -425,19 +438,29 @@ export default function PlayfulHomepage() {
                           </div>
                           
                           <div className="flex items-center space-x-1">
+                            {/* Password indicator - appears on hover */}
+                            {passwordProtected[listId] && (
+                              <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center bg-green-100 border border-green-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                title="Diese Liste ist passwortgeschützt"
+                              >
+                                <Lock className="w-3 h-3 text-green-600" />
+                              </div>
+                            )}
+
                             {/* Unpin Button - appears on hover */}
                             <button
                               onClick={(e) => handleUnpinClick(listId, e)}
                               className={`w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-md ${
-                                unpinConfirm === listId 
-                                  ? 'bg-orange-500 animate-pulse' 
+                                unpinConfirm === listId
+                                  ? 'bg-orange-500 animate-pulse'
                                   : 'bg-orange-400 hover:bg-orange-500'
                               }`}
                               title={unpinConfirm === listId ? 'Nochmal klicken zum Entpinnen' : `"${getListName(listId)}" aus diesem Browser entpinnen`}
                             >
                               <PinOff className="w-3 h-3 text-white" />
                             </button>
-                            
+
                             {/* Arrow - shows when not hovering buttons */}
                             <ArrowRight className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:text-purple-600 transition-all duration-300" />
                           </div>

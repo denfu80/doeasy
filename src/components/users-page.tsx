@@ -26,6 +26,7 @@ import { User } from '@/types/todo'
 import { isUserOnline, getOnlineStatus, sortUsersByLastSeen } from '@/lib/presence-utils'
 import ToastNotification from './toast-notification'
 import HeaderActionsMenu from './header-actions-menu'
+import PasswordPrompt from './password-prompt'
 
 interface UsersPageProps {
   listId: string
@@ -47,6 +48,12 @@ export default function UsersPage({ listId }: UsersPageProps) {
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('info')
   const [lastDeletedUser, setLastDeletedUser] = useState<{id: string, data: Record<string, unknown>} | null>(null)
   const [isPinned, setIsPinned] = useState(false)
+
+  // Password protection state
+  const [isPasswordProtected, setIsPasswordProtected] = useState(false)
+  const [isUnlocked, setIsUnlocked] = useState(false)
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
+  const [passwordError, setPasswordError] = useState<string>('')
 
   // Firebase Authentication
   useEffect(() => {
@@ -97,6 +104,36 @@ export default function UsersPage({ listId }: UsersPageProps) {
       }
     }
   }, [])
+
+  // Load password protection status and check if unlocked
+  useEffect(() => {
+    if (!isFirebaseConfigured() || !db || !isAuthReady) return
+
+    const passwordRef = ref(db, `lists/${listId}/metadata/password`)
+
+    const unsubscribe = onValue(passwordRef, (snapshot) => {
+      const passwordData = snapshot.val()
+      const hasPassword = !!passwordData?.hashedPassword
+
+      setIsPasswordProtected(hasPassword)
+
+      // Check if we have unlocked this list in this session
+      const sessionUnlocked = sessionStorage.getItem(`unlocked-${listId}`)
+
+      if (hasPassword && !sessionUnlocked) {
+        // List is locked, show password prompt
+        setIsUnlocked(false)
+        setShowPasswordPrompt(true)
+      } else {
+        // List is unlocked or has no password
+        setIsUnlocked(true)
+      }
+    })
+
+    return () => {
+      off(passwordRef, 'value', unsubscribe)
+    }
+  }, [listId, isAuthReady])
 
   // Real-time Presence Tracking
   useEffect(() => {
@@ -271,6 +308,57 @@ export default function UsersPage({ listId }: UsersPageProps) {
     }
   }
 
+  // Password protection functions
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  const handlePasswordConfirm = async (password: string) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+
+    setPasswordError('')
+
+    // Always in verify mode on users page
+    try {
+      const hashedPassword = await hashPassword(password)
+      const passwordRef = ref(db, `lists/${listId}/metadata/password`)
+      const { get } = await import('firebase/database')
+      const snapshot = await get(passwordRef)
+      const passwordData = snapshot.val()
+
+      if (passwordData?.hashedPassword === hashedPassword) {
+        // Password correct
+        setIsUnlocked(true)
+        setShowPasswordPrompt(false)
+        sessionStorage.setItem(`unlocked-${listId}`, 'true')
+
+        setToastMessage('🔓 Liste entsperrt')
+        setToastType('success')
+        setToastVisible(true)
+      } else {
+        // Password incorrect
+        setPasswordError('Falsches Passwort')
+      }
+    } catch (error) {
+      console.error('Error verifying password:', error)
+      setPasswordError('Fehler beim Überprüfen des Passworts')
+    }
+  }
+
+  const handlePasswordCancel = () => {
+    setShowPasswordPrompt(false)
+    setPasswordError('')
+
+    // If list is locked and user cancels, redirect to home
+    if (isPasswordProtected && !isUnlocked) {
+      window.location.href = '/'
+    }
+  }
+
   const handleBack = () => {
     // Check if we have browser history within our app
     if (typeof window !== 'undefined' && window.history.length > 1) {
@@ -390,6 +478,33 @@ export default function UsersPage({ listId }: UsersPageProps) {
   }
 
   const onlineUserCount = users.filter(u => isUserOnline(u)).length
+
+  // If not authenticated yet, show loading
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="flex items-center space-x-3 text-slate-600">
+          <Zap className="w-8 h-8 text-purple-500 animate-spin" />
+          <span className="text-xl font-bold">Verbindung wird hergestellt...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // If password protected and not unlocked, show only password prompt
+  if (isPasswordProtected && !isUnlocked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
+        <PasswordPrompt
+          isOpen={showPasswordPrompt}
+          mode="verify"
+          onConfirm={handlePasswordConfirm}
+          onCancel={handlePasswordCancel}
+          error={passwordError}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">

@@ -934,6 +934,21 @@ export default function TodoApp({ listId }: TodoAppProps) {
     )
   }
 
+  // If password protected and not unlocked, show only password prompt (blocking view)
+  if (isPasswordProtected && !isUnlocked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
+        <PasswordPrompt
+          isOpen={true}
+          mode="verify"
+          onConfirm={handlePasswordConfirm}
+          onCancel={handlePasswordCancel}
+          error={passwordError}
+        />
+      </div>
+    )
+  }
+
   const onlineUserCount = users.filter(u => isUserOnline(u)).length
 
   return (
@@ -1241,14 +1256,16 @@ export default function TodoApp({ listId }: TodoAppProps) {
         variant="warning"
       />
 
-      {/* Password Prompt */}
-      <PasswordPrompt
-        isOpen={showPasswordPrompt}
-        mode={passwordMode}
-        onConfirm={handlePasswordConfirm}
-        onCancel={handlePasswordCancel}
-        error={passwordError}
-      />
+      {/* Password Prompt (for setting/removing password when already unlocked) */}
+      {isUnlocked && (
+        <PasswordPrompt
+          isOpen={showPasswordPrompt}
+          mode={passwordMode}
+          onConfirm={handlePasswordConfirm}
+          onCancel={handlePasswordCancel}
+          error={passwordError}
+        />
+      )}
     </div>
   )
 }

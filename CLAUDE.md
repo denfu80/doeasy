@@ -250,6 +250,13 @@ sessionStorage.setItem(`unlocked-${listId}`, 'true')
 - Desktop: Lock button appears next to Pin and Share buttons
 - Note in sharing modal: Guest links explicitly state "Kein Passwortschutz"
 
+**Access Control:**
+- **List View** (`/list/[id]`): Password prompt blocks all content until correct password is entered
+- **Users View** (`/list/[id]/users`): Same password protection applies - users page is also locked
+- **Guest View** (`/guest/[guestId]`): No password protection - always accessible
+- When password prompt is cancelled, user is redirected to homepage
+- Session-based unlocking: Once unlocked, stays unlocked for the browser session (sessionStorage)
+
 ### Contextual Tooltip System
 
 **Overview:**

@@ -11,9 +11,10 @@ interface UserAvatarsProps {
     onNameChange?: (name: string) => void
     listId: string
     disableNavigation?: boolean
+    hasShownNameHint?: boolean
 }
 
-export default function UserAvatars({users, currentUserId, userName, onNameChange, listId, disableNavigation}: UserAvatarsProps) {
+export default function UserAvatars({users, currentUserId, userName, onNameChange, listId, disableNavigation, hasShownNameHint}: UserAvatarsProps) {
     const router = useRouter()
     const [isExpanded, setIsExpanded] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -197,6 +198,8 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
                                 isCurrentUser && isExpanded ? 'scale-110 z-50' : ''
                             } ${
                                 clickedUserId === user.id ? 'ring-4 ring-purple-400 ring-opacity-75 scale-125 shadow-2xl' : ''
+                            } ${
+                                isCurrentUser && hasShownNameHint ? 'gentle-pulse-animation' : ''
                             }`}
                             style={{
                                 backgroundColor: user.color,

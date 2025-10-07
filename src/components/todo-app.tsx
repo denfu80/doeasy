@@ -62,6 +62,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // Pin state
   const [isPinned, setIsPinned] = useState(false)
   const [hasShownPinHint, setHasShownPinHint] = useState(false)
+  const [hasShownNameHint, setHasShownNameHint] = useState(false)
 
   // Sharing state
   const [showSharingModal, setShowSharingModal] = useState(false)
@@ -72,6 +73,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
     const trimmedName = newName.trim()
     _setUserName(trimmedName)
     localStorage.setItem('macheinfach-username', trimmedName)
+    localStorage.setItem('macheinfach-username-customized', 'true')
+    setHasShownNameHint(false)
   }
   // Toast notification state
   const [toastVisible, setToastVisible] = useState(false)
@@ -129,10 +132,34 @@ export default function TodoApp({ listId }: TodoAppProps) {
         setTimeout(() => {
           setHasShownPinHint(false)
         }, 8000)
-      }, 0) // Show after 3 seconds
+      }, 0)
     }
   }, [listId, isAuthReady])
-  
+
+  // Show name hint once per list (if user still has a generated name)
+  useEffect(() => {
+    const nameHintKey = `name-hint-shown-${listId}`
+    const hasShownHintBefore = localStorage.getItem(nameHintKey) === 'true'
+    const hasCustomName = localStorage.getItem('macheinfach-username-customized') === 'true'
+
+    // Show hint if: user has not customized their name yet and we haven't shown it before
+    if (!hasCustomName && !hasShownHintBefore && isAuthReady && userName) {
+      // Delay to let the UI settle and avoid collision with pin hint
+      setTimeout(() => {
+        setToastMessage('✨ Tipp: Hover über deinen Avatar, um deinen Namen anzupassen!')
+        setToastType('info')
+        setToastVisible(true)
+        setHasShownNameHint(true)
+        localStorage.setItem(nameHintKey, 'true')
+
+        // Auto-stop pulsing after 8 seconds
+        setTimeout(() => {
+          setHasShownNameHint(false)
+        }, 8000)
+      }, 5000)
+    }
+  }, [listId, isAuthReady, userName])
+
   // Use ref to ensure Firebase initialization only runs once (React StrictMode protection)
   const firebaseInitialized = useRef(false)
 
@@ -847,6 +874,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
                 userName={userName}
                 onNameChange={setUserName}
                 listId={listId}
+                hasShownNameHint={hasShownNameHint}
               />
               <button
                 onClick={handleTogglePin}

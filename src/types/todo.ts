@@ -5,6 +5,9 @@ export interface Todo {
   createdAt: number | object // Realtime Database timestamp
   createdBy: string
   creatorName: string
+  completedBy?: string // Who completed this todo
+  completedByName?: string // Name of who completed this todo
+  completedAt?: number | object | null // When this todo was completed
   deletedAt?: number | object | null // Realtime Database timestamp for soft-delete
   deletedBy?: string // Who deleted this todo
 }

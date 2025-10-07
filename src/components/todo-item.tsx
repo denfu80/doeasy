@@ -149,16 +149,23 @@ export default function TodoItem({ todo, users, currentUserId, onToggle, onDelet
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <p 
-          className={`flex-grow cursor-pointer select-none text-sm md:text-base ${
-            todo.completed ? 'line-through' : ''
-          } ${
-            isTouchDevice && isSelected ? 'text-blue-700 font-medium' : ''
-          }`}
-          onClick={handleTextClick}
-        >
-          {todo.text}
-        </p>
+        <div className="flex-grow cursor-pointer select-none" onClick={handleTextClick}>
+          <p
+            className={`text-sm md:text-base ${
+              todo.completed ? 'line-through' : ''
+            } ${
+              isTouchDevice && isSelected ? 'text-blue-700 font-medium' : ''
+            }`}
+          >
+            {todo.text}
+          </p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {todo.completed && todo.completedByName
+              ? `✓ abgehakt von ${todo.completedByName}`
+              : `erstellt von ${todo.creatorName}`
+            }
+          </p>
+        </div>
       )}
 
       {/* Actions - Show on desktop hover or mobile selection, hide during editing */}

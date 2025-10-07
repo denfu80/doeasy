@@ -1,7 +1,7 @@
 ### Avatar & User
 
 #### Probleme
-- aktive/alle filter raus - eifach immer alle anzeigen
+- was ist mit pin von gäste listen
 
 ### UI/UX
 
@@ -10,24 +10,21 @@
 
 ### Algmein
 
-- Es gibt keine Möglichkeit auf die Startseite zu kommen (Logo als Link?)
-- bug: anpinnen von gastlisten ist wie anpinnen der normalen liste
-- gastschutz
-- 
+
+
+
 ### Todo Liste
 - erledigt von steht da nicht sondern nur wer es erstellt hat
 - item log
+- extended item mode
+- selektion
 
 ## Ideen
 
-- Beschreibungstext für die Liste
+- PPW schutz
 - vorschläge für nächste items wie bei https://list2go.io/de/list/-Oas331SdgRZqjXhD-zh
-- Eigene Farbe ändern
 - Thema ändern: z.b. mach.einfach -> schenk.einfach
 - Hovereffekt auf Todos für mehr optionen (momentan nur löschen)
 - Drag & Drop Sortierung der Todos
 - Extended mode
 - Das bin ich feature. Erlaube es einem nutzer sich selbst aus der liste existierender Nutzer auszuwählen
-- Tipp: Änder deinen Namen
-- Random tips
-- Sticky Header: Add new Todo

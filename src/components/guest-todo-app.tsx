@@ -530,15 +530,20 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
                       <Check className="w-3 h-3 text-white" />
                     )}
                   </div>
-                  <p className={`flex-1 select-none ${
-                    todo.completed
-                      ? 'line-through text-green-700'
-                      : 'text-slate-800'
-                  }`}>
-                    {todo.text}
-                  </p>
-                  <div className="text-xs text-slate-400">
-                    von {todo.creatorName}
+                  <div className="flex-1">
+                    <p className={`select-none ${
+                      todo.completed
+                        ? 'line-through text-green-700'
+                        : 'text-slate-800'
+                    }`}>
+                      {todo.text}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {todo.completed && todo.completedByName
+                        ? `✓ abgehakt von ${todo.completedByName}`
+                        : `erstellt von ${todo.creatorName}`
+                      }
+                    </p>
                   </div>
                 </div>
               </div>

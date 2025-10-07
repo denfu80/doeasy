@@ -80,7 +80,10 @@
               ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
             },
             "completedBy": {
-              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+              ".validate": "(newData.isString() && newData.val().length > 0 && newData.val().length <= 100) || newData.val() == null"
+            },
+            "completedByName": {
+              ".validate": "(newData.isString() && newData.val().length > 0 && newData.val().length <= 50) || newData.val() == null"
             },
             "updatedAt": {
               ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"

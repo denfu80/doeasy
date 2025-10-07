@@ -455,11 +455,24 @@ export default function TodoApp({ listId }: TodoAppProps) {
     if (!isFirebaseConfigured() || !db) return
 
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
-    await update(todoRef, { 
-      completed,
-      completedAt: serverTimestamp(),
-      completedBy: userName || 'Unknown'
-    })
+
+    if (completed) {
+      // When completing: track who completed it
+      await update(todoRef, {
+        completed,
+        completedAt: serverTimestamp(),
+        completedBy: user?.uid || 'unknown',
+        completedByName: userName || 'Unbekannt'
+      })
+    } else {
+      // When uncompleting: remove completion info
+      await update(todoRef, {
+        completed,
+        completedAt: null,
+        completedBy: null,
+        completedByName: null
+      })
+    }
   }
   
   const handleUpdateTodo = async (id: string, text: string) => {

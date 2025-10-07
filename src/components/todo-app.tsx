@@ -454,6 +454,12 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const handleToggleTodo = async (id: string, completed: boolean) => {
     if (!isFirebaseConfigured() || !db) return
 
+    // If uncompleting (unhaking), ask for confirmation
+    if (!completed) {
+      const confirmed = window.confirm('Möchtest du das Abhaken wirklich rückgängig machen?')
+      if (!confirmed) return
+    }
+
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
 
     if (completed) {

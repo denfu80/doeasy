@@ -349,14 +349,33 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
   const handleToggleComplete = async (todoId: string, currentCompleted: boolean) => {
     if (!user || !listId || !isFirebaseConfigured() || !db) return
 
+    // If uncompleting (unhaking), ask for confirmation
+    if (currentCompleted) {
+      const confirmed = window.confirm('Möchtest du das Abhaken wirklich rückgängig machen?')
+      if (!confirmed) return
+    }
+
     try {
       const todoRef = ref(db!, `lists/${listId}/todos/${todoId}`)
       console.log(`🔄 Guest toggling todo ${todoId} to ${!currentCompleted ? 'completed' : 'uncompleted'}`)
-      await update(todoRef, {
-        completed: !currentCompleted,
-        completedAt: !currentCompleted ? serverTimestamp() : null,
-        completedBy: !currentCompleted ? user.uid : null
-      })
+
+      if (!currentCompleted) {
+        // When completing: track who completed it
+        await update(todoRef, {
+          completed: true,
+          completedAt: serverTimestamp(),
+          completedBy: user.uid,
+          completedByName: userName || 'Gast'
+        })
+      } else {
+        // When uncompleting: remove completion info
+        await update(todoRef, {
+          completed: false,
+          completedAt: null,
+          completedBy: null,
+          completedByName: null
+        })
+      }
 
       console.log(`${!currentCompleted ? '✅' : '⏹️'} Guest ${!currentCompleted ? 'completed' : 'uncompleted'} todo: ${todoId}`)
     } catch (error) {

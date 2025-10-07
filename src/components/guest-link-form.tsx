@@ -53,11 +53,13 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
   }, [isOpen])
 
   const handleSubmit = () => {
+    const trimmedPassword = formData.password?.trim()
+
     const submitData: GuestLinkFormData = {
       name: formData.name?.trim() || undefined,
       guestDisplayName: formData.guestDisplayName?.trim() || undefined,
       expiresInDays: formData.expiresInDays,
-      password: formData.password?.trim() || undefined
+      password: trimmedPassword || (isEditing ? '' : undefined)
     }
 
     onSubmit(submitData)

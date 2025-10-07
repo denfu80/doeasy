@@ -208,8 +208,8 @@ export default function PlayfulHomepage() {
       {/* Header */}
       <header className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
-          <div 
-            className="flex items-center space-x-2 cursor-pointer group"
+          <div
+            className="flex items-center space-x-2 group"
             onMouseEnter={() => setLogoHovered(true)}
             onMouseLeave={() => setLogoHovered(false)}
           >
@@ -227,9 +227,9 @@ export default function PlayfulHomepage() {
             </span>
           </div>
           
-          <Badge 
-            variant="secondary" 
-            className={`bg-yellow-100 text-yellow-800 border-yellow-200 font-bold cursor-pointer transition-all duration-300 ${
+          <Badge
+            variant="secondary"
+            className={`bg-yellow-100 text-yellow-800 border-yellow-200 font-bold transition-all duration-300 ${
               badgeHovered ? 'bg-green-100 text-green-800 border-green-200 scale-110 shadow-lg' : ''
             }`}
             onMouseEnter={() => setBadgeHovered(true)}
@@ -244,8 +244,8 @@ export default function PlayfulHomepage() {
       <main className="flex-1 flex items-center justify-center px-4 relative">
         {/* Interactive Background Elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div 
-            className="absolute top-20 left-10 w-32 h-32 bg-pink-200 rounded-full opacity-20 animate-pulse cursor-pointer hover:opacity-40 hover:scale-125 transition-all duration-500 hover:animate-spin"
+          <div
+            className="absolute top-20 left-10 w-32 h-32 bg-pink-200 rounded-full opacity-20 animate-pulse hover:opacity-40 hover:scale-125 transition-all duration-500 hover:animate-spin"
             onClick={() => {/* Feature spoiler: Todo creation */}}
           >
             <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
@@ -253,8 +253,8 @@ export default function PlayfulHomepage() {
             </div>
           </div>
           
-          <div 
-            className="absolute bottom-32 right-16 w-24 h-24 bg-purple-200 rounded-full opacity-30 animate-bounce cursor-pointer hover:opacity-60 hover:scale-150 transition-all duration-500"
+          <div
+            className="absolute bottom-32 right-16 w-24 h-24 bg-purple-200 rounded-full opacity-30 animate-bounce hover:opacity-60 hover:scale-150 transition-all duration-500"
             onClick={() => {/* Feature spoiler: Real-time collaboration */}}
           >
             <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
@@ -262,8 +262,8 @@ export default function PlayfulHomepage() {
             </div>
           </div>
           
-          <div 
-            className="absolute top-1/2 left-1/4 w-16 h-16 bg-blue-200 rounded-full opacity-25 cursor-pointer hover:opacity-50 hover:scale-110 transition-all duration-300 hover:animate-ping"
+          <div
+            className="absolute top-1/2 left-1/4 w-16 h-16 bg-blue-200 rounded-full opacity-25 hover:opacity-50 hover:scale-110 transition-all duration-300 hover:animate-ping"
             onClick={() => {/* Feature spoiler: Sharing */}}
           >
             <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
@@ -275,8 +275,8 @@ export default function PlayfulHomepage() {
         <div className="max-w-3xl mx-auto text-center space-y-12 relative z-10">
           {/* Interactive Title */}
           <div className="space-y-6">
-            <h1 
-              className="text-5xl md:text-7xl font-black text-slate-900 leading-none tracking-tight cursor-pointer"
+            <h1
+              className="text-5xl md:text-7xl font-black text-slate-900 leading-none tracking-tight"
               onMouseEnter={() => setTitleHovered(true)}
               onMouseLeave={() => setTitleHovered(false)}
             >
@@ -299,8 +299,8 @@ export default function PlayfulHomepage() {
             
             <div className="relative">
               <p className="text-2xl text-slate-600 font-medium">
-                aber <span className="line-through text-slate-400 hover:text-red-500 hover:animate-pulse transition-colors cursor-pointer">kompliziert</span>{" "}
-                <span className="bg-yellow-200 px-2 py-1 rounded font-bold hover:bg-green-200 hover:scale-110 transition-all duration-300 cursor-pointer">einfach</span>
+                aber <span className="line-through text-slate-400 hover:text-red-500 hover:animate-pulse transition-colors">kompliziert</span>{" "}
+                <span className="bg-yellow-200 px-2 py-1 rounded font-bold hover:bg-green-200 hover:scale-110 transition-all duration-300">einfach</span>
               </p>
               
               {/* Title hover spoiler */}
@@ -316,7 +316,7 @@ export default function PlayfulHomepage() {
           {/* Big Central Button */}
           <div className="relative">
             {/* Interactive Floating Elements */}
-            <div className="absolute -top-12 -left-16 opacity-70 transform rotate-12 cursor-pointer hover:opacity-100 hover:scale-125 hover:-rotate-12 transition-all duration-500 group">
+            <div className="absolute -top-12 -left-16 opacity-70 transform rotate-12 hover:opacity-100 hover:scale-125 hover:-rotate-12 transition-all duration-500 group">
               <div className="bg-pink-100 rounded-2xl px-4 py-2 shadow-lg border-2 border-pink-300 group-hover:bg-pink-200 group-hover:border-pink-400">
                 <span className="text-sm font-bold text-pink-700 group-hover:text-pink-800">
                   ✨ <span className="group-hover:hidden">instant flow</span>
@@ -326,7 +326,7 @@ export default function PlayfulHomepage() {
               </div>
             </div>
 
-            <div className="absolute -top-8 -right-20 opacity-70 transform -rotate-12 cursor-pointer hover:opacity-100 hover:scale-110 hover:rotate-12 transition-all duration-500 group">
+            <div className="absolute -top-8 -right-20 opacity-70 transform -rotate-12 hover:opacity-100 hover:scale-110 hover:rotate-12 transition-all duration-500 group">
               <div className="flex -space-x-1">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-black border-2 border-white shadow-lg group-hover:animate-spin">
                   <span className="group-hover:hidden">😎</span>
@@ -338,7 +338,7 @@ export default function PlayfulHomepage() {
               </div>
             </div>
 
-            <div className="absolute -bottom-12 -right-12 opacity-70 transform rotate-6 cursor-pointer hover:opacity-100 hover:scale-125 hover:-rotate-6 transition-all duration-500 group">
+            <div className="absolute -bottom-12 -right-12 opacity-70 transform rotate-6 hover:opacity-100 hover:scale-125 hover:-rotate-6 transition-all duration-500 group">
               <div className="bg-purple-100 rounded-2xl px-4 py-2 shadow-lg border-2 border-purple-300 group-hover:bg-purple-200 group-hover:border-purple-400">
                 <div className="flex items-center space-x-2">
                   <Users className="w-4 h-4 text-purple-600 group-hover:animate-pulse" />
@@ -350,7 +350,7 @@ export default function PlayfulHomepage() {
               </div>
             </div>
 
-            <div className="absolute -bottom-8 -left-16 opacity-70 transform -rotate-6 cursor-pointer hover:opacity-100 hover:scale-125 hover:rotate-6 transition-all duration-500 group">
+            <div className="absolute -bottom-8 -left-16 opacity-70 transform -rotate-6 hover:opacity-100 hover:scale-125 hover:rotate-6 transition-all duration-500 group">
               <div className="bg-blue-100 rounded-2xl px-4 py-2 shadow-lg border-2 border-blue-300 group-hover:bg-blue-200 group-hover:border-blue-400">
                 <div className="flex items-center space-x-1">
                   <span className="text-sm font-bold text-blue-700 group-hover:text-blue-800">
@@ -524,11 +524,11 @@ export default function PlayfulHomepage() {
           {/* Interactive Subtitle */}
           <div className="space-y-2 mt-12">
             <p className="text-lg text-slate-500">
-              <span className="font-mono bg-slate-100 px-2 py-1 rounded cursor-pointer hover:bg-green-100 hover:text-green-700 hover:scale-110 transition-all duration-300">0</span> anmeldung •{" "}
-              <span className="font-mono bg-slate-100 px-2 py-1 rounded cursor-pointer hover:bg-purple-100 hover:text-purple-700 hover:scale-110 transition-all duration-300 hover:animate-pulse">∞</span> kollaboration •{" "}
-              <span className="font-mono bg-slate-100 px-2 py-1 rounded cursor-pointer hover:bg-blue-100 hover:text-blue-700 hover:scale-110 transition-all duration-300">100%</span> flow
+              <span className="font-mono bg-slate-100 px-2 py-1 rounded hover:bg-green-100 hover:text-green-700 hover:scale-110 transition-all duration-300">0</span> anmeldung •{" "}
+              <span className="font-mono bg-slate-100 px-2 py-1 rounded hover:bg-purple-100 hover:text-purple-700 hover:scale-110 transition-all duration-300 hover:animate-pulse">∞</span> kollaboration •{" "}
+              <span className="font-mono bg-slate-100 px-2 py-1 rounded hover:bg-blue-100 hover:text-blue-700 hover:scale-110 transition-all duration-300">100%</span> flow
             </p>
-            <p className="text-sm text-slate-400 font-mono cursor-pointer hover:text-slate-600 hover:scale-105 transition-all duration-300 group">
+            <p className="text-sm text-slate-400 font-mono hover:text-slate-600 hover:scale-105 transition-all duration-300 group">
               {`// einfach link teilen und fertig`}
               <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2">
                 ✨
@@ -540,8 +540,8 @@ export default function PlayfulHomepage() {
 
       {/* Interactive Footer */}
       <footer className="container mx-auto px-4 py-6 text-center">
-        <p className="text-sm text-slate-400 font-mono cursor-pointer hover:text-slate-600 transition-colors duration-300 group">
-          made with <span className="text-pink-500 hover:animate-pulse cursor-pointer">♥</span> and <span className="text-purple-500 hover:animate-bounce cursor-pointer">good vibes</span>
+        <p className="text-sm text-slate-400 font-mono hover:text-slate-600 transition-colors duration-300 group">
+          made with <span className="text-pink-500 hover:animate-pulse">♥</span> and <span className="text-purple-500 hover:animate-bounce">good vibes</span>
           <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2">
             🚀
           </span>

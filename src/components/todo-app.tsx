@@ -542,6 +542,25 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const confirmToggleTodo = async () => {
     if (!pendingToggle || !isFirebaseConfigured() || !db) return
 
+    // Check if this is password removal confirmation
+    if (pendingToggle.id === 'password-remove') {
+      // Remove password protection
+      const passwordRef = ref(db, `lists/${listId}/metadata/password`)
+      await set(passwordRef, null)
+      setIsPasswordProtected(false)
+      setIsUnlocked(true)
+      sessionStorage.removeItem(`unlocked-${listId}`)
+
+      setToastMessage('🔓 Passwortschutz wurde entfernt')
+      setToastType('success')
+      setToastVisible(true)
+
+      setShowConfirmDialog(false)
+      setPendingToggle(null)
+      return
+    }
+
+    // Original todo toggle logic
     const todoRef = ref(db, `lists/${listId}/todos/${pendingToggle.id}`)
     await update(todoRef, {
       completed: pendingToggle.completed,
@@ -829,11 +848,18 @@ export default function TodoApp({ listId }: TodoAppProps) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
   }
 
-  const handleTogglePasswordProtection = () => {
+  const handleTogglePasswordProtection = async () => {
     if (isPasswordProtected) {
-      // Remove password protection - need to verify first, then remove
-      setPasswordMode('remove')
-      setShowPasswordPrompt(true)
+      // Remove password protection - if already unlocked, just confirm and remove
+      if (isUnlocked) {
+        // Show confirmation dialog
+        setShowConfirmDialog(true)
+        setPendingToggle({ id: 'password-remove', completed: false })
+      } else {
+        // Not unlocked yet, need to verify password first
+        setPasswordMode('remove')
+        setShowPasswordPrompt(true)
+      }
     } else {
       // Lock (set password)
       setPasswordMode('set')
@@ -1261,9 +1287,11 @@ export default function TodoApp({ listId }: TodoAppProps) {
       {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={showConfirmDialog}
-        title="Abhaken rückgängig machen?"
-        message="Möchtest du diese Aufgabe wirklich wieder als offen markieren?"
-        confirmText="Ja, rückgängig machen"
+        title={pendingToggle?.id === 'password-remove' ? 'Passwortschutz entfernen?' : 'Abhaken rückgängig machen?'}
+        message={pendingToggle?.id === 'password-remove'
+          ? 'Möchtest du den Passwortschutz wirklich entfernen? Danach kann jeder auf die Liste zugreifen.'
+          : 'Möchtest du diese Aufgabe wirklich wieder als offen markieren?'}
+        confirmText={pendingToggle?.id === 'password-remove' ? 'Ja, Schutz entfernen' : 'Ja, rückgängig machen'}
         cancelText="Abbrechen"
         onConfirm={confirmToggleTodo}
         onCancel={cancelToggleTodo}

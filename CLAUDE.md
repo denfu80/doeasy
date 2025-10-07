@@ -218,8 +218,13 @@ Lists can be protected with a password to restrict access. Users must enter the 
 
 3. **Removing Password Protection** (Unlocking the List):
    - User clicks Lock icon (closed lock)
-   - Modal prompts for current password verification (remove mode)
-   - On success: Password is **permanently removed** from Firebase
+   - **If already unlocked** (has access):
+     - Confirmation dialog: "Passwortschutz entfernen?"
+     - Message: "Danach kann jeder auf die Liste zugreifen"
+     - On confirm: Password is **permanently removed** from Firebase
+   - **If not unlocked** (no access yet):
+     - Modal prompts for current password verification (remove mode)
+     - On success: Password is **permanently removed** from Firebase
    - List is now completely unprotected
    - Success toast: "🔓 Passwortschutz wurde entfernt"
 

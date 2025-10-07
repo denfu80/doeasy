@@ -37,6 +37,8 @@ export interface GuestLink {
   password?: string
   lastAccessAt?: number | null
   accessCount?: number
+  disabled?: boolean
+  disabledAt?: number | null
 }
 
 export interface ListPassword {

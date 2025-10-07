@@ -580,6 +580,7 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
                   onNameChange={setUserName}
                   listId={listId}
                   disableNavigation={true}
+                  disableNameEdit={!!guestLinkData?.guestDisplayName}
                 />
               )}
             </div>

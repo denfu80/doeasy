@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { X, Link, Copy, QrCode, Eye, Users, Calendar, Lock, User } from 'lucide-react'
+import { X, Link, Copy, QrCode, Eye, Users, Calendar, Lock, User, Power, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { GuestLink } from '@/types/todo'
@@ -22,6 +22,7 @@ interface SharingModalProps {
   guestLinks: GuestLink[]
   onCreateGuestLink: (data: GuestLinkFormData) => void
   onRevokeGuestLink: (linkId: string) => void
+  onToggleGuestLink?: (linkId: string, disabled: boolean) => void
 }
 
 export default function SharingModal({
@@ -31,7 +32,8 @@ export default function SharingModal({
   listName,
   guestLinks,
   onCreateGuestLink,
-  onRevokeGuestLink
+  onRevokeGuestLink,
+  onToggleGuestLink
 }: SharingModalProps) {
   const [copied, setCopied] = useState<string | null>(null)
   const [showQR, setShowQR] = useState<string | null>(null)

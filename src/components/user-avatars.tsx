@@ -12,9 +12,10 @@ interface UserAvatarsProps {
     listId: string
     disableNavigation?: boolean
     hasShownNameHint?: boolean
+    disableNameEdit?: boolean
 }
 
-export default function UserAvatars({users, currentUserId, userName, onNameChange, listId, disableNavigation, hasShownNameHint}: UserAvatarsProps) {
+export default function UserAvatars({users, currentUserId, userName, onNameChange, listId, disableNavigation, hasShownNameHint, disableNameEdit}: UserAvatarsProps) {
     const router = useRouter()
     const [isExpanded, setIsExpanded] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -173,14 +174,16 @@ export default function UserAvatars({users, currentUserId, userName, onNameChang
                                 ) : (
                                     <>
                     <span
-                        className="font-semibold text-slate-800 cursor-pointer hover:text-purple-700 transition-colors text-sm whitespace-nowrap"
-                        onClick={() => setIsEditing(true)}
+                        className={`font-semibold text-slate-800 text-sm whitespace-nowrap ${!disableNameEdit ? 'cursor-pointer hover:text-purple-700 transition-colors' : ''}`}
+                        onClick={() => !disableNameEdit && setIsEditing(true)}
                     >
                       {userName}
                     </span>
-                                        <Edit3
-                                            className="w-3 h-3 text-slate-400 cursor-pointer hover:text-purple-500 transition-colors"
-                                            onClick={() => setIsEditing(true)}/>
+                                        {!disableNameEdit && (
+                                            <Edit3
+                                                className="w-3 h-3 text-slate-400 cursor-pointer hover:text-purple-500 transition-colors"
+                                                onClick={() => setIsEditing(true)}/>
+                                        )}
                                     </>
                                 )}
                             </div>

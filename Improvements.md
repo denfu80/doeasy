@@ -6,6 +6,8 @@ List Ausbau
 - 
 ## Gast Ausbau
 
+- modal über modal
+
 Probleme:
 - esc muss einladungsfenster schließen
 - kommentare ausblendbar machen (alle auf einmal und einzeln)

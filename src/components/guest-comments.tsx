@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { MessageCircle, Send, Eye } from 'lucide-react'
+import { MessageCircle, Send, Eye, ChevronDown, ChevronUp } from 'lucide-react'
 import { ref, onValue, push, set, serverTimestamp, off } from 'firebase/database'
 import { db, isFirebaseConfigured } from '@/lib/firebase'
 import { GuestComment } from '@/types/todo'
@@ -26,6 +26,7 @@ export default function GuestComments({
   const [comments, setComments] = useState<GuestComment[]>([])
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true)
 
   useEffect(() => {
     if (!isFirebaseConfigured() || !db) return
@@ -94,10 +95,20 @@ export default function GuestComments({
       {/* Comments List */}
       {comments.length > 0 && (
         <div className="space-y-2 mb-3">
-          <div className="flex items-center space-x-1 text-xs text-purple-600 font-medium mb-2">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center space-x-1 text-xs text-purple-600 font-medium mb-2 hover:text-purple-700 transition-colors w-full"
+          >
             <MessageCircle className="w-3 h-3" />
             <span>Gast-Kommentare ({comments.length})</span>
-          </div>
+            {isExpanded ? (
+              <ChevronUp className="w-3 h-3 ml-auto" />
+            ) : (
+              <ChevronDown className="w-3 h-3 ml-auto" />
+            )}
+          </button>
+          {isExpanded && (
+            <div className="space-y-2">
           {comments.map((comment) => (
             <div key={comment.id} className="bg-purple-50 rounded-lg p-2 text-sm">
               <p className="text-slate-700">{comment.text}</p>
@@ -118,6 +129,8 @@ export default function GuestComments({
               </div>
             </div>
           ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from 'react'
-import { X, Eye, Calendar, Lock, User } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Eye, Calendar, Lock, User, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -27,6 +27,18 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit }: GuestLinkFo
   })
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [showAdvanced, setShowAdvanced] = useState(false)
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        handleClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isOpen])
 
   const handleSubmit = () => {
     if (formData.password && formData.password !== confirmPassword) {
@@ -80,8 +92,30 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit }: GuestLinkFo
 
         {/* Form */}
         <div className="p-6 space-y-4">
-          {/* Link Name (optional) */}
-          <div>
+          {/* Quick Mode Message */}
+          {!showAdvanced && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-700">
+              💡 Schnellmodus: Link läuft nach 7 Tagen ab. Für mehr Optionen klicke auf "Erweiterte Einstellungen".
+            </div>
+          )}
+
+          {/* Advanced Toggle */}
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium text-slate-700"
+          >
+            <span>Erweiterte Einstellungen</span>
+            {showAdvanced ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+          </button>
+
+          {showAdvanced && (
+            <>
+              {/* Link Name (optional) */}
+              <div>
             <label className="flex items-center space-x-2 text-sm font-medium text-slate-700 mb-2">
               <Eye className="w-4 h-4" />
               <span>Link-Name (optional)</span>
@@ -172,6 +206,8 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit }: GuestLinkFo
             />
             <p className="text-xs text-slate-500 mt-1">Unabhängig vom Listen-Passwort</p>
           </div>
+            </>
+          )}
 
           {/* Error Message */}
           {error && (

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
-import { ChevronDown, ChevronUp, Edit2, Check, X, FileText } from 'lucide-react'
+import { Minimize2, Maximize2, Edit2, Check, X } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -47,7 +47,7 @@ export default function ListDescription({
 
   const handleSave = () => {
     const trimmed = editValue.trim()
-    if (trimmed.length > 500) {
+    if (trimmed.length > 1000) {
       return
     }
     onSave(trimmed)
@@ -92,9 +92,9 @@ export default function ListDescription({
           title={isCollapsed ? 'Beschreibung anzeigen' : 'Beschreibung ausblenden'}
         >
           {isCollapsed ? (
-            <ChevronDown className="w-4 h-4" />
+            <Maximize2 className="w-4 h-4" />
           ) : (
-            <ChevronUp className="w-4 h-4" />
+            <Minimize2 className="w-4 h-4" />
           )}
         </button>
       )}
@@ -116,11 +116,11 @@ export default function ListDescription({
 
               <div className="flex items-center justify-between">
                 <p className={`text-xs font-mono ${
-                  editValue.length > 500 ? 'text-red-500' : 'text-slate-500'
+                  editValue.length > 1000 ? 'text-red-500' : 'text-slate-500'
                 }`}>
-                  {editValue.length > 500
-                    ? `// zu lang: ${editValue.length}/500 zeichen`
-                    : `// cmd/ctrl+enter = speichern, esc = abbrechen (${editValue.length}/500)`
+                  {editValue.length > 1000
+                    ? `// zu lang: ${editValue.length}/1000 zeichen`
+                    : `// cmd/ctrl+enter = speichern, esc = abbrechen (${editValue.length}/1000)`
                   }
                 </p>
 
@@ -135,7 +135,7 @@ export default function ListDescription({
 
                   <button
                     onClick={handleSave}
-                    disabled={editValue.length > 500}
+                    disabled={editValue.length > 1000}
                     className="px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium transition-colors flex items-center space-x-1 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Check className="w-3 h-3" />

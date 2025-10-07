@@ -158,7 +158,7 @@
             ".validate": "newData.isString()"
           },
           "description": {
-            ".validate": "newData.isString() && newData.val().length <= 500"
+            ".validate": "newData.isString() && newData.val().length <= 1000"
           },
           "isPublic": {
             ".validate": "newData.isBoolean()"

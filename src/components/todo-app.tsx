@@ -819,18 +819,23 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
       const hashedPassword = data.password ? await hashPassword(data.password) : undefined
 
-      await set(newLinkRef, {
+      // Build guest link object, only including defined values
+      const guestLinkData: any = {
         listId: listId,
         createdBy: user.uid,
         createdAt: serverTimestamp(),
         revoked: false,
-        name: data.name || undefined,
-        guestDisplayName: data.guestDisplayName || undefined,
-        expiresAt: expiresAt,
-        password: hashedPassword,
         lastAccessAt: null,
         accessCount: 0
-      })
+      }
+
+      // Only add optional fields if they have values
+      if (data.name) guestLinkData.name = data.name
+      if (data.guestDisplayName) guestLinkData.guestDisplayName = data.guestDisplayName
+      if (expiresAt) guestLinkData.expiresAt = expiresAt
+      if (hashedPassword) guestLinkData.password = hashedPassword
+
+      await set(newLinkRef, guestLinkData)
 
       console.log('Guest link created:', newLinkRef.key)
 

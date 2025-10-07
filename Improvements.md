@@ -1,5 +1,22 @@
+List Ausbau
+
+- Wann abgehakt fehlt
+- Expand icon unpassend
+- Kommentarfunktoin von Gastseite unterstützen und ausbauen
+- 
 ## Gast Ausbau
 
+Probleme:
+- esc muss einladungsfenster schließen
+- kommentare ausblendbar machen (alle auf einmal und einzeln)
+- gastlinks mit festen namen darf namen nicht ändern (bei hover und klick auf avatar)
+- advanced toggle für die neuen erweiterten funktionen um den nutzer nicht zu überfordern mit funktionen
+
+Neue Features:
+- links zeitweise deaktivierbar machen und wieder aktivierbar
+- nachträgliches ändern von diesen konfigurationen erlauben
+
+---
 Optionale zeitlich begrenzte Gast-Links
 - Auto-Revoke nach X Tagen/Stunden . default bei aktivieruzng 7 Tage (änderbar)
 

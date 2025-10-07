@@ -33,7 +33,12 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData)
+      setFormData({
+        name: initialData.name || '',
+        guestDisplayName: initialData.guestDisplayName || '',
+        expiresInDays: initialData.expiresInDays ?? 7,
+        password: initialData.password || ''
+      })
       setConfirmPassword(initialData.password || '')
       if (initialData.name || initialData.guestDisplayName || initialData.password) {
         setShowAdvanced(true)

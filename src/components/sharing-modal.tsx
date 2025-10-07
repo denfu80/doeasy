@@ -23,6 +23,7 @@ interface SharingModalProps {
   onCreateGuestLink: (data: GuestLinkFormData) => void
   onRevokeGuestLink: (linkId: string) => void
   onToggleGuestLink?: (linkId: string, disabled: boolean) => void
+  onEditGuestLink?: (linkId: string, data: GuestLinkFormData) => void
 }
 
 export default function SharingModal({
@@ -33,11 +34,13 @@ export default function SharingModal({
   guestLinks,
   onCreateGuestLink,
   onRevokeGuestLink,
-  onToggleGuestLink
+  onToggleGuestLink,
+  onEditGuestLink
 }: SharingModalProps) {
   const [copied, setCopied] = useState<string | null>(null)
   const [showQR, setShowQR] = useState<string | null>(null)
   const [showGuestLinkForm, setShowGuestLinkForm] = useState(false)
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null)
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const normalLink = `${baseUrl}/list/${listId}`
@@ -62,9 +65,27 @@ export default function SharingModal({
     await onCreateGuestLink(data)
   }
 
+  const handleEditGuestLink = async (linkId: string, data: GuestLinkFormData) => {
+    if (onEditGuestLink) {
+      await onEditGuestLink(linkId, data)
+      setEditingLinkId(null)
+    }
+  }
+
+  const handleToggleLink = (linkId: string, currentDisabled: boolean) => {
+    if (onToggleGuestLink) {
+      onToggleGuestLink(linkId, !currentDisabled)
+    }
+  }
+
   const isLinkExpired = (link: GuestLink) => {
     if (!link.expiresAt) return false
     return link.expiresAt < Date.now()
+  }
+
+  const getEditingLink = () => {
+    if (!editingLinkId) return null
+    return guestLinks.find(link => link.id === editingLinkId)
   }
 
   if (!isOpen) return null
@@ -149,8 +170,9 @@ export default function SharingModal({
                   {activeGuestLinks.map((link) => {
                     const guestLink = `${baseUrl}/guest/${link.id}`
                     const expired = isLinkExpired(link)
+                    const isDisabled = link.disabled || false
                     return (
-                      <div key={link.id} className={`bg-white rounded-lg p-3 border ${expired ? 'border-red-200 bg-red-50' : ''}`}>
+                      <div key={link.id} className={`bg-white rounded-lg p-3 border ${expired ? 'border-red-200 bg-red-50' : isDisabled ? 'border-yellow-200 bg-yellow-50' : ''}`}>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex-1 min-w-0">
@@ -160,6 +182,9 @@ export default function SharingModal({
                                 </p>
                                 {expired && (
                                   <Badge variant="destructive" className="text-xs">Abgelaufen</Badge>
+                                )}
+                                {isDisabled && (
+                                  <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">Deaktiviert</Badge>
                                 )}
                                 {link.password && (
                                   <Lock className="w-3 h-3 text-purple-500" />
@@ -191,11 +216,29 @@ export default function SharingModal({
                             </div>
                             <div className="flex items-center space-x-1 ml-2">
                               <Button
+                                onClick={() => handleToggleLink(link.id, isDisabled)}
+                                size="sm"
+                                variant="ghost"
+                                className={`h-8 w-8 p-0 ${isDisabled ? 'text-yellow-600' : 'text-green-600'}`}
+                                title={isDisabled ? 'Link aktivieren' : 'Link deaktivieren'}
+                              >
+                                <Power className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                onClick={() => setEditingLinkId(link.id)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                title="Link bearbeiten"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button
                                 onClick={() => copyToClipboard(guestLink, `guest-${link.id}`)}
                                 size="sm"
                                 variant="ghost"
                                 className="h-8 w-8 p-0"
-                                disabled={expired}
+                                disabled={expired || isDisabled}
                               >
                                 <Copy className="w-3 h-3" />
                               </Button>
@@ -204,7 +247,7 @@ export default function SharingModal({
                                 size="sm"
                                 variant="ghost"
                                 className="h-8 w-8 p-0"
-                                disabled={expired}
+                                disabled={expired || isDisabled}
                               >
                                 <QrCode className="w-3 h-3" />
                               </Button>
@@ -258,12 +301,30 @@ export default function SharingModal({
         )}
       </div>
 
-      {/* Guest Link Form Modal */}
+      {/* Guest Link Form Modal - Create */}
       <GuestLinkForm
         isOpen={showGuestLinkForm}
         onClose={() => setShowGuestLinkForm(false)}
         onSubmit={handleCreateGuestLink}
       />
+
+      {/* Guest Link Form Modal - Edit */}
+      {editingLinkId && (
+        <GuestLinkForm
+          isOpen={true}
+          onClose={() => setEditingLinkId(null)}
+          onSubmit={(data) => handleEditGuestLink(editingLinkId, data)}
+          initialData={{
+            name: getEditingLink()?.name,
+            guestDisplayName: getEditingLink()?.guestDisplayName,
+            expiresInDays: getEditingLink()?.expiresAt
+              ? Math.ceil((getEditingLink()!.expiresAt - Date.now()) / (1000 * 60 * 60 * 24))
+              : null,
+            password: undefined
+          }}
+          isEditing={true}
+        />
+      )}
     </div>
   )
 }

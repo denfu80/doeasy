@@ -7,6 +7,10 @@ List Ausbau
 ## Gast Ausbau
 
 - modal über modal
+- passwortschutz ausschalten nicht möglich
+- deaktivieren von gastlinks nicht möglich
+- 💡 Schnellmodus: Link läuft nach 7 Tagen ab. Für mehr Optionen klicke auf "Erweiterte Einstellungen".
+- qr code kann raus
 
 Probleme:
 - esc muss einladungsfenster schließen

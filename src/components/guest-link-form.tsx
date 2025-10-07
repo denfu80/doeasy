@@ -16,10 +16,12 @@ interface GuestLinkFormProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (data: GuestLinkFormData) => void
+  initialData?: GuestLinkFormData
+  isEditing?: boolean
 }
 
-export default function GuestLinkForm({ isOpen, onClose, onSubmit }: GuestLinkFormProps) {
-  const [formData, setFormData] = useState<GuestLinkFormData>({
+export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, isEditing = false }: GuestLinkFormProps) {
+  const [formData, setFormData] = useState<GuestLinkFormData>(initialData || {
     name: '',
     guestDisplayName: '',
     expiresInDays: 7,
@@ -27,7 +29,16 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit }: GuestLinkFo
   })
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(isEditing || false)
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData)
+      if (initialData.name || initialData.guestDisplayName || initialData.password) {
+        setShowAdvanced(true)
+      }
+    }
+  }, [initialData])
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -80,7 +91,9 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit }: GuestLinkFo
             <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
               <Eye className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-slate-800">Gast-Link erstellen</h2>
+            <h2 className="text-xl font-bold text-slate-800">
+              {isEditing ? 'Gast-Link bearbeiten' : 'Gast-Link erstellen'}
+            </h2>
           </div>
           <button
             onClick={handleClose}
@@ -231,7 +244,7 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit }: GuestLinkFo
             size="sm"
             className="bg-purple-500 hover:bg-purple-600"
           >
-            Gast-Link erstellen
+            {isEditing ? 'Änderungen speichern' : 'Gast-Link erstellen'}
           </Button>
         </div>
       </div>

@@ -868,6 +868,76 @@ export default function TodoApp({ listId }: TodoAppProps) {
     }
   }
 
+  const handleToggleGuestLink = async (linkId: string, disabled: boolean) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+
+    try {
+      console.log('Toggling guest link:', linkId, 'disabled:', disabled)
+      const linkRef = ref(db, `guestLinks/${linkId}`)
+      const updates: any = { disabled }
+
+      if (disabled) {
+        updates.disabledAt = serverTimestamp()
+      } else {
+        updates.disabledAt = null
+      }
+
+      await update(linkRef, updates)
+
+      setToastMessage(disabled ? '⏸️ Link deaktiviert' : '▶️ Link aktiviert')
+      setToastType('success')
+      setToastVisible(true)
+
+      console.log('Guest link toggled:', linkId)
+    } catch (error) {
+      console.error('Error toggling guest link:', error)
+      setToastMessage('❌ Fehler beim Ändern des Link-Status')
+      setToastType('error')
+      setToastVisible(true)
+    }
+  }
+
+  const handleEditGuestLink = async (linkId: string, data: any) => {
+    if (!user || !isFirebaseConfigured() || !db) return
+
+    try {
+      console.log('Editing guest link:', linkId, data)
+      const linkRef = ref(db, `guestLinks/${linkId}`)
+
+      const updates: any = {
+        updatedAt: serverTimestamp()
+      }
+
+      if (data.name !== undefined) updates.name = data.name || null
+      if (data.guestDisplayName !== undefined) updates.guestDisplayName = data.guestDisplayName || null
+
+      if (data.expiresInDays !== null && data.expiresInDays !== undefined) {
+        const expiresAt = Date.now() + (data.expiresInDays * 24 * 60 * 60 * 1000)
+        updates.expiresAt = expiresAt
+      } else if (data.expiresInDays === null) {
+        updates.expiresAt = null
+      }
+
+      if (data.password) {
+        const hashedPassword = await hashPassword(data.password)
+        updates.password = hashedPassword
+      }
+
+      await update(linkRef, updates)
+
+      setToastMessage('✅ Gast-Link aktualisiert')
+      setToastType('success')
+      setToastVisible(true)
+
+      console.log('Guest link updated:', linkId)
+    } catch (error) {
+      console.error('Error updating guest link:', error)
+      setToastMessage('❌ Fehler beim Aktualisieren des Gast-Links')
+      setToastType('error')
+      setToastVisible(true)
+    }
+  }
+
   // Password protection functions
   const hashPassword = async (password: string): Promise<string> => {
     const encoder = new TextEncoder()
@@ -1301,6 +1371,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
         guestLinks={guestLinks}
         onCreateGuestLink={handleCreateGuestLink}
         onRevokeGuestLink={handleRevokeGuestLink}
+        onToggleGuestLink={handleToggleGuestLink}
+        onEditGuestLink={handleEditGuestLink}
       />
       
       {/* Toast Notification */}

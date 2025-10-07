@@ -48,6 +48,15 @@
         "accessCount": {
           ".validate": "newData.isNumber()"
         },
+        "disabled": {
+          ".validate": "newData.isBoolean() || newData.val() == null"
+        },
+        "disabledAt": {
+          ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
+        },
 
         // Prevent additional fields
         "$other": {

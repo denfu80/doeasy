@@ -25,11 +25,18 @@ export interface User {
 
 export interface GuestLink {
   id: string
+  listId: string
   createdBy: string
   createdAt: number | object
   revoked?: boolean
   revokedAt?: number | object | null
   revokedBy?: string | null
+  name?: string
+  guestDisplayName?: string
+  expiresAt?: number | null
+  password?: string
+  lastAccessAt?: number | null
+  accessCount?: number
 }
 
 export interface ListPassword {
@@ -37,6 +44,15 @@ export interface ListPassword {
   createdBy: string
   createdAt: number | object
   updatedAt?: number | object
+}
+
+export interface GuestComment {
+  id: string
+  todoId: string
+  text: string
+  guestName: string
+  guestLinkId: string
+  createdAt: number | object
 }
 
 export type UserRole = 'normal' | 'guest'

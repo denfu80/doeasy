@@ -1,10 +1,18 @@
 "use client"
 
 import { useState } from 'react'
-import { X, Link, Copy, QrCode, Eye, Users } from 'lucide-react'
+import { X, Link, Copy, QrCode, Eye, Users, Calendar, Lock, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { GuestLink } from '@/types/todo'
+import GuestLinkForm from './guest-link-form'
+
+interface GuestLinkFormData {
+  name?: string
+  guestDisplayName?: string
+  expiresInDays: number | null
+  password?: string
+}
 
 interface SharingModalProps {
   isOpen: boolean
@@ -12,7 +20,7 @@ interface SharingModalProps {
   listId: string
   listName: string
   guestLinks: GuestLink[]
-  onCreateGuestLink: () => void
+  onCreateGuestLink: (data: GuestLinkFormData) => void
   onRevokeGuestLink: (linkId: string) => void
 }
 
@@ -27,7 +35,7 @@ export default function SharingModal({
 }: SharingModalProps) {
   const [copied, setCopied] = useState<string | null>(null)
   const [showQR, setShowQR] = useState<string | null>(null)
-  const [isCreatingLink, setIsCreatingLink] = useState(false)
+  const [showGuestLinkForm, setShowGuestLinkForm] = useState(false)
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const normalLink = `${baseUrl}/list/${listId}`
@@ -48,10 +56,13 @@ export default function SharingModal({
     setTimeout(() => setShowQR(null), 10000)
   }
 
-  const handleCreateGuestLink = async () => {
-    setIsCreatingLink(true)
-    await onCreateGuestLink()
-    setTimeout(() => setIsCreatingLink(false), 2000)
+  const handleCreateGuestLink = async (data: GuestLinkFormData) => {
+    await onCreateGuestLink(data)
+  }
+
+  const isLinkExpired = (link: GuestLink) => {
+    if (!link.expiresAt) return false
+    return link.expiresAt < Date.now()
   }
 
   if (!isOpen) return null
@@ -135,42 +146,75 @@ export default function SharingModal({
                 <div className="space-y-2 mb-3">
                   {activeGuestLinks.map((link) => {
                     const guestLink = `${baseUrl}/guest/${link.id}`
+                    const expired = isLinkExpired(link)
                     return (
-                      <div key={link.id} className="bg-white rounded-lg p-3 border">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-slate-800 truncate">
-                              {listName} (readonly)
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              Erstellt: {new Date(typeof link.createdAt === 'number' ? link.createdAt : Date.now()).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-1 ml-2">
-                            <Button
-                              onClick={() => copyToClipboard(guestLink, `guest-${link.id}`)}
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                            >
-                              <Copy className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              onClick={() => showQRCode(guestLink)}
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0"
-                            >
-                              <QrCode className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              onClick={() => onRevokeGuestLink(link.id)}
-                              size="sm"
-                              variant="ghost"
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
+                      <div key={link.id} className={`bg-white rounded-lg p-3 border ${expired ? 'border-red-200 bg-red-50' : ''}`}>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <p className="font-medium text-sm text-slate-800 truncate">
+                                  {link.name || `${listName} (readonly)`}
+                                </p>
+                                {expired && (
+                                  <Badge variant="destructive" className="text-xs">Abgelaufen</Badge>
+                                )}
+                                {link.password && (
+                                  <Lock className="w-3 h-3 text-purple-500" />
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-3 mt-1">
+                                <p className="text-xs text-slate-500">
+                                  Erstellt: {new Date(typeof link.createdAt === 'number' ? link.createdAt : Date.now()).toLocaleDateString('de-DE')}
+                                </p>
+                                {link.expiresAt && (
+                                  <p className={`text-xs flex items-center space-x-1 ${expired ? 'text-red-500' : 'text-slate-500'}`}>
+                                    <Calendar className="w-3 h-3" />
+                                    <span>Läuft ab: {new Date(link.expiresAt).toLocaleDateString('de-DE')}</span>
+                                  </p>
+                                )}
+                              </div>
+                              {link.guestDisplayName && (
+                                <p className="text-xs text-purple-600 flex items-center space-x-1 mt-1">
+                                  <User className="w-3 h-3" />
+                                  <span>Gast-Name: {link.guestDisplayName}</span>
+                                </p>
+                              )}
+                              {link.lastAccessAt && (
+                                <p className="text-xs text-slate-400 mt-1">
+                                  Zuletzt verwendet: {new Date(link.lastAccessAt).toLocaleString('de-DE')}
+                                  {link.accessCount ? ` • ${link.accessCount}x verwendet` : ''}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-1 ml-2">
+                              <Button
+                                onClick={() => copyToClipboard(guestLink, `guest-${link.id}`)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                disabled={expired}
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                onClick={() => showQRCode(guestLink)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                disabled={expired}
+                              >
+                                <QrCode className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                onClick={() => onRevokeGuestLink(link.id)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -181,14 +225,13 @@ export default function SharingModal({
 
               {/* Create Guest Link Button */}
               <Button
-                onClick={handleCreateGuestLink}
+                onClick={() => setShowGuestLinkForm(true)}
                 size="sm"
                 className="w-full"
-                variant={isCreatingLink ? 'default' : 'outline'}
-                disabled={isCreatingLink}
+                variant="outline"
               >
                 <Users className="w-4 h-4 mr-2" />
-                {isCreatingLink ? 'Erstellt!' : 'Neuen Gast-Link erstellen'}
+                Neuen Gast-Link erstellen
               </Button>
           </div>
         </div>
@@ -212,6 +255,13 @@ export default function SharingModal({
           </div>
         )}
       </div>
+
+      {/* Guest Link Form Modal */}
+      <GuestLinkForm
+        isOpen={showGuestLinkForm}
+        onClose={() => setShowGuestLinkForm(false)}
+        onSubmit={handleCreateGuestLink}
+      />
     </div>
   )
 }

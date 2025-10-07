@@ -798,9 +798,14 @@ export default function TodoApp({ listId }: TodoAppProps) {
       off(guestLinksRef, 'value', unsubscribeGuestLinks)
     }
   }, [isAuthReady, user, listId])
-  
+
   // Sharing functions
-  const handleCreateGuestLink = async () => {
+  const handleCreateGuestLink = async (data: {
+    name?: string
+    guestDisplayName?: string
+    expiresInDays: number | null
+    password?: string
+  }) => {
     if (!user || !isFirebaseConfigured() || !db) return
 
     try {
@@ -808,16 +813,35 @@ export default function TodoApp({ listId }: TodoAppProps) {
       const guestLinksRef = ref(db, `guestLinks`)
       const newLinkRef = push(guestLinksRef)
 
+      const expiresAt = data.expiresInDays
+        ? Date.now() + (data.expiresInDays * 24 * 60 * 60 * 1000)
+        : null
+
+      const hashedPassword = data.password ? await hashPassword(data.password) : undefined
+
       await set(newLinkRef, {
         listId: listId,
         createdBy: user.uid,
         createdAt: serverTimestamp(),
-        revoked: false
+        revoked: false,
+        name: data.name || undefined,
+        guestDisplayName: data.guestDisplayName || undefined,
+        expiresAt: expiresAt,
+        password: hashedPassword,
+        lastAccessAt: null,
+        accessCount: 0
       })
 
       console.log('Guest link created:', newLinkRef.key)
+
+      setToastMessage('🔗 Gast-Link wurde erstellt')
+      setToastType('success')
+      setToastVisible(true)
     } catch (error) {
       console.error('Error creating guest link:', error)
+      setToastMessage('Fehler beim Erstellen des Gast-Links')
+      setToastType('warning')
+      setToastVisible(true)
     }
   }
   

@@ -30,6 +30,24 @@
         "revokedBy": {
           ".validate": "newData.isString() || newData.val() == null"
         },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "guestDisplayName": {
+          ".validate": "newData.isString() && newData.val().length <= 50"
+        },
+        "expiresAt": {
+          ".validate": "newData.isNumber() || newData.val() == null"
+        },
+        "password": {
+          ".validate": "newData.isString() && newData.val().length == 64"
+        },
+        "lastAccessAt": {
+          ".validate": "newData.isNumber() || newData.val() == now || newData.val() == null"
+        },
+        "accessCount": {
+          ".validate": "newData.isNumber()"
+        },
 
         // Prevent additional fields
         "$other": {
@@ -97,7 +115,38 @@
             "restoredBy": {
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
             },
-            
+
+            // Guest comments structure
+            "guestComments": {
+              ".read": "auth != null",
+
+              "$commentId": {
+                ".write": "auth != null",
+
+                ".validate": "newData.hasChildren(['todoId', 'text', 'guestName', 'guestLinkId', 'createdAt'])",
+
+                "todoId": {
+                  ".validate": "newData.isString()"
+                },
+                "text": {
+                  ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
+                },
+                "guestName": {
+                  ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+                },
+                "guestLinkId": {
+                  ".validate": "newData.isString()"
+                },
+                "createdAt": {
+                  ".validate": "newData.isNumber() || newData.val() == now"
+                },
+
+                "$other": {
+                  ".validate": false
+                }
+              }
+            },
+
             // Prevent additional fields
             "$other": {
               ".validate": false

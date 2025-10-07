@@ -28,6 +28,8 @@ import UserAvatars from './user-avatars'
 import ToastNotification from './toast-notification'
 import ListDescription from './list-description'
 import ConfirmDialog from './confirm-dialog'
+import GuestComments from './guest-comments'
+import PasswordPrompt from './password-prompt'
 
 interface GuestTodoAppProps {
   guestId: string
@@ -49,6 +51,13 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
   const [listDescription, setListDescription] = useState('')
   const [listId, setListId] = useState<string | null>(null)
   const [isValidGuestLink, setIsValidGuestLink] = useState<boolean | null>(null)
+  const [guestLinkData, setGuestLinkData] = useState<any>(null)
+
+  // Password state
+  const [isPasswordProtected, setIsPasswordProtected] = useState(false)
+  const [isUnlocked, setIsUnlocked] = useState(false)
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
+  const [passwordError, setPasswordError] = useState<string>('')
 
   // Toast notification state
   const [toastVisible, setToastVisible] = useState(false)
@@ -144,6 +153,15 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
     }
   }, [])
 
+  // Hash password helper
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
   // Validate guest link and load listId
   useEffect(() => {
     if (!isAuthReady || !isFirebaseConfigured() || !db) return
@@ -154,7 +172,8 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
         const snapshot = await get(guestLinkRef)
 
         if (snapshot.exists()) {
-          const linkData = snapshot.val() as { listId: string; revoked?: boolean }
+          const linkData = snapshot.val()
+          setGuestLinkData(linkData)
 
           // Check if link is revoked
           if (linkData.revoked) {
@@ -163,6 +182,33 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
             setToastType('warning')
             setToastVisible(true)
             return
+          }
+
+          // Check if link is expired
+          if (linkData.expiresAt && linkData.expiresAt < Date.now()) {
+            setIsValidGuestLink(false)
+            setToastMessage('Dieser Gast-Link ist abgelaufen')
+            setToastType('warning')
+            setToastVisible(true)
+            return
+          }
+
+          // Check if link is password protected
+          if (linkData.password) {
+            setIsPasswordProtected(true)
+            setShowPasswordPrompt(true)
+          }
+
+          // Update last access time and count
+          await update(guestLinkRef, {
+            lastAccessAt: serverTimestamp(),
+            accessCount: (linkData.accessCount || 0) + 1
+          })
+
+          // Set guest display name if provided
+          if (linkData.guestDisplayName) {
+            _setUserName(linkData.guestDisplayName)
+            localStorage.setItem('macheinfach-username', linkData.guestDisplayName)
           }
 
           setListId(linkData.listId)
@@ -413,6 +459,35 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
     setPendingToggle(null)
   }
 
+  // Password verification handler
+  const handlePasswordSubmit = async (password: string) => {
+    if (!guestLinkData) return
+
+    try {
+      const hashedPassword = await hashPassword(password)
+
+      if (guestLinkData.password === hashedPassword) {
+        setIsUnlocked(true)
+        setShowPasswordPrompt(false)
+        setPasswordError('')
+        setToastMessage('✅ Zugang gewährt')
+        setToastType('success')
+        setToastVisible(true)
+      } else {
+        setPasswordError('Falsches Passwort')
+      }
+    } catch (error) {
+      console.error('Error verifying password:', error)
+      setPasswordError('Fehler beim Überprüfen des Passworts')
+    }
+  }
+
+  const handlePasswordCancel = () => {
+    setShowPasswordPrompt(false)
+    setPasswordError('')
+    router.push('/')
+  }
+
   // Loading state
   if (!isAuthReady) {
     return (
@@ -422,6 +497,21 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
           <span className="text-xl font-bold">Gast-Zugang wird geladen...</span>
         </div>
       </div>
+    )
+  }
+
+  // Password protected guest link
+  if (isPasswordProtected && !isUnlocked) {
+    return (
+      <>
+        <PasswordPrompt
+          isOpen={showPasswordPrompt}
+          mode="verify"
+          onConfirm={handlePasswordSubmit}
+          onCancel={handlePasswordCancel}
+          error={passwordError}
+        />
+      </>
     )
   }
 
@@ -532,7 +622,7 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
             <div>
               <h3 className="font-semibold text-purple-800">Gast-Zugang</h3>
               <p className="text-sm text-purple-600">
-                Du kannst Todos ansehen und abhaken. Klicke auf eine Aufgabe um sie zu erledigen.
+                Du kannst Todos ansehen, abhaken und kommentieren.
               </p>
             </div>
           </div>
@@ -561,12 +651,14 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
             todos.map((todo) => (
               <div
                 key={todo.id}
-                className={`bg-white rounded-xl p-4 shadow-sm border hover:shadow-md transition-all duration-300 cursor-pointer ${
+                className={`bg-white rounded-xl p-4 shadow-sm border hover:shadow-md transition-all duration-300 ${
                   todo.completed ? 'border-green-200 bg-green-50' : 'border-gray-200 hover:border-purple-200'
                 }`}
-                onClick={() => handleToggleComplete(todo.id, todo.completed)}
               >
-                <div className="flex items-center space-x-3">
+                <div
+                  className="flex items-center space-x-3 cursor-pointer"
+                  onClick={() => handleToggleComplete(todo.id, todo.completed)}
+                >
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                     todo.completed
                       ? 'bg-green-500 border-green-500'
@@ -592,6 +684,17 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
                     </p>
                   </div>
                 </div>
+
+                {/* Guest Comments */}
+                {listId && (
+                  <GuestComments
+                    listId={listId}
+                    todoId={todo.id}
+                    guestLinkId={guestId}
+                    guestName={userName}
+                    isGuest={true}
+                  />
+                )}
               </div>
             ))
           )}

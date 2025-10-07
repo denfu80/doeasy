@@ -27,6 +27,7 @@ import { Todo, User } from '@/types/todo'
 import UserAvatars from './user-avatars'
 import ToastNotification from './toast-notification'
 import ListDescription from './list-description'
+import ConfirmDialog from './confirm-dialog'
 
 interface GuestTodoAppProps {
   guestId: string
@@ -53,6 +54,10 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
   const [toastVisible, setToastVisible] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('info')
+
+  // Confirm dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [pendingToggle, setPendingToggle] = useState<{ todoId: string, currentCompleted: boolean } | null>(null)
 
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
@@ -351,39 +356,61 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
 
     // If uncompleting (unhaking), ask for confirmation
     if (currentCompleted) {
-      const confirmed = window.confirm('Möchtest du das Abhaken wirklich rückgängig machen?')
-      if (!confirmed) return
+      setPendingToggle({ todoId, currentCompleted })
+      setShowConfirmDialog(true)
+      return
     }
 
+    // Direct completion without confirmation
     try {
       const todoRef = ref(db!, `lists/${listId}/todos/${todoId}`)
-      console.log(`🔄 Guest toggling todo ${todoId} to ${!currentCompleted ? 'completed' : 'uncompleted'}`)
+      console.log(`🔄 Guest toggling todo ${todoId} to completed`)
 
-      if (!currentCompleted) {
-        // When completing: track who completed it
-        await update(todoRef, {
-          completed: true,
-          completedAt: serverTimestamp(),
-          completedBy: user.uid,
-          completedByName: userName || 'Gast'
-        })
-      } else {
-        // When uncompleting: remove completion info
-        await update(todoRef, {
-          completed: false,
-          completedAt: null,
-          completedBy: null,
-          completedByName: null
-        })
-      }
+      await update(todoRef, {
+        completed: true,
+        completedAt: serverTimestamp(),
+        completedBy: user.uid,
+        completedByName: userName || 'Gast'
+      })
 
-      console.log(`${!currentCompleted ? '✅' : '⏹️'} Guest ${!currentCompleted ? 'completed' : 'uncompleted'} todo: ${todoId}`)
+      console.log(`✅ Guest completed todo: ${todoId}`)
     } catch (error) {
       console.error('❌ Error toggling todo completion:', error)
       setToastMessage('Fehler beim Aktualisieren der Aufgabe')
       setToastType('warning')
       setToastVisible(true)
     }
+  }
+
+  const confirmToggleTodo = async () => {
+    if (!pendingToggle || !user || !listId || !isFirebaseConfigured() || !db) return
+
+    try {
+      const todoRef = ref(db!, `lists/${listId}/todos/${pendingToggle.todoId}`)
+      console.log(`🔄 Guest uncompleting todo ${pendingToggle.todoId}`)
+
+      await update(todoRef, {
+        completed: false,
+        completedAt: null,
+        completedBy: null,
+        completedByName: null
+      })
+
+      console.log(`⏹️ Guest uncompleted todo: ${pendingToggle.todoId}`)
+    } catch (error) {
+      console.error('❌ Error toggling todo completion:', error)
+      setToastMessage('Fehler beim Aktualisieren der Aufgabe')
+      setToastType('warning')
+      setToastVisible(true)
+    }
+
+    setShowConfirmDialog(false)
+    setPendingToggle(null)
+  }
+
+  const cancelToggleTodo = () => {
+    setShowConfirmDialog(false)
+    setPendingToggle(null)
   }
 
   // Loading state
@@ -577,6 +604,18 @@ export default function GuestTodoApp({ guestId }: GuestTodoAppProps) {
         type={toastType}
         isVisible={toastVisible}
         onClose={() => setToastVisible(false)}
+      />
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        title="Abhaken rückgängig machen?"
+        message="Möchtest du diese Aufgabe wirklich wieder als offen markieren?"
+        confirmText="Ja, rückgängig machen"
+        cancelText="Abbrechen"
+        onConfirm={confirmToggleTodo}
+        onCancel={cancelToggleTodo}
+        variant="warning"
       />
     </div>
   )

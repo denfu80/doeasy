@@ -33,6 +33,7 @@ import DeletedTodosTrash from './deleted-todos-trash'
 import ToastNotification from './toast-notification'
 import SharingModal from './sharing-modal'
 import HeaderActionsMenu from './header-actions-menu'
+import ConfirmDialog from './confirm-dialog'
 
 interface TodoAppProps {
   listId: string
@@ -67,6 +68,10 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // Sharing state
   const [showSharingModal, setShowSharingModal] = useState(false)
   const [guestLinks, setGuestLinks] = useState<GuestLink[]>([])
+
+  // Confirm dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [pendingToggle, setPendingToggle] = useState<{ id: string, completed: boolean } | null>(null)
 
   // Wrapper function to update state and localStorage
   const setUserName = (newName: string) => {
@@ -456,29 +461,39 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
     // If uncompleting (unhaking), ask for confirmation
     if (!completed) {
-      const confirmed = window.confirm('Möchtest du das Abhaken wirklich rückgängig machen?')
-      if (!confirmed) return
+      setPendingToggle({ id, completed })
+      setShowConfirmDialog(true)
+      return
     }
 
+    // Direct completion without confirmation
     const todoRef = ref(db, `lists/${listId}/todos/${id}`)
+    await update(todoRef, {
+      completed,
+      completedAt: serverTimestamp(),
+      completedBy: user?.uid || 'unknown',
+      completedByName: userName || 'Unbekannt'
+    })
+  }
 
-    if (completed) {
-      // When completing: track who completed it
-      await update(todoRef, {
-        completed,
-        completedAt: serverTimestamp(),
-        completedBy: user?.uid || 'unknown',
-        completedByName: userName || 'Unbekannt'
-      })
-    } else {
-      // When uncompleting: remove completion info
-      await update(todoRef, {
-        completed,
-        completedAt: null,
-        completedBy: null,
-        completedByName: null
-      })
-    }
+  const confirmToggleTodo = async () => {
+    if (!pendingToggle || !isFirebaseConfigured() || !db) return
+
+    const todoRef = ref(db, `lists/${listId}/todos/${pendingToggle.id}`)
+    await update(todoRef, {
+      completed: pendingToggle.completed,
+      completedAt: null,
+      completedBy: null,
+      completedByName: null
+    })
+
+    setShowConfirmDialog(false)
+    setPendingToggle(null)
+  }
+
+  const cancelToggleTodo = () => {
+    setShowConfirmDialog(false)
+    setPendingToggle(null)
   }
   
   const handleUpdateTodo = async (id: string, text: string) => {
@@ -1027,6 +1042,18 @@ export default function TodoApp({ listId }: TodoAppProps) {
         onClose={() => setToastVisible(false)}
         onUndo={lastDeletedTodo ? handleUndoDelete : undefined}
         undoText="Wiederherstellen"
+      />
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        title="Abhaken rückgängig machen?"
+        message="Möchtest du diese Aufgabe wirklich wieder als offen markieren?"
+        confirmText="Ja, rückgängig machen"
+        cancelText="Abbrechen"
+        onConfirm={confirmToggleTodo}
+        onCancel={cancelToggleTodo}
+        variant="warning"
       />
     </div>
   )

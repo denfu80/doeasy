@@ -5,7 +5,7 @@ import { X, Lock, Unlock } from 'lucide-react'
 
 interface PasswordPromptProps {
   isOpen: boolean
-  mode: 'set' | 'verify'
+  mode: 'set' | 'verify' | 'remove'
   onConfirm: (password: string) => void
   onCancel: () => void
   error?: string
@@ -54,6 +54,8 @@ export default function PasswordPrompt({
     ? password.length >= 1 && password === confirmPassword
     : password.length >= 1
 
+  const needsConfirmation = mode === 'set'
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 border border-purple-200">
@@ -65,7 +67,7 @@ export default function PasswordPrompt({
               <Unlock className="w-6 h-6 text-purple-600" />
             )}
             <h2 className="text-xl font-bold text-slate-800">
-              {mode === 'set' ? 'Passwort festlegen' : 'Passwort eingeben'}
+              {mode === 'set' ? 'Passwort festlegen' : mode === 'remove' ? 'Passwortschutz entfernen' : 'Passwort eingeben'}
             </h2>
           </div>
           <button
@@ -80,7 +82,7 @@ export default function PasswordPrompt({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              {mode === 'set' ? 'Neues Passwort' : 'Passwort'}
+              {mode === 'set' ? 'Neues Passwort' : mode === 'remove' ? 'Aktuelles Passwort' : 'Passwort'}
             </label>
             <input
               type="password"
@@ -93,7 +95,7 @@ export default function PasswordPrompt({
             />
           </div>
 
-          {mode === 'set' && (
+          {needsConfirmation && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 Passwort bestätigen
@@ -131,7 +133,7 @@ export default function PasswordPrompt({
               disabled={!isValid}
               className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {mode === 'set' ? 'Schließen' : 'Entsperren'}
+              {mode === 'set' ? 'Schließen' : mode === 'remove' ? 'Passwort entfernen' : 'Zugang gewähren'}
             </button>
           </div>
         </form>
@@ -139,6 +141,11 @@ export default function PasswordPrompt({
         {mode === 'set' && (
           <p className="text-xs text-slate-500 mt-4 text-center">
             Das Passwort schützt diese Liste vor unbefugtem Zugriff
+          </p>
+        )}
+        {mode === 'remove' && (
+          <p className="text-xs text-slate-500 mt-4 text-center">
+            Nach dem Entfernen kann jeder auf die Liste zugreifen
           </p>
         )}
       </div>

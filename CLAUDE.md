@@ -206,22 +206,32 @@ Lists can be protected with a password to restrict access. Users must enter the 
    - Password is hashed with SHA-256 before storing
    - Success toast: "🔒 Liste ist jetzt passwortgeschützt"
 
-2. **Unlocking a List** (Entering Password):
+2. **Accessing a Locked List** (Entering Password):
    - When loading a password-protected list, modal appears automatically
    - User enters password
    - Password is hashed and compared with stored hash
-   - On success: List unlocks and session is marked as unlocked
+   - On success: **Zugang gewährt** (access granted, list stays locked)
+   - Session is marked as unlocked: `sessionStorage.setItem('unlocked-{listId}', 'true')`
    - On failure: Error message "Falsches Passwort"
    - Cancel redirects to homepage
+   - Success toast: "✅ Zugang gewährt"
 
-3. **Removing Password Protection**:
+3. **Removing Password Protection** (Unlocking the List):
    - User clicks Lock icon (closed lock)
-   - Modal prompts for current password verification
-   - On success: Password is removed from Firebase
+   - Modal prompts for current password verification (remove mode)
+   - On success: Password is **permanently removed** from Firebase
+   - List is now completely unprotected
    - Success toast: "🔓 Passwortschutz wurde entfernt"
 
 **Technical Implementation:**
 ```typescript
+// Password modes
+type PasswordMode = 'set' | 'verify' | 'remove'
+
+// 'set' - Create new password protection
+// 'verify' - Grant access to locked list (does not remove password)
+// 'remove' - Remove password protection permanently
+
 // Password hashing (client-side, SHA-256)
 const hashPassword = async (password: string): Promise<string> => {
   const encoder = new TextEncoder()
@@ -239,7 +249,8 @@ lists/{listId}/metadata/password: {
   updatedAt?: timestamp
 }
 
-// Session unlocking
+// Session-based access (not unlocking!)
+// Grants access for current session, list remains password-protected
 sessionStorage.setItem(`unlocked-${listId}`, 'true')
 ```
 
@@ -255,7 +266,12 @@ sessionStorage.setItem(`unlocked-${listId}`, 'true')
 - **Users View** (`/list/[id]/users`): Same password protection applies - users page is also locked
 - **Guest View** (`/guest/[guestId]`): No password protection - always accessible
 - When password prompt is cancelled, user is redirected to homepage
-- Session-based unlocking: Once unlocked, stays unlocked for the browser session (sessionStorage)
+- **Session-based access** (NOT unlocking!):
+  - Once password is verified, access is granted for the current browser session
+  - List remains password-protected in Firebase
+  - New tab/window requires password again
+  - Closing browser clears sessionStorage → password required again
+  - To **remove** password protection, use Lock icon (requires verification)
 
 ### Contextual Tooltip System
 

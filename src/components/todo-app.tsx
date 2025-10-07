@@ -70,7 +70,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [isPasswordProtected, setIsPasswordProtected] = useState(false)
   const [isUnlocked, setIsUnlocked] = useState(false)
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
-  const [passwordMode, setPasswordMode] = useState<'set' | 'verify'>('set')
+  const [passwordMode, setPasswordMode] = useState<'set' | 'verify' | 'remove'>('set')
   const [passwordError, setPasswordError] = useState<string>('')
   const [hasShownPasswordHint, setHasShownPasswordHint] = useState(false)
 
@@ -831,8 +831,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   const handleTogglePasswordProtection = () => {
     if (isPasswordProtected) {
-      // Unlock (remove password)
-      setPasswordMode('verify')
+      // Remove password protection - need to verify first, then remove
+      setPasswordMode('remove')
       setShowPasswordPrompt(true)
     } else {
       // Lock (set password)
@@ -847,7 +847,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
     setPasswordError('')
 
     if (passwordMode === 'set') {
-      // Set new password
+      // Set new password (lock the list)
       try {
         const hashedPassword = await hashPassword(password)
         const passwordRef = ref(db, `lists/${listId}/metadata/password`)
@@ -870,8 +870,8 @@ export default function TodoApp({ listId }: TodoAppProps) {
         console.error('Error setting password:', error)
         setPasswordError('Fehler beim Setzen des Passworts')
       }
-    } else {
-      // Verify password
+    } else if (passwordMode === 'remove') {
+      // Remove password protection - verify first, then remove
       try {
         const hashedPassword = await hashPassword(password)
         const passwordRef = ref(db, `lists/${listId}/metadata/password`)
@@ -880,28 +880,42 @@ export default function TodoApp({ listId }: TodoAppProps) {
         const passwordData = snapshot.val()
 
         if (passwordData?.hashedPassword === hashedPassword) {
-          // Password correct
-          if (isPasswordProtected) {
-            // Unlocking to remove password
-            await set(passwordRef, null)
-            setIsPasswordProtected(false)
-            setIsUnlocked(true)
-            setShowPasswordPrompt(false)
-            sessionStorage.removeItem(`unlocked-${listId}`)
+          // Password correct - remove password protection
+          await set(passwordRef, null)
+          setIsPasswordProtected(false)
+          setIsUnlocked(true)
+          setShowPasswordPrompt(false)
+          sessionStorage.removeItem(`unlocked-${listId}`)
 
-            setToastMessage('🔓 Passwortschutz wurde entfernt')
-            setToastType('success')
-            setToastVisible(true)
-          } else {
-            // Just unlocking for viewing
-            setIsUnlocked(true)
-            setShowPasswordPrompt(false)
-            sessionStorage.setItem(`unlocked-${listId}`, 'true')
+          setToastMessage('🔓 Passwortschutz wurde entfernt')
+          setToastType('success')
+          setToastVisible(true)
+        } else {
+          // Password incorrect
+          setPasswordError('Falsches Passwort')
+        }
+      } catch (error) {
+        console.error('Error removing password:', error)
+        setPasswordError('Fehler beim Entfernen des Passworts')
+      }
+    } else {
+      // Verify password (for initial access)
+      try {
+        const hashedPassword = await hashPassword(password)
+        const passwordRef = ref(db, `lists/${listId}/metadata/password`)
+        const { get } = await import('firebase/database')
+        const snapshot = await get(passwordRef)
+        const passwordData = snapshot.val()
 
-            setToastMessage('🔓 Liste entsperrt')
-            setToastType('success')
-            setToastVisible(true)
-          }
+        if (passwordData?.hashedPassword === hashedPassword) {
+          // Password correct - grant access but keep list locked
+          setIsUnlocked(true)
+          setShowPasswordPrompt(false)
+          sessionStorage.setItem(`unlocked-${listId}`, 'true')
+
+          setToastMessage('✅ Zugang gewährt')
+          setToastType('success')
+          setToastVisible(true)
         } else {
           // Password incorrect
           setPasswordError('Falsches Passwort')

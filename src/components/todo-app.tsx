@@ -23,7 +23,7 @@ import { sortUsersByLastSeen, isUserOnline } from '@/lib/presence-utils'
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase'
 import { generateFunnyName, generateColor } from '@/lib/name-generator'
 import { OfflineStorage, getLocalListIds, addLocalListId, removeLocalListId } from '@/lib/offline-storage'
-import { Todo, User, GuestLink, UserRole, ListPassword } from '@/types/todo'
+import { Todo, User, GuestLink, UserRole, ListPassword, ListFlavour } from '@/types/todo'
 
 import UserAvatars from './user-avatars'
 import TodoInput from './todo-input'
@@ -34,6 +34,8 @@ import ToastNotification from './toast-notification'
 import HeaderActionsMenu from './header-actions-menu'
 import ConfirmDialog from './confirm-dialog'
 import PasswordPrompt from './password-prompt'
+import ListLogo from './list-logo'
+import { getFlavourConfig } from '@/lib/flavour-config'
 
 interface TodoAppProps {
   listId: string
@@ -59,6 +61,9 @@ export default function TodoApp({ listId }: TodoAppProps) {
 
   // List description state
   const [listDescription, setListDescription] = useState('')
+
+  // List flavour state
+  const [listFlavour, setListFlavour] = useState<ListFlavour>('mach')
 
   // Pin state
   const [isPinned, setIsPinned] = useState(false)
@@ -97,12 +102,13 @@ export default function TodoApp({ listId }: TodoAppProps) {
   // Initialize offline storage
   const offlineStorage = new OfflineStorage(listId)
 
-  // Load list name and description from Firebase
+  // Load list name, description, and flavour from Firebase
   useEffect(() => {
     if (!isFirebaseConfigured() || !db) return
 
     const listNameRef = ref(db!, `lists/${listId}/metadata/name`)
     const listDescriptionRef = ref(db!, `lists/${listId}/metadata/description`)
+    const listFlavourRef = ref(db!, `lists/${listId}/metadata/flavour`)
 
     const nameUnsubscribe = onValue(listNameRef, (snapshot) => {
       const name = snapshot.val()
@@ -114,9 +120,15 @@ export default function TodoApp({ listId }: TodoAppProps) {
       setListDescription(description || '')
     })
 
+    const flavourUnsubscribe = onValue(listFlavourRef, (snapshot) => {
+      const flavour = snapshot.val() as ListFlavour | null
+      setListFlavour(flavour || 'mach')
+    })
+
     return () => {
       off(listNameRef, 'value', nameUnsubscribe)
       off(listDescriptionRef, 'value', descriptionUnsubscribe)
+      off(listFlavourRef, 'value', flavourUnsubscribe)
     }
   }, [listId])
 
@@ -747,6 +759,19 @@ export default function TodoApp({ listId }: TodoAppProps) {
     }
   }
 
+  // Flavour change handler
+  const handleFlavourChange = async (newFlavour: ListFlavour) => {
+    if (!isFirebaseConfigured() || !db) return
+
+    const flavourRef = ref(db!, `lists/${listId}/metadata/flavour`)
+    await set(flavourRef, newFlavour)
+
+    const config = getFlavourConfig(newFlavour)
+    setToastMessage(`Listenstil zu "${config.label}" geändert`)
+    setToastType('success')
+    setToastVisible(true)
+  }
+
   // Load guest links (from top-level guestLinks, filtered by listId)
   useEffect(() => {
     console.log('🔗 Guest links useEffect triggered', {
@@ -1049,27 +1074,24 @@ export default function TodoApp({ listId }: TodoAppProps) {
   }
 
   const onlineUserCount = users.filter(u => isUserOnline(u)).length
+  const flavourConfig = getFlavourConfig(listFlavour)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 font-sans">
+    <div className={`min-h-screen bg-gradient-to-br ${flavourConfig.colors.bgGradient} font-sans`}>
       {/* Sticky Header - All Sizes */}
       <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-sm border-b border-white/20 shadow-sm">
         {/* Mobile Layout (<md) */}
         <div className="md:hidden px-4 py-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex flex-col flex-1 min-w-0">
-              <Link
-                href="/"
-                className="flex items-center space-x-2 mb-1"
-                title="Zur Startseite"
-              >
-                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md flex-shrink-0">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <h1 className="text-xl font-black text-slate-800 tracking-tight">
-                  mach<span className="text-pink-500">.</span>einfach
-                </h1>
-              </Link>
+              <div className="mb-1">
+                <ListLogo
+                  flavour={listFlavour}
+                  onFlavourChange={handleFlavourChange}
+                  size="small"
+                  showLabel={true}
+                />
+              </div>
               {isEditingListName ? (
                 <div className="flex items-center space-x-1 ml-10">
                   <input
@@ -1124,23 +1146,13 @@ export default function TodoApp({ listId }: TodoAppProps) {
         <div className="hidden md:block container mx-auto px-8 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
             <div className="flex items-center space-x-3 mb-3 sm:mb-0">
-              <Link
-                href="/"
-                className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md transition-transform duration-200 hover:scale-110 hover:rotate-12"
-                title="Zur Startseite"
-              >
-                <Zap className="w-6 h-6 text-white" />
-              </Link>
               <div className="flex flex-col">
-                <Link
-                  href="/"
-                  className="group"
-                  title="Zur Startseite"
-                >
-                  <h1 className="text-3xl font-black text-slate-800 tracking-tight group-hover:text-purple-600 transition-colors duration-200">
-                    mach<span className="text-pink-500">.</span>einfach
-                  </h1>
-                </Link>
+                <ListLogo
+                  flavour={listFlavour}
+                  onFlavourChange={handleFlavourChange}
+                  size="large"
+                  showLabel={true}
+                />
                 <div className="flex items-center space-x-2 mt-1">
                   {isEditingListName ? (
                     <div className="flex items-center space-x-2">

@@ -58,3 +58,12 @@ export interface GuestComment {
 }
 
 export type UserRole = 'normal' | 'guest'
+
+export type ListFlavour = 'mach' | 'bring' | 'schenk' | 'organisier' | 'pack'
+
+export interface ListMetadata {
+  name?: string
+  description?: string
+  flavour?: ListFlavour
+  password?: ListPassword
+}

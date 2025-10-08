@@ -111,7 +111,7 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
           {/* Quick Mode Message */}
           {!showAdvanced && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-700">
-              Link läuft nach 7 Tagen ab. Für mehr Optionen klicke auf "Erweiterte Einstellungen".
+              Link läuft nach 7 Tagen ab. Für mehr Optionen klicke auf &#34;Erweiterte Einstellungen&#34;.
             </div>
           )}
 

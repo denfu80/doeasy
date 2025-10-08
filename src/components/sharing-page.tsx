@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Link, Copy, Eye, Users, Calendar, Lock, User, Power, Edit, X } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowLeft, Link as LinkIcon, Copy, Eye, Users, Calendar, Lock, User, Power, Edit, X, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ref, onValue, off, set, update, remove } from 'firebase/database'
@@ -164,29 +165,65 @@ export default function SharingPage({ listId }: SharingPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-          <div className="flex items-center space-x-4">
-            <button
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-purple-100">
+        {/* Mobile Header (<md) */}
+        <div className="md:hidden px-4 py-3">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => router.push(`/list/${listId}`)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="text-slate-600 hover:text-slate-900 hover:bg-purple-100 -ml-2"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-600" />
-            </button>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-slate-800">Liste teilen</h1>
-              <p className="text-sm text-slate-500 font-mono">{listName || listId}</p>
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Zurück
+            </Button>
+          </div>
+        </div>
+
+        {/* Desktop Header (≥md) */}
+        <div className="hidden md:block container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push(`/list/${listId}`)}
+                className="text-slate-600 hover:text-slate-900 hover:bg-purple-100"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Zurück
+              </Button>
+
+              <Link
+                href="/"
+                className="flex items-center space-x-2 group cursor-pointer"
+                title="Zur Startseite"
+              >
+                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-slate-900 group-hover:text-purple-600 transition-colors duration-200">
+                    <span className="font-black">mach<span className="text-pink-500">.</span>einfach</span> / Teilen
+                  </h1>
+                  <p className="text-sm text-slate-500 font-mono">{listName}</p>
+                </div>
+              </Link>
             </div>
           </div>
         </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
 
         {/* Normal Link Card */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Link className="w-5 h-5 text-white" />
+                <LinkIcon className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h3 className="font-semibold text-slate-800">Normal teilen</h3>

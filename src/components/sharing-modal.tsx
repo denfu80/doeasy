@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { X, Link, Copy, QrCode, Eye, Users, Calendar, Lock, User, Power, Edit } from 'lucide-react'
+import { X, Link, Copy, Eye, Users, Calendar, Lock, User, Power, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { GuestLink } from '@/types/todo'
@@ -38,7 +38,6 @@ export default function SharingModal({
   onEditGuestLink
 }: SharingModalProps) {
   const [copied, setCopied] = useState<string | null>(null)
-  const [showQR, setShowQR] = useState<string | null>(null)
   const [showGuestLinkForm, setShowGuestLinkForm] = useState(false)
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null)
 
@@ -53,12 +52,6 @@ export default function SharingModal({
     } catch (error) {
       console.error('Failed to copy:', error)
     }
-  }
-
-  const showQRCode = (text: string) => {
-    setShowQR(text)
-    // Auto-close QR after 10 seconds
-    setTimeout(() => setShowQR(null), 10000)
   }
 
   const handleCreateGuestLink = async (data: GuestLinkFormData) => {
@@ -127,24 +120,15 @@ export default function SharingModal({
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <Button
-                onClick={() => copyToClipboard(normalLink, 'normal')}
-                size="sm"
-                className="flex-1"
-                variant={copied === 'normal' ? 'default' : 'outline'}
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                {copied === 'normal' ? 'Kopiert!' : 'Link kopieren'}
-              </Button>
-              <Button
-                onClick={() => showQRCode(normalLink)}
-                size="sm"
-                variant="outline"
-              >
-                <QrCode className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button
+              onClick={() => copyToClipboard(normalLink, 'normal')}
+              size="sm"
+              className="w-full"
+              variant={copied === 'normal' ? 'default' : 'outline'}
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              {copied === 'normal' ? 'Kopiert!' : 'Link kopieren'}
+            </Button>
           </div>
 
           {/* Guest Link Card */}
@@ -243,15 +227,6 @@ export default function SharingModal({
                                 <Copy className="w-3 h-3" />
                               </Button>
                               <Button
-                                onClick={() => showQRCode(guestLink)}
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0"
-                                disabled={expired || isDisabled}
-                              >
-                                <QrCode className="w-3 h-3" />
-                              </Button>
-                              <Button
                                 onClick={() => onRevokeGuestLink(link.id)}
                                 size="sm"
                                 variant="ghost"
@@ -280,25 +255,6 @@ export default function SharingModal({
               </Button>
           </div>
         </div>
-
-        {/* QR Code Modal */}
-        {showQR && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-60 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center">
-              <h3 className="font-semibold text-lg mb-4">QR-Code</h3>
-              <div className="bg-gray-100 rounded-xl p-4 mb-4 flex items-center justify-center min-h-[200px]">
-                <p className="text-gray-500">QR-Code wird hier angezeigt</p>
-                {/* TODO: Implement actual QR code generation */}
-              </div>
-              <p className="text-sm text-gray-600 mb-4">
-                Handy zeigen zum Scannen
-              </p>
-              <Button onClick={() => setShowQR(null)} className="w-full">
-                Schließen
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Guest Link Form Modal - Create */}

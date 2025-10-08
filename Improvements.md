@@ -10,37 +10,7 @@ List Ausbau
 - passwortschutz ausschalten nicht möglich
 - deaktivieren von gastlinks nicht möglich
 - 💡 Schnellmodus: Link läuft nach 7 Tagen ab. Für mehr Optionen klicke auf "Erweiterte Einstellungen".
-- qr code kann raus
 
-Probleme:
-- esc muss einladungsfenster schließen
-- kommentare ausblendbar machen (alle auf einmal und einzeln)
-- gastlinks mit festen namen darf namen nicht ändern (bei hover und klick auf avatar)
-- advanced toggle für die neuen erweiterten funktionen um den nutzer nicht zu überfordern mit funktionen
-
-Neue Features:
-- links zeitweise deaktivierbar machen und wieder aktivierbar
-- nachträgliches ändern von diesen konfigurationen erlauben
-
----
-Optionale zeitlich begrenzte Gast-Links
-- Auto-Revoke nach X Tagen/Stunden . default bei aktivieruzng 7 Tage (änderbar)
-
-Benannte Gast-Links
-- optional Name für Gast-Link setzen. Der gast kann seinen namen dann nicht selbst ändern und bekommt den gesetzen wenn er den link benutzt
-
-Letzte Aktivität pro Gast-Link
-
-Passwortgeschützte Gast-Links
-- Gast-Link mit eigenem Passwort
-- Unabhängig vom Listen-Passwort
-
-Gast-Kommentare
-
-- Gäste können Notizen/Kommentare zu Todos hinterlassen
-- Separate "Gast-Kommentar-Sektion" pro Todo
-- Nicht editierbar für Gäste
-- Kommentare werden mit Gast-Namen angezeigt
 
 
 

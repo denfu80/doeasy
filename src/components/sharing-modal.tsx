@@ -265,22 +265,26 @@ export default function SharingModal({
       />
 
       {/* Guest Link Form Modal - Edit */}
-      {editingLinkId && (
-        <GuestLinkForm
-          isOpen={true}
-          onClose={() => setEditingLinkId(null)}
-          onSubmit={(data) => handleEditGuestLink(editingLinkId, data)}
-          initialData={{
-            name: getEditingLink()?.name,
-            guestDisplayName: getEditingLink()?.guestDisplayName,
-            expiresInDays: getEditingLink()?.expiresAt
-              ? Math.ceil((getEditingLink()!.expiresAt - Date.now()) / (1000 * 60 * 60 * 24))
-              : null,
-            password: getEditingLink()?.password || ''
-          }}
-          isEditing={true}
-        />
-      )}
+      {editingLinkId && (() => {
+        const link = getEditingLink()
+        if (!link) return null
+        return (
+          <GuestLinkForm
+            isOpen={true}
+            onClose={() => setEditingLinkId(null)}
+            onSubmit={(data) => handleEditGuestLink(editingLinkId, data)}
+            initialData={{
+              name: link.name,
+              guestDisplayName: link.guestDisplayName,
+              expiresInDays: link.expiresAt
+                ? Math.ceil((link.expiresAt - Date.now()) / (1000 * 60 * 60 * 24))
+                : null,
+              password: link.password || ''
+            }}
+            isEditing={true}
+          />
+        )
+      })()}
     </div>
   )
 }

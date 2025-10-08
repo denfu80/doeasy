@@ -6,6 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **"mach.einfach"** (previously "doeasy") is a fun, simple but intuitive todo app designed for seamless multi-user collaboration without registration requirements. Users can create and share todo lists via unique IDs for real-time collaboration. The app embraces a playful, modern aesthetic with the core message "zusammen sachen machen" (doing things together).
 
+**🚀 Next Phase: Flavoured Lists**
+The app is expanding to support context-specific list types ("flavours") that adapt the UI and functionality based on use case while maintaining a unified core. Users can choose between different flavours like "mach.einfach" (standard todos), "bring.einfach" (shopping lists), "schenk.einfach" (gift lists), "organisier.einfach" (event planning), and "pack.einfach" (packing lists). Each flavour adds contextual extensions without overwhelming the base interface.
+
 ## Tech Stack
 
 - **Frontend**: React + TypeScript + Next.js
@@ -16,6 +19,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Key Features
 
+- **Flavoured list system** with context-specific UI extensions (mach/bring/schenk/organisier/pack)
+- **Switchable list flavours** (can be changed after creation)
+- **Progressive disclosure** pattern for extended features (hover/click-based expansion)
 - **Dual design system** with playful and terminal-style alternatives
 - **Environment variable-based design switching** (`NEXT_PUBLIC_HOMEPAGE_STYLE`)
 - **Playful, modern UX/UI design** with "mach.einfach" branding
@@ -185,6 +191,179 @@ Test setup includes:
 - Minimal test framework for incremental development
 
 ## Feature Deep Dives
+
+### Flavoured Lists System
+
+**Overview:**
+Lists can have different "flavours" that adapt the interface and functionality to specific use cases. Each flavour maintains the same core todo functionality while adding contextual extensions through a progressive disclosure pattern.
+
+**Core Principles:**
+1. **Unified Data Model**: Single base schema with optional extensions
+2. **Progressive Disclosure**: Extended features appear on hover/click, keeping base UI clean
+3. **Switchable Flavours**: Users can change list flavour after creation
+4. **Low Complexity**: Each flavour adds only 2-4 contextual features
+5. **Maximum Overview**: Base list view remains uncluttered
+
+**Planned Flavours:**
+
+1. **mach.einfach** (Standard Todo) - **Phase 1 (Current)**
+   - Extended View:
+     - 📅 Deadline with date picker
+     - 🏷️ Priority (low/medium/high) as colored badges
+     - 📎 Note field for details
+   - Use Case: Classic tasks, projects, errands
+   - Color Scheme: Pink-Purple (current branding)
+
+2. **bring.einfach** (Shopping List) - **Phase 2 (Next)**
+   - Extended View:
+     - 🔢 Quantity (e.g., "3x Äpfel")
+     - 🏪 Category (Produce, Meat, Household) → Auto-grouping
+     - 💰 Price (optional) → Total sum at bottom
+     - 📷 Image upload (optional, for specific products)
+   - Use Case: Shopping, errands, party planning
+   - Color Scheme: Orange-Yellow (shopping vibes)
+
+3. **schenk.einfach** (Gift List/Wishlist) - **Phase 3**
+   - Extended View:
+     - 🔗 Link (Amazon, Etsy, etc.) → Automatic image preview via OpenGraph
+     - 💶 Price/Budget
+     - 👤 "Reserved by" → Users can claim items (visible only to them)
+     - ⭐ Priority/Wish strength
+   - Use Case: Birthdays, Christmas, wedding registries
+   - Color Scheme: Red-Pink (gift feeling)
+   - Killer Feature: Guests can "claim" items without others seeing who's buying what
+
+4. **organisier.einfach** (Event Planning) - **Phase 4**
+   - Extended View:
+     - 👥 Assignee (from user list)
+     - ⏰ Time/Deadline
+     - 📍 Location (optional text field)
+     - ✅ Checklist (sub-tasks)
+   - Use Case: Weddings, moves, company events, parties
+   - Color Scheme: Blue-Cyan (productivity)
+
+5. **pack.einfach** (Packing List) - **Phase 5**
+   - Extended View:
+     - ☑️ Category (Clothing, Electronics, Documents)
+     - 🔢 Quantity
+     - ⚠️ Importance (Nice-to-have vs. Must-have)
+   - Use Case: Vacation, moving, festivals
+   - Color Scheme: Green-Teal (travel feeling)
+
+**Technical Implementation:**
+
+**Firebase Data Schema:**
+```typescript
+interface TodoItem {
+  // Core (all flavours)
+  id: string
+  text: string
+  completed: boolean
+  createdAt: number
+  createdBy: string
+
+  // Extended (flavour-specific, optional)
+  extensions?: {
+    // mach.einfach
+    dueDate?: number
+    priority?: 'low' | 'medium' | 'high'
+    note?: string
+
+    // bring.einfach
+    quantity?: number
+    category?: string
+    price?: number
+    imageUrl?: string
+
+    // schenk.einfach
+    link?: string
+    reservedBy?: string
+    wishPriority?: 1 | 2 | 3
+
+    // organisier.einfach
+    assignedTo?: string
+    deadline?: number
+    location?: string
+    subtasks?: string[]
+
+    // pack.einfach
+    packCategory?: string
+    importance?: 'must-have' | 'nice-to-have'
+  }
+}
+
+interface ListMetadata {
+  flavour: 'mach' | 'bring' | 'schenk' | 'organisier' | 'pack'
+  // ... existing metadata fields
+}
+```
+
+**Component Architecture:**
+```tsx
+<TodoItem>
+  <TodoItemBase />  {/* Checkbox, Text, Delete (always same) */}
+  {isExpanded && (
+    <TodoItemExtensions flavour={flavour}>
+      {flavour === 'mach' && <MachExtensions />}
+      {flavour === 'bring' && <BringExtensions />}
+      {flavour === 'schenk' && <SchenkExtensions />}
+      {/* ... */}
+    </TodoItemExtensions>
+  )}
+</TodoItem>
+```
+
+**UI/UX Pattern:**
+
+Desktop (Hover-based):
+```
+┌────────────────────────────────┐
+│ ☐ Tomaten                    … │ ← Normal view
+└────────────────────────────────┘
+          ↓ Hover triggers expansion
+┌────────────────────────────────┐
+│ ☐ Tomaten                    … │
+│ ┌──────────────────────────┐   │
+│ │ [Extended view content]  │   │
+│ └──────────────────────────┘   │
+└────────────────────────────────┘
+```
+
+Mobile: Click/Tap-based expansion (TBD in implementation phase)
+
+**Flavour Selection:**
+- Selectable during list creation (modal with flavour options)
+- Changeable after creation via header dropdown
+- Stored in Firebase: `lists/{id}/metadata/flavour`
+
+**Design System:**
+- Each flavour has distinct color scheme
+- Flavour icon displayed next to list title
+- Input placeholder adapts: "Was möchtest du **bringen**?" / "Was möchtest du **schenken**?"
+
+**Implementation Roadmap:**
+- ✅ Phase 1: Core system + "mach.einfach" (current)
+- 🎯 Phase 2: Add "bring.einfach" (quantity + category)
+- 📋 Phase 3: Add "schenk.einfach" (link preview via OpenGraph)
+- 📋 Phase 4: Add "organisier.einfach" + "pack.einfach"
+
+**Link Preview Feature (Phase 3):**
+```typescript
+// API Route: app/api/og-preview/route.ts
+export async function POST(req: Request) {
+  const { url } = await req.json()
+  const html = await fetch(url).then(r => r.text())
+  // Parse og:image, og:title, og:price
+  return Response.json({ title, image, price })
+}
+```
+
+**Design Decisions:**
+- ✅ Flavour changeable after creation
+- ✅ Mobile expansion: Click/Tap (details TBD in implementation)
+- ✅ Start with "mach.einfach" flavour
+- ✅ Flavour-specific colors, but "mach.einfach" keeps current pink-purple scheme
+- ⏳ Link preview: Phase 3 implementation
 
 ### Password Protection
 

@@ -31,7 +31,6 @@ import TodoList from './todo-list'
 import ListDescription from './list-description'
 import DeletedTodosTrash from './deleted-todos-trash'
 import ToastNotification from './toast-notification'
-import SharingModal from './sharing-modal'
 import HeaderActionsMenu from './header-actions-menu'
 import ConfirmDialog from './confirm-dialog'
 import PasswordPrompt from './password-prompt'
@@ -74,8 +73,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   const [passwordError, setPasswordError] = useState<string>('')
   const [hasShownPasswordHint, setHasShownPasswordHint] = useState(false)
 
-  // Sharing state
-  const [showSharingModal, setShowSharingModal] = useState(false)
+  // Guest links state (for tracking)
   const [guestLinks, setGuestLinks] = useState<GuestLink[]>([])
 
   // Confirm dialog state
@@ -670,7 +668,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
   }
 
   const copyLinkToClipboard = () => {
-    setShowSharingModal(true)
+    window.location.href = `/list/${listId}/sharing`
   }
 
   // List name editing functions
@@ -1324,18 +1322,6 @@ export default function TodoApp({ listId }: TodoAppProps) {
         onDeleteAll={handleDeleteAll}
       />
 
-      {/* Sharing Modal */}
-      <SharingModal
-        isOpen={showSharingModal}
-        onClose={() => setShowSharingModal(false)}
-        listId={listId}
-        listName={listName}
-        guestLinks={guestLinks}
-        onCreateGuestLink={handleCreateGuestLink}
-        onRevokeGuestLink={handleRevokeGuestLink}
-        onToggleGuestLink={handleToggleGuestLink}
-        onEditGuestLink={handleEditGuestLink}
-      />
 
       {/* Toast Notification */}
       <ToastNotification

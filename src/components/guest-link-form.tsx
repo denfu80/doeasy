@@ -34,12 +34,12 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        name: initialData.name || '',
-        guestDisplayName: initialData.guestDisplayName || '',
+        name: initialData.name ?? '',
+        guestDisplayName: initialData.guestDisplayName ?? '',
         expiresInDays: initialData.expiresInDays ?? 7,
-        password: initialData.password || ''
+        password: initialData.password ?? ''
       })
-      setConfirmPassword(initialData.password || '')
+      setConfirmPassword(initialData.password ?? '')
       if (initialData.name || initialData.guestDisplayName || initialData.password) {
         setShowAdvanced(true)
       }
@@ -58,11 +58,13 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
   }, [isOpen])
 
   const handleSubmit = () => {
+    const trimmedName = formData.name?.trim()
+    const trimmedGuestDisplayName = formData.guestDisplayName?.trim()
     const trimmedPassword = formData.password?.trim()
 
     const submitData: GuestLinkFormData = {
-      name: formData.name?.trim() || undefined,
-      guestDisplayName: formData.guestDisplayName?.trim() || undefined,
+      name: trimmedName || (isEditing ? '' : undefined),
+      guestDisplayName: trimmedGuestDisplayName || (isEditing ? '' : undefined),
       expiresInDays: formData.expiresInDays,
       password: trimmedPassword || (isEditing ? '' : undefined)
     }
@@ -139,7 +141,7 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
             <Input
               type="text"
               placeholder="z.B. 'Team Alpha', 'Kunde XY'"
-              value={formData.name}
+              value={formData.name ?? ''}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full"
             />
@@ -155,7 +157,7 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
             <Input
               type="text"
               placeholder="z.B. 'Max Mustermann'"
-              value={formData.guestDisplayName}
+              value={formData.guestDisplayName ?? ''}
               onChange={(e) => setFormData({ ...formData, guestDisplayName: e.target.value })}
               className="w-full"
             />
@@ -209,7 +211,7 @@ export default function GuestLinkForm({ isOpen, onClose, onSubmit, initialData, 
             <Input
               type="text"
               placeholder="Passwort für diesen Link"
-              value={formData.password}
+              value={formData.password ?? ''}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full"
             />

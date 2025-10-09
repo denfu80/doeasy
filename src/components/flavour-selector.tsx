@@ -33,6 +33,9 @@ export default function FlavourSelector({
     }
   }, [isOpen, triggerRef])
 
+  // Track closing state for exit animation
+  const [isClosing, setIsClosing] = useState(false)
+
   // Close dropdown when clicking outside
   useEffect(() => {
     if (!isOpen) return
@@ -44,7 +47,11 @@ export default function FlavourSelector({
         triggerRef.current &&
         !triggerRef.current.contains(event.target as Node)
       ) {
-        onClose()
+        setIsClosing(true)
+        setTimeout(() => {
+          onClose()
+          setIsClosing(false)
+        }, 300)
       }
     }
 
@@ -52,7 +59,13 @@ export default function FlavourSelector({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen, onClose, triggerRef])
 
-  if (!isOpen) return null
+  useEffect(() => {
+    if (isOpen) {
+      setIsClosing(false)
+    }
+  }, [isOpen])
+
+  if (!isOpen && !isClosing) return null
 
   const handleSelect = (flavour: ListFlavour) => {
     onFlavourChange(flavour)
@@ -92,13 +105,17 @@ export default function FlavourSelector({
           const Icon = config.icon
           const isActive = config.id === currentFlavour
           const pos = getArcPosition(index, flavours.length)
-          const delay = index * 60
+          const delay = isClosing ? (flavours.length - 1 - index) * 60 : index * 60
 
           return (
             <button
               key={config.id}
               onClick={() => handleSelect(config.id)}
-              className="group absolute flex items-center gap-3 bg-white/95 backdrop-blur-sm rounded-full pr-4 shadow-lg hover:shadow-xl transition-all duration-300 animate-in fade-in zoom-in-90"
+              className={`group absolute flex items-center gap-3 bg-white/95 backdrop-blur-sm rounded-full pr-4 shadow-lg hover:shadow-xl transition-all duration-300 ${
+                isClosing
+                  ? 'animate-out fade-out zoom-out-90'
+                  : 'animate-in fade-in zoom-in-90'
+              }`}
               style={{
                 left: `${pos.x}px`,
                 top: `${pos.y}px`,

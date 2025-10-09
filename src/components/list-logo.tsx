@@ -28,17 +28,22 @@ export default function ListLogo({
   const containerSize = size === 'small' ? 'w-8 h-8' : 'w-10 h-10'
   const labelSize = size === 'small' ? 'text-xl' : 'text-3xl'
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    setIsDropdownOpen(!isDropdownOpen)
+  const handleMouseEnter = () => {
+    setIsDropdownOpen(true)
+  }
+
+  const handleMouseLeave = () => {
+    setIsDropdownOpen(false)
   }
 
   return (
     <>
-      <div className="flex items-center space-x-3">
+      <div
+        className="flex items-center space-x-3"
+        onMouseEnter={handleMouseEnter}
+      >
         <button
           ref={logoRef}
-          onClick={handleClick}
           className={`${containerSize} bg-gradient-to-r ${config.colors.gradient} rounded-lg flex items-center justify-center shadow-md transition-all duration-200 hover:scale-110 hover:rotate-12 cursor-pointer`}
           title="Listenstil ändern"
         >
@@ -46,8 +51,7 @@ export default function ListLogo({
         </button>
         {showLabel && (
           <div className="flex flex-col">
-            <button
-              onClick={handleClick}
+            <div
               className="group cursor-pointer"
               title="Listenstil ändern"
             >
@@ -58,7 +62,7 @@ export default function ListLogo({
                 <span className={`text-${config.colors.accent}`}>.</span>
                 einfach
               </h1>
-            </button>
+            </div>
           </div>
         )}
       </div>
@@ -67,7 +71,7 @@ export default function ListLogo({
         currentFlavour={flavour}
         onFlavourChange={onFlavourChange}
         isOpen={isDropdownOpen}
-        onClose={() => setIsDropdownOpen(false)}
+        onClose={handleMouseLeave}
         triggerRef={logoRef}
       />
     </>

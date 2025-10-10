@@ -1318,6 +1318,7 @@ export default function TodoApp({ listId }: TodoAppProps) {
           todos={todos}
           users={users}
           currentUserId={user?.uid}
+          flavour={listFlavour}
           onToggleTodo={handleToggleTodo}
           onDeleteTodo={handleDeleteTodo}
           onUpdateTodo={handleUpdateTodo}

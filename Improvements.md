@@ -27,6 +27,7 @@ List Ausbau
 
 ### Allgemein
 
+- automatisches löschen von listen (e.g. leere oder unbenutzte)
 - Echte QR-Codes mit qrcode.react oder qr-code-styling
 - Kommentar funktion
 - item log

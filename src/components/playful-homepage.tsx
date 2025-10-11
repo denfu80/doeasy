@@ -20,6 +20,7 @@ export default function PlayfulHomepage() {
   const [listNames, setListNames] = useState<Record<string, string>>({})
   const [lastActivity, setLastActivity] = useState<Record<string, {timestamp: number, user: string, action?: string}>>({})
   const [passwordProtected, setPasswordProtected] = useState<Record<string, boolean>>({})
+  const [todoStats, setTodoStats] = useState<Record<string, {open: number, total: number}>>({})
   const [, forceUpdate] = useState({})
   const router = useRouter()
 
@@ -44,7 +45,7 @@ export default function PlayfulHomepage() {
         }))
       })
       
-      // Listen to todos to track last activity
+      // Listen to todos to track last activity and count todos
       const todosRef = ref(db!, `lists/${listId}/todos`)
       const activityUnsubscribe = onValue(todosRef, (snapshot) => {
         const data = snapshot.val()
@@ -52,36 +53,46 @@ export default function PlayfulHomepage() {
           let latestTimestamp = 0
           let latestUser = 'Unknown'
           let latestAction = 'created'
-          
+          let openCount = 0
+          let totalCount = 0
+
           Object.values(data).forEach((todo: any) => {
+            // Count todos (exclude deleted)
+            if (!todo.deletedAt) {
+              totalCount++
+              if (todo.completed) {
+                openCount++ // openCount = completed count
+              }
+            }
+
             // Check creation time
             if (todo.createdAt && typeof todo.createdAt === 'number' && todo.createdAt > latestTimestamp) {
               latestTimestamp = todo.createdAt
               latestUser = todo.creatorName || 'Unknown'
               latestAction = 'created'
             }
-            
+
             // Check completion toggle (when completed timestamp exists)
             if (todo.completedAt && typeof todo.completedAt === 'number' && todo.completedAt > latestTimestamp) {
               latestTimestamp = todo.completedAt
               latestUser = todo.completedBy || latestUser
               latestAction = todo.completed ? 'completed' : 'uncompleted'
             }
-            
+
             // Check text updates (when updatedAt exists)
             if (todo.updatedAt && typeof todo.updatedAt === 'number' && todo.updatedAt > latestTimestamp) {
               latestTimestamp = todo.updatedAt
               latestUser = todo.updatedBy || latestUser
               latestAction = 'updated'
             }
-            
+
             // Check deletion (when deletedAt exists)
             if (todo.deletedAt && typeof todo.deletedAt === 'number' && todo.deletedAt > latestTimestamp) {
               latestTimestamp = todo.deletedAt
               latestUser = todo.deletedBy || latestUser
               latestAction = 'deleted'
             }
-            
+
             // Check restoration (when restoredAt exists)
             if (todo.restoredAt && typeof todo.restoredAt === 'number' && todo.restoredAt > latestTimestamp) {
               latestTimestamp = todo.restoredAt
@@ -89,7 +100,13 @@ export default function PlayfulHomepage() {
               latestAction = 'restored'
             }
           })
-          
+
+          // Update todo stats
+          setTodoStats(prev => ({
+            ...prev,
+            [listId]: { open: openCount, total: totalCount }
+          }))
+
           if (latestTimestamp > 0) {
             setLastActivity(prev => ({
               ...prev,
@@ -436,7 +453,7 @@ export default function PlayfulHomepage() {
                           <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-500 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-md group-hover:scale-110 transition-transform duration-300">
                             {index + 1}
                           </div>
-                          
+
                           <div className="flex items-center space-x-1">
                             {/* Password indicator - appears on hover */}
                             {passwordProtected[listId] && (
@@ -492,6 +509,27 @@ export default function PlayfulHomepage() {
                       
                       {/* Hover overlay */}
                       <div className="absolute inset-0 bg-gradient-to-br from-pink-400/10 via-purple-400/10 to-blue-400/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                      {/* Todo Stats Badge - Bottom Right on Hover */}
+                      {todoStats[listId]?.total > 0 && (() => {
+                        const stats = todoStats[listId]
+                        const completed = stats.open
+                        const total = stats.total
+
+                        // Determine badge color
+                        let bgColor = 'bg-red-500' // 0 completed
+                        if (completed === total) {
+                          bgColor = 'bg-green-500' // All completed
+                        } else if (completed > 0) {
+                          bgColor = 'bg-orange-500' // Some completed
+                        }
+
+                        return (
+                          <div className={`absolute bottom-2 right-2 ${bgColor} text-white text-[10px] font-mono font-bold px-2 py-1 rounded-full shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
+                            {completed}/{total}
+                          </div>
+                        )
+                      })()}
                     </div>
                     
                     {/* Magic floating elements around card */}
